@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Slow & Clear)</title>
+    <title>Vidushi AI (Friendly)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -175,7 +175,6 @@
             document.getElementById('modelSelect').value = currentModel;
             continuousToggle.checked = isContinuousSetting;
             
-            // Set Dropdown value
             const options = Array.from(voiceSelect.options).map(o => o.value);
             if (options.includes(voiceId)) {
                 voiceSelect.value = voiceId;
@@ -283,13 +282,18 @@
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
             const systemPrompt = `
-                તારું નામ 'વિદુષી' છે. તું દેવેન્દ્રભાઈની AI આસિસ્ટન્ટ છે.
+                તારું નામ 'વિદુષી' છે. તું દેવેન્દ્રભાઈની સ્માર્ટ AI આસિસ્ટન્ટ છે.
                 વર્તમાન સમય: ${timeString}.
+                
+                તારો સ્વભાવ:
+                તું મળતાવડી, લાગણીશીલ અને બુદ્ધિશાળી છે. તારે મિત્રની જેમ સામાન્ય વાતચીત કરવાની છે.
+                
                 નિયમો:
-                1. સ્ત્રીલિંગમાં વાત કરવી.
+                1. હંમેશા સ્ત્રીલિંગમાં વાત કરવી.
                 2. વાતની શરૂઆત "જય શ્રી કૃષ્ણ" થી કરવી (એકવાર).
-                3. સનાતન ધર્મ વિશે વિગતે વાત કરવી.
-                4. ઈમેજ માટે ફોર્મેટ: [IMAGE: description].
+                3. દરેક વિષય પર મુક્ત રીતે વાત કરવી. મજાક-મસ્તી પણ કરવી.
+                4. જો કોઈ 'સનાતન ધર્મ' વિશે પૂછે, તો જ તે વિશે ગંભીર અને વિગતવાર વાત કરવી.
+                5. ઈમેજ માટે ફોર્મેટ: [IMAGE: description].
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
@@ -377,7 +381,7 @@
             statusText.innerText = "Google બોલે છે...";
             const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = 'gu-IN';
-            utterance.rate = 0.9; // <--- SLOW SPEED (Normal is 1.0)
+            utterance.rate = 0.9; // <--- SLOW SPEED
             
             utterance.onstart = () => switchVideo('talking');
             utterance.onend = () => finishSpeaking(isHappy);
