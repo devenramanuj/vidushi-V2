@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Friendly)</title>
+    <title>Vidushi AI (Final)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -21,9 +21,14 @@
         /* Settings Modal */
         #settings-modal, #error-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 100; justify-content: center; align-items: center; }
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input, select { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        input[type="text"], input[type="password"], select { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
         .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 15px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; text-align: left; margin-top: 15px; border-bottom: 1px solid #444; }
+
+        /* Speed Slider Style */
+        .slider-container { text-align: left; margin: 15px 0; }
+        .range-slider { width: 100%; cursor: pointer; accent-color: #ff4500; }
+        .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
 
         /* Toggle Switch */
         .toggle-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: #333; border-radius: 5px; }
@@ -96,10 +101,19 @@
                 <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Female - Default)</option>
                 <option value="pNInz6obpgDQGcFmaJgB">Adam (Male - Deep)</option>
                 <option value="TxGEqnHWrfWFTfGW9XjX">Josh (Male - Soft)</option>
-                <option value="piTKgcLEGmPE4e6mEKli">Nicole (Female - Soft)</option>
                 <option value="custom">Custom ID (Manual)</option>
             </select>
             <input type="text" id="voiceIdInput" placeholder="Or Paste Voice ID Here" style="display:none;">
+
+            <div class="section-title">GOOGLE VOICE SPEED</div>
+            <div class="slider-container">
+                <input type="range" id="speedRange" min="0.5" max="1.5" step="0.1" value="0.9" class="range-slider" oninput="updateSpeedLabel(this.value)">
+                <div class="slider-labels">
+                    <span>ધીમું (0.5)</span>
+                    <span id="speedValue" style="color:#ff4500;">0.9</span>
+                    <span>ઝડપી (1.5)</span>
+                </div>
+            </div>
 
             <div class="toggle-container">
                 <span style="font-size:14px;">સતત વાતચીત (Continuous)</span>
@@ -137,6 +151,8 @@
         const generatedImage = document.getElementById('generated-image');
         const voiceSelect = document.getElementById('voiceSelect');
         const voiceIdInput = document.getElementById('voiceIdInput');
+        const speedRange = document.getElementById('speedRange');
+        const speedValue = document.getElementById('speedValue');
 
         // Variables
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -144,6 +160,7 @@
         let elevenKey = localStorage.getItem('vidushi_eleven_key') || '';
         let voiceId = localStorage.getItem('vidushi_voice_id') || '21m00Tcm4TlvDq8ikWAM';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
+        let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
         let isConversationActive = false; 
         let wakeLock = null;
@@ -175,6 +192,11 @@
             document.getElementById('modelSelect').value = currentModel;
             continuousToggle.checked = isContinuousSetting;
             
+            // Speed Slider
+            speedRange.value = speechRate;
+            speedValue.innerText = speechRate;
+
+            // Voice Dropdown
             const options = Array.from(voiceSelect.options).map(o => o.value);
             if (options.includes(voiceId)) {
                 voiceSelect.value = voiceId;
@@ -184,6 +206,10 @@
                 voiceIdInput.style.display = 'block';
                 voiceIdInput.value = voiceId;
             }
+        }
+
+        function updateSpeedLabel(val) {
+            speedValue.innerText = val;
         }
 
         function updateVoiceId() {
@@ -208,6 +234,7 @@
 
             currentModel = document.getElementById('modelSelect').value;
             isContinuousSetting = continuousToggle.checked;
+            speechRate = parseFloat(speedRange.value);
 
             if(!apiKey.startsWith('gsk_')) { alert("Groq Key 'gsk_' થી શરૂ થવી જોઈએ."); return; }
             
@@ -216,6 +243,7 @@
             localStorage.setItem('vidushi_voice_id', voiceId);
             localStorage.setItem('vidushi_groq_model', currentModel);
             localStorage.setItem('vidushi_continuous', isContinuousSetting);
+            localStorage.setItem('vidushi_rate', speechRate);
             settingsModal.style.display = 'none';
         }
 
@@ -285,15 +313,12 @@
                 તારું નામ 'વિદુષી' છે. તું દેવેન્દ્રભાઈની સ્માર્ટ AI આસિસ્ટન્ટ છે.
                 વર્તમાન સમય: ${timeString}.
                 
-                તારો સ્વભાવ:
-                તું મળતાવડી, લાગણીશીલ અને બુદ્ધિશાળી છે. તારે મિત્રની જેમ સામાન્ય વાતચીત કરવાની છે.
-                
                 નિયમો:
                 1. હંમેશા સ્ત્રીલિંગમાં વાત કરવી.
                 2. વાતની શરૂઆત "જય શ્રી કૃષ્ણ" થી કરવી (એકવાર).
-                3. દરેક વિષય પર મુક્ત રીતે વાત કરવી. મજાક-મસ્તી પણ કરવી.
-                4. જો કોઈ 'સનાતન ધર્મ' વિશે પૂછે, તો જ તે વિશે ગંભીર અને વિગતવાર વાત કરવી.
-                5. ઈમેજ માટે ફોર્મેટ: [IMAGE: description].
+                3. મિત્રની જેમ દરેક વિષય પર સામાન્ય અને મુક્ત રીતે વાત કરવી.
+                4. જો કોઈ 'સનાતન ધર્મ' વિશે પૂછે, તો જ તે વિશે વિગતે વાત કરવી.
+                5. ઈમેજ માટે: [IMAGE: description].
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
@@ -344,7 +369,7 @@
         }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
-        // --- SPEAK (ElevenLabs + Google Slow Rate) ---
+        // --- SPEAK ---
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "").replace(/ખૂબ\s+જ/g, "ખુબજ");
             
@@ -377,11 +402,11 @@
                 } catch (e) { console.log("ElevenLabs Failed"); }
             }
 
-            // 2. Fallback Google (Slow Speed)
+            // 2. Fallback Google (Controlled Speed)
             statusText.innerText = "Google બોલે છે...";
             const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = 'gu-IN';
-            utterance.rate = 0.9; // <--- SLOW SPEED
+            utterance.rate = speechRate; // <--- USER SELECTED SPEED
             
             utterance.onstart = () => switchVideo('talking');
             utterance.onend = () => finishSpeaking(isHappy);
