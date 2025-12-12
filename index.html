@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Female Only)</title>
+    <title>Vidushi AI (Indian Default)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -98,8 +98,9 @@
             
             <label style="display:block; text-align:left; color:#ff4500; font-size:12px; margin-top:5px;">Select Voice (અવાજ પસંદ કરો):</label>
             <select id="voiceSelect" onchange="updateVoiceId()">
-                <option value="21m00Tcm4TlvDq8ikWAM">Rachel (Female - Default)</option>
-                <option value="EXAVITQu4vr4xnSDxMaL">Sarah (Female - Professional)</option>
+                <option value="5Q0t7uMcQlclqqfJhqL8">Ayesha (Indian - Energetic)</option>
+                <option value="zFLlkq72ysbq1TWC0Mlx">Anushri (Indian - Soft)</option>
+                <option value="21m00Tcm4TlvDq8ikWAM">Rachel (US - Clear)</option>
                 <option value="custom">Custom ID (Manual)</option>
             </select>
             <input type="text" id="voiceIdInput" placeholder="Paste Voice ID Here" style="display:none;">
@@ -157,7 +158,8 @@
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.3-70b-versatile';
         let elevenKey = localStorage.getItem('vidushi_eleven_key') || '';
-        let voiceId = localStorage.getItem('vidushi_voice_id') || '21m00Tcm4TlvDq8ikWAM';
+        // DEFAULT IS NOW AYESHA (INDIAN)
+        let voiceId = localStorage.getItem('vidushi_voice_id') || '5Q0t7uMcQlclqqfJhqL8';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
