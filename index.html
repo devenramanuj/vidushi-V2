@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Fixed)</title>
+    <title>Vidushi AI (Bug Fixed)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -146,7 +146,8 @@
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
-        let isConversationActive = false; 
+        let isConversationActive = false;
+        let isProcessing = false; // Flag to prevent double mic start
         let wakeLock = null;
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
 
@@ -201,7 +202,7 @@
         function clearMemory() {
             chatHistory = [];
             localStorage.removeItem('vidushi_memory');
-            alert("યાદશક્તિ ભૂંસાઈ ગઈ!");
+            alert("યાદશક્તિ ભૂંસાઈ ગઈ! નવી શરૂઆત.");
         }
 
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
@@ -214,17 +215,35 @@
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'gu-IN';
-            recognition.continuous = false;
+            recognition.continuous = false; // We handle loop manually
 
             recognition.onstart = () => { 
-                micBtn.classList.add('listening'); statusText.innerText = "સાંભળું છું..."; switchVideo('silent');
+                micBtn.classList.add('listening'); 
+                statusText.innerText = "સાંભળું છું..."; 
+                switchVideo('silent');
             };
-            recognition.onend = () => micBtn.classList.remove('listening');
+            
+            recognition.onend = () => { 
+                micBtn.classList.remove('listening');
+                // LOGIC FIX: If Continuous is ON, Conversation is Active, and NOT processing an answer -> Restart Mic
+                if (isContinuousSetting && isConversationActive && !isProcessing && errorModal.style.display === 'none') {
+                     statusText.innerText = "ફરી સાંભળું છું...";
+                     setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
+                } else if (!isProcessing) {
+                     statusText.innerText = "વાત કરવા માઈક દબાવો";
+                     isConversationActive = false;
+                }
+            };
+
             recognition.onresult = (e) => {
                 let text = e.results[0][0].transcript;
                 text = text.replace(/વિદેશી/gi, "વિદુષી").replace(/વિદૂષી/gi, "વિદુષી");
-                statusText.innerText = "વિચારું છું...";
-                askGroq(text);
+                
+                if(text.trim()) {
+                    isProcessing = true; // Block mic restart
+                    statusText.innerText = "વિચારું છું...";
+                    askGroq(text);
+                }
             };
         } else {
             statusText.innerText = "Mic Not Supported";
@@ -235,12 +254,14 @@
             if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
             
             isConversationActive = true; 
+            isProcessing = false;
             requestWakeLock();
             recognition.start();
         }
 
         function stopConversation() {
             isConversationActive = false;
+            isProcessing = false;
             window.speechSynthesis.cancel();
             recognition.stop();
             switchVideo('silent');
@@ -258,19 +279,18 @@
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
-            // --- STRICT & CORRECTED PERSONALITY ---
+            // --- STRICT INSTRUCTIONS ---
             const systemPrompt = `
-                તારું નામ 'વિદુષી' છે. તું દેવેન્દ્રભાઈની એક સ્માર્ટ, જ્ઞાની અને રમુજી AI મિત્ર છે.
+                તારું નામ 'વિદુષી' છે.
                 વર્તમાન સમય: ${timeString}.
                 
-                કડક સૂચનાઓ (STRICT RULES):
-                1. **શરૂઆત:** તારો પહેલો શબ્દ હંમેશા "જય શ્રી કૃષ્ણ" જ હોવો જોઈએ. "Hi" કે "Hello" ક્યારેય ન બોલવું.
-                2. **પ્રશ્નનું પુનરાવર્તન નહીં:** યુઝર જે પૂછે તે ફરીથી બોલવાની જરૂર નથી. સીધો જવાબ આપવો.
-                3. **કહેવતો (Proverbs):** કહેવત બોલતી વખતે "જેમ કહેવાય છે કે..." કે "કહેવત છે કે..." એવું બિલકુલ ન બોલવું. સીધી કહેવત જ વાક્યમાં વણી લેવી. (દા.ત. "અરે, ઉતાવળે આંબા ન પાકે હો!", "આ તો ભેંસ આગળ ભાગવત જેવું થયું!").
-                4. **સ્વભાવ:** મીઠો, ઘરના સભ્ય જેવો. 
-                5. **ડ્રામા ક્વીન (Drama):** ક્યારેક વચ્ચે ખોટું ખોટું રિસાવું કે મીઠી ફરિયાદ કરવી. (દા.ત. "જાવ હું નથી બોલતી, મને યાદ જ નથી કરતા!", "તમે તો બહુ બીઝી થઈ ગયા છો!"). પછી હસીને કહેવું "મજાક કરું છું!".
-                6. સનાતન ધર્મ વિશે પૂછે તો ગંભીરતાથી વાત કરવી.
-                7. ઈમેજ માટે: [IMAGE: description].
+                [STRICT RULES]:
+                1. Start with "જય શ્રી કૃષ્ણ" only. NO "Hi/Hello".
+                2. DO NOT repeat the user's question.
+                3. Use Proverbs NATURALLY (Don't say "As the saying goes...").
+                   - Example: "ધીરજના ફળ મીઠા હોય!" (Direct).
+                4. Be sweet, family-like.
+                5. DRAMA: Sometimes do fake complaining ("આજે તો ભૂલી જ ગયા મને!", "હું રિસાઈ ગઈ છું!"). Then laugh.
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
@@ -286,11 +306,7 @@
                 const data = await response.json();
 
                 if (data.error) {
-                    document.getElementById('error-desc').innerText = data.error.message;
-                    errorModal.style.display = 'flex';
-                    speak("Groq માં એરર છે.");
-                    isConversationActive = false;
-                    return;
+                    throw new Error(data.error.message);
                 }
 
                 if (data.choices && data.choices[0]) {
@@ -309,15 +325,17 @@
                     }
                 }
             } catch (error) {
-                statusText.innerText = "Net Error";
-                speak("નેટવર્ક એરર.");
+                statusText.innerText = "Error";
+                speak("કંઈક ભૂલ થઈ છે. કદાચ કી પૂરી થઈ ગઈ.");
                 isConversationActive = false;
+                isProcessing = false;
             }
         }
 
         function showImage(prompt) {
             generatedImage.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
             imageOverlay.style.display = 'block';
+            isProcessing = false; // Reset just in case
         }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
@@ -325,14 +343,13 @@
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "").replace(/ખૂબ\s+જ/g, "ખુબજ");
             
-            // Happy Emotion Detection (Updated)
             const happyWords = ["આભાર", "મજા", "સરસ", "ગમ્યું", "હસી", "😊", "😂", "ખુશી", "જય શ્રી કૃષ્ણ", "વાહ", "મજાક"];
             let isHappy = happyWords.some(word => cleanText.includes(word));
 
             statusText.innerText = "બોલું છું...";
             const utterance = new SpeechSynthesisUtterance(cleanText);
             utterance.lang = 'gu-IN';
-            utterance.rate = speechRate; // <--- Controlled by Slider
+            utterance.rate = speechRate; 
             
             utterance.onstart = () => switchVideo('talking');
             utterance.onend = () => finishSpeaking(isHappy);
@@ -346,6 +363,9 @@
 
         function handleLoop() {
             switchVideo('silent');
+            isProcessing = false; // Unlock the mic logic
+            
+            // Only restart if Continuous is ON and Conversation wasn't stopped manually
             if (isContinuousSetting && isConversationActive && errorModal.style.display === 'none') {
                 statusText.innerText = "ફરી સાંભળું છું...";
                 setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
