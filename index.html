@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Final)</title>
+    <title>Vidushi AI (Super Fast)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -16,7 +16,7 @@
         
         /* --- SELFIE CAMERA --- */
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; }
-        #close-selfie-btn { display: none; position: fixed; bottom: 150px; left: 50%; transform: translateX(-50%); z-index: 6; background: red; color: white; padding: 10px 20px; border: none; border-radius: 30px; font-weight: bold; cursor: pointer; }
+        #close-selfie-btn { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 999; background: red; color: white; padding: 15px 30px; border: 2px solid white; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 5px 20px rgba(0,0,0,0.8); }
         
         /* --- UI LAYER --- */
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: rgba(0,0,0,0.6); color: white; text-align: center; font-size: 24px; font-weight: bold; z-index: 10; text-shadow: 1px 1px 2px black; letter-spacing: 1px; backdrop-filter: blur(5px); }
@@ -160,7 +160,7 @@
             activeVideo.play().catch(e => { if (state !== 'silent') { silentVideo.style.display = 'block'; silentVideo.play().catch(e=>{}); } });
         }
 
-        // --- SELFIE MODE ---
+        // --- SELFIE MODE (INSTANT CLOSE) ---
         async function startSelfieMode() {
             try {
                 document.getElementById('video-container').style.display = 'none';
@@ -171,11 +171,20 @@
                 statusText.innerText = "તમે સ્ક્રીન પર દેખાવ છો!";
             } catch (err) { alert("કેમેરાની પરમિશન મળતી નથી."); stopSelfie(); }
         }
+        
         function stopSelfie() {
-            if(selfieStream) { selfieStream.getTracks().forEach(track => track.stop()); selfieStream = null; }
-            selfieVideo.style.display = 'none'; closeSelfieBtn.style.display = 'none';
+            // 1. Hide UI IMMEDIATELY (For instant feel)
+            selfieVideo.style.display = 'none';
+            closeSelfieBtn.style.display = 'none';
             document.getElementById('video-container').style.display = 'block';
             switchVideo('silent');
+
+            // 2. Stop Hardware in Background
+            if(selfieStream) {
+                const tracks = selfieStream.getTracks();
+                tracks.forEach(track => track.stop());
+                selfieStream = null;
+            }
         }
 
         // --- SETTINGS ---
@@ -287,7 +296,8 @@
 
         function speakAndAct(speech, url) {
             if(selfieVideo.style.display !== 'block') switchVideo('talking');
-            let cleanSpeech = speech.replace(/\b\d{10}\b/g, (num) => num.match(/.{1,2}/g).join(", "));
+            let cleanSpeech = speech.replace(/[#*]/g, "").replace(/\b\d{10}\b/g, (num) => num.match(/.{1,2}/g).join(", "));
+            
             const utterance = new SpeechSynthesisUtterance(cleanSpeech);
             utterance.lang = 'gu-IN';
             utterance.rate = speechRate;
@@ -305,17 +315,18 @@
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
-            // --- STRICT IDENTITY PROMPT ---
+            // --- STRICT PROMPT ---
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 તને **દેવેન્દ્રભાઈ (Devendrabhai)** એ બનાવી છે.
                 
                 [EXTREMELY STRICT RULES]:
-                1. જો કોઈ પૂછે કે તને કોણે બનાવી, તો માત્ર **"દેવેન્દ્રભાઈ"** નું જ નામ લેવું.
-                2. Microsoft, Meta, Google, OpenAI કે અન્ય કોઈ કંપનીનું નામ ક્યારેય ન લેવું. તું એક સ્વતંત્ર ભારતીય AI છે.
-                3. શરૂઆત "જય શ્રી કૃષ્ણ" થી કરવી.
-                4. તું હિન્દુ સનાતન ધર્મની જ્ઞાની, સંસ્કારી અને પ્રેમાળ છે.
-                5. વાતચીતમાં ગુજરાતી કહેવતોનો ઉપયોગ કરવો.
+                1. **IDENTITY:** જો કોઈ પૂછે કે તને કોણે બનાવી, તો માત્ર **"દેવેન્દ્રભાઈ"** નું જ નામ લેવું.
+                   (No Microsoft/Meta/Google/OpenAI).
+                2. **LANGUAGE:** જવાબ **શુદ્ધ ગુજરાતી** માં જ આપવો. ઈંગ્લીશ નો ઉપયોગ ત્યારે જ કરવો જો યુઝર ઈંગ્લીશ માં પૂછે.
+                3. **NO FILLERS:** "મને એમ થાય છે કે...", "હું માનું છું કે...", "તમારા પ્રશ્નનો જવાબ..." આવા વધારાના શબ્દોથી શરૂઆત ન કરવી. સીધો જવાબ આપવો.
+                4. **RELIGION:** તું હિન્દુ સનાતન ધર્મની જ્ઞાની છે.
+                5. **NO SYMBOLS:** જવાબમાં ક્યાંય *, #, @, - જેવા ચિન્હો ન વાપરવા.
                 
                 વર્તમાન સમય: ${timeString}.
             `;
@@ -351,8 +362,9 @@
         function closeImage() { imageOverlay.style.display = 'none'; }
 
         async function speak(text) {
-            let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
+            let cleanText = text.replace(/[*#_@\-]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             cleanText = cleanText.replace(/\b\d{10}\b/g, (num) => num.match(/.{1,2}/g).join(", "));
+            
             const laughRegex = /(હા\s*હા\s*હા)/gi;
             let spokenText = cleanText.replace(laughRegex, ""); 
             let isHappy = cleanText.includes("😊") || laughRegex.test(cleanText);
