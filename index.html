@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Final)</title>
+    <title>Vidushi AI (Smiling Start)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; }
         
-        /* --- START OVERLAY (To Allow Audio) --- */
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; }
-        .start-btn { padding: 20px 40px; font-size: 24px; border: 2px solid #ff4500; border-radius: 50px; background: transparent; color: white; animation: pulse 2s infinite; }
+        /* --- START OVERLAY --- */
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; backdrop-filter: blur(5px); }
+        .start-btn { padding: 20px 50px; font-size: 22px; border: 2px solid #ff4500; border-radius: 50px; background: rgba(0,0,0,0.5); color: white; animation: pulse 2s infinite; font-weight: bold; letter-spacing: 1px; }
 
         /* --- VIDEO LAYER --- */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -155,17 +155,22 @@
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let selfieStream = null;
 
-        // --- STARTUP LOGIC ---
+        // --- INITIALIZE (SMILING START) ---
         function initializeApp() {
-            startOverlay.style.display = 'none'; // Hide overlay
+            startOverlay.style.display = 'none';
             
-            // Play Silent Video to unlock audio/video context
-            silentVideo.play().then(() => {
-                // IMMEDIATELY GREET
+            // 1. Play all videos to unlock audio/video
+            silentVideo.play().catch(e=>{});
+            talkingVideo.play().catch(e=>{});
+            smilingVideo.play().catch(e=>{});
+
+            // 2. FORCE SMILE FIRST
+            switchVideo('smiling');
+
+            // 3. WAIT 1 SECOND (So you see the smile), THEN SPEAK
+            setTimeout(() => {
                 speak("જય શ્રી કૃષ્ણ");
-            }).catch(e => {
-                alert("વિડિયો પ્લે કરવામાં તકલીફ છે. કૃપા કરીને ફરી રિફ્રેશ કરો.");
-            });
+            }, 1000);
         }
 
         // --- VIDEO CONTROLLER ---
@@ -182,7 +187,7 @@
             activeVideo.play().catch(e => { if (state !== 'silent') { silentVideo.style.display = 'block'; silentVideo.play().catch(e=>{}); } });
         }
 
-        // --- SELFIE MODE (INSTANT CLOSE) ---
+        // --- SELFIE MODE ---
         async function startSelfieMode() {
             try {
                 document.getElementById('video-container').style.display = 'none';
@@ -194,12 +199,10 @@
             } catch (err) { alert("કેમેરાની પરમિશન મળતી નથી."); stopSelfie(); }
         }
         function stopSelfie() {
-            // Instant UI Hide
             selfieVideo.style.display = 'none';
             closeSelfieBtn.style.display = 'none';
             document.getElementById('video-container').style.display = 'block';
             switchVideo('silent');
-            // Background Stop
             if(selfieStream) { selfieStream.getTracks().forEach(track => track.stop()); selfieStream = null; }
         }
 
@@ -279,6 +282,8 @@
         // --- COMMAND CENTER ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
+            
+            // App Controls
             if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(found) { speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number); return; }
@@ -303,7 +308,7 @@
             }
             if(cmd.includes('youtube')) { speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com"); return; }
             if(cmd.includes('map') || cmd.includes('નકશો')) { speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com"); return; }
-            
+
             // Ask AI
             askGroq(text);
         }
