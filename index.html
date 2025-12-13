@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Unlimited Fix)</title>
+    <title>Vidushi AI (Best Version)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -102,9 +102,8 @@
             <div class="section-title">GROQ API (MIND)</div>
             <input type="password" id="apiKeyInput" placeholder="gsk_...">
             <select id="modelSelect">
-                <option value="llama-3.1-8b-instant">Llama 3.1 8b (Fast/Saver) - RECOMMENDED</option>
-                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70b (Smartest)</option>
-                <option value="llama-3.1-70b-versatile">Llama 3.1 70b</option>
+                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 (Best & Smartest)</option>
+                <option value="llama-3.1-8b-instant">Llama 3.1 8b (Fast/Saver)</option>
             </select>
             <div class="section-title">VIP CONTACTS</div>
             <div id="contactsListContainer"></div>
@@ -141,9 +140,9 @@
         const speedRange = document.getElementById('speedRange');
         const speedValue = document.getElementById('speedValue');
 
-        // DEFAULT TO SAVER MODEL TO AVOID RATE LIMITS
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
-        let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.1-8b-instant';
+        // RESTORED DEFAULT MODEL TO THE BEST ONE
+        let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.3-70b-versatile';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
@@ -157,26 +156,37 @@
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let selfieStream = null;
 
-        // --- INITIALIZE ---
+        // --- INITIALIZE (SMILING START) ---
         function initializeApp() {
             startOverlay.style.display = 'none';
             [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => v.play().catch(e=>{}));
+            
+            // Force Smile
             switchVideo('smiling');
+
+            // Wait 3 Seconds then Speak
             setTimeout(() => { speak("જય શ્રી કૃષ્ણ"); }, 3000);
         }
 
         // --- VIDEO CONTROLLER ---
         function switchVideo(state) {
             if(selfieVideo.style.display === 'block') return;
+
             let activeVideo;
             if (state === 'talking') activeVideo = talkingVideo;
             else if (state === 'thinking') activeVideo = thinkingVideo;
             else if (state === 'smiling') activeVideo = smilingVideo;
             else activeVideo = silentVideo;
+
             activeVideo.style.display = 'block';
             activeVideo.play().catch(e=>{});
-            [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => {
-                if(v !== activeVideo) { v.style.display = 'none'; v.pause(); }
+
+            const allVideos = [silentVideo, talkingVideo, thinkingVideo, smilingVideo];
+            allVideos.forEach(v => {
+                if(v !== activeVideo) {
+                    v.style.display = 'none';
+                    v.pause();
+                }
             });
         }
 
@@ -317,12 +327,13 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- AI LOGIC (STRICT PROMPT) ---
+        // --- AI LOGIC (THE BEST ONE) ---
         async function askGroq(userText) {
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
+            // --- STRICT PROMPT ---
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 તને **દેવેન્દ્રભાઈ (Devendrabhai)** એ બનાવી છે.
@@ -369,7 +380,12 @@
                 }
             } catch (error) { 
                 statusText.innerText = "Error"; 
-                alert("ભૂલ આવી છે (Try changing model in settings): " + error.message); 
+                // IF RATE LIMIT HAPPENS
+                if(error.message.includes("Rate limit")) {
+                   alert("⚠️ તમારી લિમિટ પૂરી થઈ ગઈ છે! નવી API Key બનાવો અથવા કાલે ટ્રાય કરો.");
+                } else {
+                   alert("ભૂલ આવી છે: " + error.message); 
+                }
                 speak("ક્ષમા કરજો, કઈક પ્રોબ્લેમ થયો છે."); 
                 isProcessing = false; 
             }
