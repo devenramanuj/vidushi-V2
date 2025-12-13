@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Final Fixed)</title>
+    <title>Vidushi AI (Final Cute)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -155,7 +155,7 @@
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let selfieStream = null;
 
-        // --- INITIALIZE (SMILING START) ---
+        // --- INITIALIZE (LONG CUTE SMILE) ---
         function initializeApp() {
             startOverlay.style.display = 'none';
             
@@ -167,10 +167,10 @@
             // 2. FORCE SMILE FIRST
             switchVideo('smiling');
 
-            // 3. WAIT 1 SECOND (So you see the smile), THEN SPEAK
+            // 3. WAIT 3 SECONDS (Enjoy the Smile!), THEN SPEAK
             setTimeout(() => {
                 speak("જય શ્રી કૃષ્ણ");
-            }, 1000);
+            }, 3000); // 3 Second Delay
         }
 
         // --- VIDEO CONTROLLER ---
