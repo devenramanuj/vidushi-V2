@@ -3,22 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Super Fix)</title>
+    <title>Vidushi AI (Final)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; }
 
-        /* --- VIDEO LAYER (AVATAR) --- */
+        /* --- VIDEO LAYER --- */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
         #silent-video { display: block; }
 
-        /* --- SELFIE CAMERA LAYER (HIDDEN BY DEFAULT) --- */
+        /* --- SELFIE CAMERA (Mirror) --- */
         #selfie-video { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: cover; z-index: 5; transform: scaleX(-1); /* Mirror effect */
-            border: 5px solid #ff4500; 
+            object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; 
         }
         #close-selfie-btn {
             display: none; position: fixed; bottom: 150px; left: 50%; transform: translateX(-50%);
@@ -40,12 +39,10 @@
         .contact-item { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; text-align: left; border: 1px solid #444; }
         .del-contact { color: #ff4500; cursor: pointer; font-weight: bold; padding: 0 10px; }
 
-        /* Speed Slider */
+        /* Slider & Toggle */
         .slider-container { text-align: left; margin: 15px 0; }
         .range-slider { width: 100%; cursor: pointer; accent-color: #ff4500; }
         .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
-
-        /* Toggle */
         .toggle-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: #333; border-radius: 5px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -162,7 +159,11 @@
         let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.3-70b-versatile';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
-        let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || [];
+        
+        // --- HARDCODED CONTACTS (તમારો ફિક્સ નંબર) ---
+        let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || [
+            { name: "Devendra", number: "9276505035" }
+        ];
         
         let isConversationActive = false;
         let isProcessing = false;
@@ -172,8 +173,7 @@
 
         // --- VIDEO CONTROL ---
         function switchVideo(state) {
-            // If selfie is active, don't switch avatar videos
-            if(selfieVideo.style.display === 'block') return;
+            if(selfieVideo.style.display === 'block') return; // Don't interrupt Selfie
 
             const videos = [silentVideo, talkingVideo, thinkingVideo, smilingVideo];
             videos.forEach(v => { v.style.display = 'none'; v.pause(); });
@@ -190,33 +190,24 @@
             });
         }
 
-        // --- SELFIE CAMERA LOGIC (IN-APP MIRROR) ---
+        // --- SELFIE CAMERA LOGIC ---
         async function startSelfieMode() {
             try {
-                // Hide avatar videos
                 document.getElementById('video-container').style.display = 'none';
-                
-                // Start Webcam
                 selfieStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" }, audio: false });
                 selfieVideo.srcObject = selfieStream;
                 selfieVideo.style.display = 'block';
                 closeSelfieBtn.style.display = 'block';
-                
                 statusText.innerText = "તમે સ્ક્રીન પર દેખાવ છો!";
             } catch (err) {
-                alert("કેમેરો ચાલુ ન થયો. પરમિશન આપો.");
+                alert("કેમેરાની પરમિશન આપવી પડશે.");
                 stopSelfie();
             }
         }
-
         function stopSelfie() {
-            if(selfieStream) {
-                selfieStream.getTracks().forEach(track => track.stop());
-                selfieStream = null;
-            }
-            selfieVideo.style.display = 'none';
-            closeSelfieBtn.style.display = 'none';
-            document.getElementById('video-container').style.display = 'block'; // Show Avatar again
+            if(selfieStream) { selfieStream.getTracks().forEach(track => track.stop()); selfieStream = null; }
+            selfieVideo.style.display = 'none'; closeSelfieBtn.style.display = 'none';
+            document.getElementById('video-container').style.display = 'block';
             switchVideo('silent');
         }
 
@@ -230,7 +221,6 @@
             speedValue.innerText = speechRate;
             renderContacts();
         }
-
         function updateSpeedLabel(val) { speedValue.innerText = val; }
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
@@ -248,7 +238,7 @@
         }
         function clearMemory() { chatHistory = []; localStorage.removeItem('vidushi_memory'); alert("યાદશક્તિ ભૂંસાઈ ગઈ!"); }
 
-        // --- CONTACTS LOGIC ---
+        // --- CONTACTS UI ---
         function renderContacts() {
             const list = document.getElementById('contactsListContainer'); list.innerHTML = '';
             contacts.forEach((c, i) => { list.innerHTML += `<div class="contact-item"><span>${c.name} - ${c.number}</span><span class="del-contact" onclick="deleteContact(${i})">✖</span></div>`; });
@@ -302,41 +292,35 @@
             releaseWakeLock(); statusText.innerText = "બંધ";
         }
 
-        // --- THE MASTER LOGIC ---
+        // --- MASTER COMMAND CENTER ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
             
-            // 1. CALLING (Standard)
+            // 1. CALLING
             if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(found) { speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number); return; }
                 speakAndAct("ડાયલર ખોલી રહી છું...", "tel:"); return;
             }
 
-            // 2. SELFIE / CAMERA (NEW: Opens In-App Mirror)
+            // 2. SELFIE / CAMERA
             if(cmd.includes('camera') || cmd.includes('કેમેરો') || cmd.includes('ફોટો') || cmd.includes('સેલ્ફી')) {
                 speak("કેમેરો ચાલુ કરી રહી છું...");
                 setTimeout(() => { startSelfieMode(); isProcessing = false; isConversationActive = false; }, 1500);
                 return;
             }
 
-            // 3. WHATSAPP (Direct Scheme)
+            // 3. WHATSAPP
             if(cmd.includes('whatsapp') || cmd.includes('મેસેજ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
-                if(found) { 
-                    // Direct WhatsApp Open
-                    speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, `whatsapp://send?phone=${found.number}`); 
-                    return; 
-                }
-                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "whatsapp://"); 
-                return;
+                if(found) { speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, `whatsapp://send?phone=${found.number}`); return; }
+                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "whatsapp://"); return;
             }
 
-            // 4. EMAIL (Window Open)
+            // 4. EMAIL
             if(cmd.includes('mail') || cmd.includes('મેઈલ') || cmd.includes('ઈમેલ')) {
                 speak("મેઈલ એપ ખોલી રહી છું...");
-                window.open("mailto:", "_blank");
-                isProcessing = false; isConversationActive = false;
+                window.open("mailto:", "_blank"); isProcessing = false; isConversationActive = false;
                 return;
             }
 
@@ -347,28 +331,33 @@
                 return;
             }
 
-            // 6. YOUTUBE
+            // 6. YOUTUBE / MAPS
             if(cmd.includes('youtube')) { speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com"); return; }
             if(cmd.includes('map') || cmd.includes('નકશો')) { speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com"); return; }
 
-            // 7. ASK GROQ
+            // 7. ASK GROQ (AI)
             askGroq(text);
         }
 
         function speakAndAct(speech, url) {
             if(selfieVideo.style.display !== 'block') switchVideo('talking');
-            const utterance = new SpeechSynthesisUtterance(speech);
+            
+            // NEW: Split speech text for 2-digit numbers
+            let cleanSpeech = speech.replace(/\b\d{10}\b/g, (num) => num.match(/.{1,2}/g).join(", "));
+            
+            const utterance = new SpeechSynthesisUtterance(cleanSpeech);
             utterance.lang = 'gu-IN';
             utterance.rate = speechRate;
             
             utterance.onend = () => {
                 if(selfieVideo.style.display !== 'block') switchVideo('silent');
                 isProcessing = false; isConversationActive = false;
-                window.open(url, "_blank"); // Better for mobile handling
+                window.open(url, "_blank"); 
             };
             window.speechSynthesis.speak(utterance);
         }
 
+        // --- GROQ API CALL ---
         async function askGroq(userText) {
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
@@ -406,8 +395,15 @@
         function showImage(prompt) { generatedImage.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`; imageOverlay.style.display = 'block'; isProcessing = false; }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
+        // --- SPEECH SYNTHESIS (UPDATED for 2-Digit Numbers) ---
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
+            
+            // ✨ SPECIAL: Read 10-digit numbers in 2-digit chunks (92, 76...)
+            cleanText = cleanText.replace(/\b\d{10}\b/g, (num) => {
+                return num.match(/.{1,2}/g).join(", "); 
+            });
+
             const laughRegex = /(હા\s*હા\s*હા)/gi;
             let spokenText = cleanText.replace(laughRegex, ""); 
             let isHappy = cleanText.includes("😊") || laughRegex.test(cleanText);
@@ -423,7 +419,7 @@
         }
 
         function finishSpeaking(isHappy) {
-            if(selfieVideo.style.display === 'block') return; // Don't change avatar if selfie is on
+            if(selfieVideo.style.display === 'block') return; 
             if (isHappy) { switchVideo('smiling'); setTimeout(handleLoop, 3000); } 
             else { handleLoop(); }
         }
