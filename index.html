@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Debug Mode)</title>
+    <title>Vidushi AI (Unlimited Fix)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -102,8 +102,9 @@
             <div class="section-title">GROQ API (MIND)</div>
             <input type="password" id="apiKeyInput" placeholder="gsk_...">
             <select id="modelSelect">
-                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 (Best)</option>
-                <option value="llama-3.1-70b-versatile">Llama 3.1</option>
+                <option value="llama-3.1-8b-instant">Llama 3.1 8b (Fast/Saver) - RECOMMENDED</option>
+                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70b (Smartest)</option>
+                <option value="llama-3.1-70b-versatile">Llama 3.1 70b</option>
             </select>
             <div class="section-title">VIP CONTACTS</div>
             <div id="contactsListContainer"></div>
@@ -140,8 +141,9 @@
         const speedRange = document.getElementById('speedRange');
         const speedValue = document.getElementById('speedValue');
 
+        // DEFAULT TO SAVER MODEL TO AVOID RATE LIMITS
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
-        let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.3-70b-versatile';
+        let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.1-8b-instant';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
@@ -155,38 +157,26 @@
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let selfieStream = null;
 
-        // --- INITIALIZE (SMILING START) ---
+        // --- INITIALIZE ---
         function initializeApp() {
             startOverlay.style.display = 'none';
-            // Play all silently
             [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => v.play().catch(e=>{}));
-            
-            // Force Smile
             switchVideo('smiling');
-
-            // Wait 3 Seconds then Speak
             setTimeout(() => { speak("જય શ્રી કૃષ્ણ"); }, 3000);
         }
 
         // --- VIDEO CONTROLLER ---
         function switchVideo(state) {
             if(selfieVideo.style.display === 'block') return;
-
             let activeVideo;
             if (state === 'talking') activeVideo = talkingVideo;
             else if (state === 'thinking') activeVideo = thinkingVideo;
             else if (state === 'smiling') activeVideo = smilingVideo;
             else activeVideo = silentVideo;
-
             activeVideo.style.display = 'block';
             activeVideo.play().catch(e=>{});
-
-            const allVideos = [silentVideo, talkingVideo, thinkingVideo, smilingVideo];
-            allVideos.forEach(v => {
-                if(v !== activeVideo) {
-                    v.style.display = 'none';
-                    v.pause();
-                }
+            [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => {
+                if(v !== activeVideo) { v.style.display = 'none'; v.pause(); }
             });
         }
 
@@ -285,8 +275,6 @@
         // --- COMMAND CENTER ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
-            
-            // App Controls
             if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(found) { speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number); return; }
@@ -329,7 +317,7 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- AI LOGIC (DEBUG/DOCTOR VERSION) ---
+        // --- AI LOGIC (STRICT PROMPT) ---
         async function askGroq(userText) {
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
@@ -340,19 +328,12 @@
                 તને **દેવેન્દ્રભાઈ (Devendrabhai)** એ બનાવી છે.
                 
                 [EXTREMELY STRICT RULES]:
-                1. **GENDER:** તું એક **સ્ત્રી (Female)** છે.
-                   - "હું કરી શકું છું" (Right) vs "હું કરી શકતો નથી" (Wrong).
-                   - તારે હંમેશા **"શકતી", "કરતી", "ગઈ હતી"** જેવા સ્ત્રીલિંગ શબ્દો વાપરવા.
-                
-                2. **MEMORY:**
-                   - તારા સર્જક દેવેન્દ્રભાઈનો મોબાઈલ નંબર **9276505035** છે. આ તારે યાદ રાખવાનો છે.
-                
-                [અન્ય નિયમો]:
-                3. **CREATOR:** તને બનાવનાર માત્ર દેવેન્દ્રભાઈ છે.
-                4. **LANGUAGE:** શુદ્ધ ગુજરાતીમાં જ જવાબ આપવો.
-                5. **NO FILLERS:** "મને એમ થાય છે કે..." થી વાક્ય શરૂ ન કરવું.
-                6. **SYMBOLS:** જવાબમાં *, #, - જેવા ચિન્હો ન બોલવા.
-                7. **PHOTOS:** ફોટો માટે જવાબના અંતે [IMAGE: english description] લખવું.
+                1. GENDER: તું એક **સ્ત્રી (Female)** છે. હંમેશા સ્ત્રીલિંગ શબ્દો (શકતી, કરતી) વાપરવા.
+                2. MEMORY: દેવેન્દ્રભાઈનો મોબાઈલ નંબર **9276505035** છે.
+                3. LANGUAGE: જવાબ **શુદ્ધ ગુજરાતી** માં જ આપવો.
+                4. NO FILLERS: "મને એમ થાય છે કે...", "મારો જવાબ છે કે..." જેવા શબ્દો નહીં વાપરવાના.
+                5. NO SYMBOLS: જવાબમાં *, #, @, - જેવા ચિન્હો ન વાપરવા.
+                6. PHOTOS: ફોટો માટે જવાબના અંતે [IMAGE: english description] લખવું.
                 
                 વર્તમાન સમય: ${timeString}.
             `;
@@ -361,7 +342,6 @@
             messagesToSend.push({ role: "user", content: userText });
 
             try {
-                // Check Key
                 if(!apiKey) throw new Error("API Key નથી! સેટિંગ્સમાં નાખો.");
 
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -371,7 +351,6 @@
 
                 const data = await response.json();
                 
-                // Check API Error
                 if (data.error) throw new Error(data.error.message);
 
                 if (data.choices && data.choices[0]) {
@@ -390,8 +369,7 @@
                 }
             } catch (error) { 
                 statusText.innerText = "Error"; 
-                // ERROR ALERT BOX
-                alert("ભૂલ આવી છે: " + error.message); 
+                alert("ભૂલ આવી છે (Try changing model in settings): " + error.message); 
                 speak("ક્ષમા કરજો, કઈક પ્રોબ્લેમ થયો છે."); 
                 isProcessing = false; 
             }
