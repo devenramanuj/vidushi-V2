@@ -1,37 +1,50 @@
-        // --- AI LOGIC (DEBUG VERSION) ---
+        // --- AI LOGIC (DOCTOR MODE - ભૂલ શોધવા માટે) ---
         async function askGroq(userText) {
+            // STEP 1: ચેક કરો કે ફંક્શન ચાલુ થયું?
+            // alert("પગલું 1: પ્રશ્ન મળ્યો - " + userText); 
+
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે. સર્જક: દેવેન્દ્રભાઈ.
-                નિયમો:
-                1. તું સ્ત્રી છે. (શકતી, કરતી, ગઈ હતી).
-                2. દેવેન્દ્રભાઈનો નંબર 9276505035 છે.
-                3. શુદ્ધ ગુજરાતીમાં જવાબ આપવો.
-                વર્તમાન સમય: ${timeString}.
+                નિયમો: તું સ્ત્રી છે. દેવેન્દ્રભાઈનો નંબર 9276505035 છે. શુદ્ધ ગુજરાતીમાં વાત કર.
+                સમય: ${timeString}.
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
             messagesToSend.push({ role: "user", content: userText });
 
             try {
-                // ચેક કરો કે કી છે કે નહિ
-                if(!apiKey) throw new Error("API Key નથી! સેટિંગ્સમાં નાખો.");
+                // STEP 2: ચેક કરો કે API Key છે?
+                if(!apiKey) {
+                    alert("ભૂલ: સેટિંગ્સમાં API Key ખાલી છે!");
+                    speak("તમે API કી નાખવાનું ભૂલી ગયા છો.");
+                    return;
+                }
+
+                // alert("પગલું 2: મગજને (API) મેસેજ મોકલું છું...");
 
                 const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${apiKey}` },
                     body: JSON.stringify({ model: currentModel, messages: messagesToSend, max_tokens: 450 })
                 });
 
+                // STEP 3: ચેક કરો કે જવાબ આવ્યો?
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    alert("ભૂલ આવી (API Error): " + JSON.stringify(errorData));
+                    speak("મારા સર્વરમાં કોઈ પ્રોબ્લેમ છે.");
+                    return;
+                }
+
                 const data = await response.json();
                 
-                // જો API તરફથી એરર આવે તો
-                if (data.error) throw new Error(data.error.message);
-
                 if (data.choices && data.choices[0]) {
                     const reply = data.choices[0].message.content;
+                    // alert("પગલું 3: જવાબ મળી ગયો!");
+                    
                     chatHistory.push({ role: "user", content: userText });
                     chatHistory.push({ role: "assistant", content: reply });
                     localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
@@ -43,12 +56,14 @@
                     } else {
                         speak(reply);
                     }
+                } else {
+                    alert("ભૂલ: ખાલી જવાબ આવ્યો.");
                 }
+
             } catch (error) { 
                 statusText.innerText = "Error"; 
-                // અહી તમને સ્ક્રીન પર એરર દેખાશે
-                alert("ભૂલ આવી છે: " + error.message); 
-                speak("ક્ષમા કરજો, કઈક પ્રોબ્લેમ થયો છે."); 
+                alert("મોટી ભૂલ (Network/Code): " + error.message); 
+                speak("કંઈક ગડબડ છે, ઈન્ટરનેટ ચેક કરો."); 
                 isProcessing = false; 
             }
         }
