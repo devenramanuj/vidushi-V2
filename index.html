@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Super Smart)</title>
+    <title>Vidushi AI (The Ultimate)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -21,13 +21,13 @@
         /* Settings Modal */
         #settings-modal, #error-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 100; justify-content: center; align-items: center; }
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input[type="text"], input[type="password"], input[type="number"], select { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        input[type="text"], input[type="password"], select { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
         .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 15px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; text-align: left; margin-top: 15px; border-bottom: 1px solid #444; }
 
-        /* Contacts List */
-        .contact-item { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; text-align: left;}
-        .del-contact { color: #ff4500; cursor: pointer; font-weight: bold; padding: 5px; }
+        /* Contacts List Styles */
+        .contact-item { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; text-align: left; border: 1px solid #444; }
+        .del-contact { color: #ff4500; cursor: pointer; font-weight: bold; padding: 0 10px; }
 
         /* Speed Slider Style */
         .slider-container { text-align: left; margin: 15px 0; }
@@ -100,7 +100,7 @@
 
             <div class="section-title">VIP CONTACTS (For Calling)</div>
             <div id="contactsListContainer"></div>
-            <button onclick="addNewContact()" style="background:#333; border:1px dashed #777; width:100%; color:#aaa; cursor:pointer; padding:5px; margin-top:5px;">+ Add Contact</button>
+            <button onclick="addNewContact()" style="background:#333; border:1px dashed #777; width:100%; color:#aaa; cursor:pointer; padding:8px; margin-top:5px; border-radius:5px;">+ Add Number</button>
 
             <div class="section-title">અન્ય સેટિંગ્સ</div>
             <div class="slider-container">
@@ -269,7 +269,7 @@
                 if(text.trim()) {
                     isProcessing = true;
                     statusText.innerText = "વિચારું છું...";
-                    // HERE IS THE NEW LOGIC (Smart Interceptor)
+                    // THE SMART INTERCEPTOR LOGIC
                     processVoiceCommand(text);
                 }
             };
@@ -290,46 +290,57 @@
             switchVideo('silent'); releaseWakeLock(); statusText.innerText = "બંધ";
         }
 
-        // --- SMART LOGIC (APPS & CALLING) ---
+        // --- THE MASTER LOGIC (APPS & CALLING) ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
             
-            // 1. CALLING LOGIC
+            // 1. CALLING
             if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
-                // Check VIP Contacts
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
-                if(found) {
-                    speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number);
-                    return;
-                }
-                speakAndAct("ડાયલર ખોલી રહી છું...", "tel:");
-                return;
+                if(found) { speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number); return; }
+                speakAndAct("ડાયલર ખોલી રહી છું...", "tel:"); return;
             }
 
-            // 2. WHATSAPP LOGIC
+            // 2. WHATSAPP
             if(cmd.includes('whatsapp') || cmd.includes('મેસેજ')) {
-                // Check if specific contact mentioned
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
-                if(found) {
-                     // Note: Number should be full (e.g., 9198...) for direct link
-                    speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, "https://wa.me/" + found.number);
+                if(found) { speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, "https://wa.me/" + found.number); return; }
+                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "https://wa.me/"); return;
+            }
+
+            // 3. CAMERA / SELFIE
+            if(cmd.includes('camera') || cmd.includes('કેમેરો') || cmd.includes('ફોટો') || cmd.includes('સેલ્ફી')) {
+                speakAndAct("સ્માઈલ પ્લીઝ! કેમેરો ખોલી રહી છું...", "intent:#Intent;action=android.media.action.STILL_IMAGE_CAMERA;end");
+                return;
+            }
+
+            // 4. EMAIL
+            if(cmd.includes('mail') || cmd.includes('મેઈલ') || cmd.includes('ઈમેલ')) {
+                speakAndAct("મેઈલ લખવા માટે એપ ખોલી રહી છું...", "mailto:");
+                return;
+            }
+
+            // 5. REMINDER / CALENDAR
+            if(cmd.includes('reminder') || cmd.includes('યાદ') || cmd.includes('એલાર્મ')) {
+                let note = text.replace(/યાદ/g, "").replace(/કરાવજે/g, "").replace(/reminder/g, "").replace(/set/g, "").trim();
+                speakAndAct("કેલેન્ડર ખોલી રહી છું...", "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(note));
+                return;
+            }
+
+            // 6. REAL IMAGES (Google Search)
+            if(cmd.includes('images of') || cmd.includes('ના ફોટા') || cmd.includes('બતાવ')) {
+                let query = text.replace('ના ફોટા', '').replace('બતાવ', '').replace('images of', '').replace('show', '').trim();
+                if(query.length > 1) {
+                    speakAndAct(`${query} ના ફોટા શોધી રહી છું...`, "https://www.google.com/search?tbm=isch&q=" + encodeURIComponent(query));
                     return;
                 }
-                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "https://wa.me/");
-                return;
             }
 
-            // 3. YOUTUBE / MAPS
-            if(cmd.includes('youtube')) {
-                speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com");
-                return;
-            }
-            if(cmd.includes('map') || cmd.includes('નકશો')) {
-                speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com");
-                return;
-            }
+            // 7. YOUTUBE / MAPS
+            if(cmd.includes('youtube')) { speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com"); return; }
+            if(cmd.includes('map') || cmd.includes('નકશો')) { speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com"); return; }
 
-            // 4. IF NO APP COMMAND -> ASK GROQ (CHAT)
+            // 8. IF NO APP COMMAND -> ASK GROQ
             askGroq(text);
         }
 
@@ -343,7 +354,7 @@
             utterance.onend = () => {
                 switchVideo('silent');
                 isProcessing = false;
-                isConversationActive = false; // Stop listening when opening app
+                isConversationActive = false; 
                 window.location.href = url;
             };
             window.speechSynthesis.speak(utterance);
