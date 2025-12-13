@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (The Ultimate)</title>
+    <title>Vidushi AI (Final Fixed)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -25,16 +25,14 @@
         .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 15px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; text-align: left; margin-top: 15px; border-bottom: 1px solid #444; }
 
-        /* Contacts List Styles */
+        /* Contacts List */
         .contact-item { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; text-align: left; border: 1px solid #444; }
         .del-contact { color: #ff4500; cursor: pointer; font-weight: bold; padding: 0 10px; }
 
-        /* Speed Slider Style */
+        /* Slider & Toggle */
         .slider-container { text-align: left; margin: 15px 0; }
         .range-slider { width: 100%; cursor: pointer; accent-color: #ff4500; }
         .slider-labels { display: flex; justify-content: space-between; font-size: 12px; color: #aaa; }
-
-        /* Toggle Switch */
         .toggle-container { display: flex; justify-content: space-between; align-items: center; margin: 15px 0; padding: 10px; background: #333; border-radius: 5px; }
         .switch { position: relative; display: inline-block; width: 50px; height: 24px; }
         .switch input { opacity: 0; width: 0; height: 0; }
@@ -78,6 +76,8 @@
         <button id="close-img-btn" onclick="closeImage()">X</button>
         <img id="generated-image" src="" alt="Generated Image">
     </div>
+
+    <input type="file" accept="image/*" capture="user" id="cameraInput" style="display:none">
 
     <div id="mic-container">
         <div id="status-text">વાત કરવા માઈક દબાવો</div>
@@ -149,6 +149,7 @@
         const generatedImage = document.getElementById('generated-image');
         const speedRange = document.getElementById('speedRange');
         const speedValue = document.getElementById('speedValue');
+        const cameraInput = document.getElementById('cameraInput'); // Camera Element
 
         // Variables
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -229,9 +230,7 @@
             let num = prompt("Number:");
             if(name && num) { contacts.push({name, number: num}); renderContacts(); }
         }
-        function deleteContact(index) {
-            contacts.splice(index, 1); renderContacts();
-        }
+        function deleteContact(index) { contacts.splice(index, 1); renderContacts(); }
 
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
         function releaseWakeLock() { if (wakeLock) { wakeLock.release(); wakeLock = null; } }
@@ -269,7 +268,6 @@
                 if(text.trim()) {
                     isProcessing = true;
                     statusText.innerText = "વિચારું છું...";
-                    // THE SMART INTERCEPTOR LOGIC
                     processVoiceCommand(text);
                 }
             };
@@ -290,7 +288,7 @@
             switchVideo('silent'); releaseWakeLock(); statusText.innerText = "બંધ";
         }
 
-        // --- THE MASTER LOGIC (APPS & CALLING) ---
+        // --- THE MASTER LOGIC ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
             
@@ -301,17 +299,22 @@
                 speakAndAct("ડાયલર ખોલી રહી છું...", "tel:"); return;
             }
 
-            // 2. WHATSAPP
+            // 2. CAMERA / SELFIE (FIXED with HTML5 INPUT)
+            if(cmd.includes('camera') || cmd.includes('કેમેરો') || cmd.includes('ફોટો') || cmd.includes('સેલ્ફી')) {
+                speak("સ્માઈલ પ્લીઝ! કેમેરો ખોલી રહી છું...");
+                // Open hidden file input (Works on all modern browsers)
+                setTimeout(() => {
+                    cameraInput.click();
+                    isProcessing = false; isConversationActive = false; // Stop listening
+                }, 1000);
+                return;
+            }
+
+            // 3. WHATSAPP
             if(cmd.includes('whatsapp') || cmd.includes('મેસેજ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(found) { speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, "https://wa.me/" + found.number); return; }
                 speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "https://wa.me/"); return;
-            }
-
-            // 3. CAMERA / SELFIE
-            if(cmd.includes('camera') || cmd.includes('કેમેરો') || cmd.includes('ફોટો') || cmd.includes('સેલ્ફી')) {
-                speakAndAct("સ્માઈલ પ્લીઝ! કેમેરો ખોલી રહી છું...", "intent:#Intent;action=android.media.action.STILL_IMAGE_CAMERA;end");
-                return;
             }
 
             // 4. EMAIL
@@ -320,7 +323,7 @@
                 return;
             }
 
-            // 5. REMINDER / CALENDAR
+            // 5. REMINDER
             if(cmd.includes('reminder') || cmd.includes('યાદ') || cmd.includes('એલાર્મ')) {
                 let note = text.replace(/યાદ/g, "").replace(/કરાવજે/g, "").replace(/reminder/g, "").replace(/set/g, "").trim();
                 speakAndAct("કેલેન્ડર ખોલી રહી છું...", "https://calendar.google.com/calendar/render?action=TEMPLATE&text=" + encodeURIComponent(note));
@@ -340,12 +343,11 @@
             if(cmd.includes('youtube')) { speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com"); return; }
             if(cmd.includes('map') || cmd.includes('નકશો')) { speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com"); return; }
 
-            // 8. IF NO APP COMMAND -> ASK GROQ
+            // 8. ASK GROQ (AI)
             askGroq(text);
         }
 
         function speakAndAct(speech, url) {
-            // Speak first, then open app
             switchVideo('talking');
             const utterance = new SpeechSynthesisUtterance(speech);
             utterance.lang = 'gu-IN';
@@ -354,7 +356,7 @@
             utterance.onend = () => {
                 switchVideo('silent');
                 isProcessing = false;
-                isConversationActive = false; 
+                isConversationActive = false;
                 window.location.href = url;
             };
             window.speechSynthesis.speak(utterance);
@@ -369,19 +371,10 @@
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 વર્તમાન સમય: ${timeString}.
-                
-                [EXTREMELY STRICT RULES]:
-                1. **FORBIDDEN PHRASES (DO NOT USE):**
-                   ❌ "જેમ કહેવાય છે કે"
-                   ❌ "એવું કહેવાય છે કે"
-                   ❌ "કહેવત છે કે"
-                   ❌ "As the saying goes"
-                2. **CORRECT USAGE:**
-                   ✅ "અરે, ધીરજના ફળ મીઠા હોય!" 
-                   ✅ "ઉતાવળે આંબા ન પાકે દેવેન્દ્રભાઈ!"
-                3. **GREETING:** Start with "જય શ્રી કૃષ્ણ" only. NO "Hi/Hello".
-                4. **PERSONALITY:** Sweet, family-like. Drama Queen (Fake anger/complaints sometimes).
-                5. **LAUGHTER:** If you want to laugh, write "હા હા હા".
+                RULES:
+                1. GREETING: Start with "જય શ્રી કૃષ્ણ".
+                2. PERSONALITY: Sweet, family-like. Drama Queen.
+                3. STRICTLY GUJARATI LANGUAGE.
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
@@ -414,7 +407,7 @@
                 }
             } catch (error) {
                 statusText.innerText = "Error";
-                speak("કંઈક એરર આવી છે.");
+                speak("એરર આવી છે.");
                 isConversationActive = false; isProcessing = false;
             }
         }
@@ -425,7 +418,6 @@
         }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
-        // --- SPEAK (With Animation) ---
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "").replace(/ખૂબ\s+જ/g, "ખુબજ");
             const laughRegex = /(હા\s*હા\s*હા|ha\s*ha\s*ha|હી\s*હી\s*હી)/gi;
