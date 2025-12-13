@@ -160,7 +160,7 @@
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
-        // --- HARDCODED CONTACTS (તમારો ફિક્સ નંબર) ---
+        // --- HARDCODED CONTACTS ---
         let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || [
             { name: "Devendra", number: "9276505035" }
         ];
@@ -310,11 +310,16 @@
                 return;
             }
 
-            // 3. WHATSAPP
+            // 3. WHATSAPP (Reverted to OLD RELIABLE Link)
             if(cmd.includes('whatsapp') || cmd.includes('મેસેજ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
-                if(found) { speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, `whatsapp://send?phone=${found.number}`); return; }
-                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "whatsapp://"); return;
+                if(found) { 
+                    // Using wa.me which works everywhere
+                    speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, "https://wa.me/" + found.number); 
+                    return; 
+                }
+                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "https://wa.me/"); 
+                return;
             }
 
             // 4. EMAIL
@@ -342,7 +347,7 @@
         function speakAndAct(speech, url) {
             if(selfieVideo.style.display !== 'block') switchVideo('talking');
             
-            // NEW: Split speech text for 2-digit numbers
+            // Number Formatting for Speech (92, 76...)
             let cleanSpeech = speech.replace(/\b\d{10}\b/g, (num) => num.match(/.{1,2}/g).join(", "));
             
             const utterance = new SpeechSynthesisUtterance(cleanSpeech);
@@ -395,11 +400,11 @@
         function showImage(prompt) { generatedImage.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`; imageOverlay.style.display = 'block'; isProcessing = false; }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
-        // --- SPEECH SYNTHESIS (UPDATED for 2-Digit Numbers) ---
+        // --- SPEECH SYNTHESIS ---
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             
-            // ✨ SPECIAL: Read 10-digit numbers in 2-digit chunks (92, 76...)
+            // Read 10-digit numbers in 2-digit chunks
             cleanText = cleanText.replace(/\b\d{10}\b/g, (num) => {
                 return num.match(/.{1,2}/g).join(", "); 
             });
