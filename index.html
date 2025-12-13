@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Bug Fixed)</title>
+    <title>Vidushi AI (Natural Flow)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -147,7 +147,7 @@
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
         let isConversationActive = false;
-        let isProcessing = false; // Flag to prevent double mic start
+        let isProcessing = false;
         let wakeLock = null;
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
 
@@ -174,8 +174,6 @@
             document.getElementById('apiKeyInput').value = apiKey;
             document.getElementById('modelSelect').value = currentModel;
             continuousToggle.checked = isContinuousSetting;
-            
-            // Speed Slider
             speedRange.value = speechRate;
             speedValue.innerText = speechRate;
         }
@@ -215,7 +213,7 @@
         if (SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'gu-IN';
-            recognition.continuous = false; // We handle loop manually
+            recognition.continuous = false;
 
             recognition.onstart = () => { 
                 micBtn.classList.add('listening'); 
@@ -225,7 +223,6 @@
             
             recognition.onend = () => { 
                 micBtn.classList.remove('listening');
-                // LOGIC FIX: If Continuous is ON, Conversation is Active, and NOT processing an answer -> Restart Mic
                 if (isContinuousSetting && isConversationActive && !isProcessing && errorModal.style.display === 'none') {
                      statusText.innerText = "ફરી સાંભળું છું...";
                      setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
@@ -240,7 +237,7 @@
                 text = text.replace(/વિદેશી/gi, "વિદુષી").replace(/વિદૂષી/gi, "વિદુષી");
                 
                 if(text.trim()) {
-                    isProcessing = true; // Block mic restart
+                    isProcessing = true;
                     statusText.innerText = "વિચારું છું...";
                     askGroq(text);
                 }
@@ -279,18 +276,26 @@
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
-            // --- STRICT INSTRUCTIONS ---
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 વર્તમાન સમય: ${timeString}.
                 
-                [STRICT RULES]:
-                1. Start with "જય શ્રી કૃષ્ણ" only. NO "Hi/Hello".
-                2. DO NOT repeat the user's question.
-                3. Use Proverbs NATURALLY (Don't say "As the saying goes...").
-                   - Example: "ધીરજના ફળ મીઠા હોય!" (Direct).
-                4. Be sweet, family-like.
-                5. DRAMA: Sometimes do fake complaining ("આજે તો ભૂલી જ ગયા મને!", "હું રિસાઈ ગઈ છું!"). Then laugh.
+                [EXTREMELY STRICT RULES]:
+                1. **FORBIDDEN PHRASES (DO NOT USE):**
+                   ❌ "જેમ કહેવાય છે કે"
+                   ❌ "એવું કહેવાય છે કે"
+                   ❌ "કહેવત છે કે"
+                   ❌ "As the saying goes"
+                   (If you use these, I will reset you!)
+
+                2. **CORRECT USAGE:**
+                   ✅ "અરે, ધીરજના ફળ મીઠા હોય!" (Directly use the proverb)
+                   ✅ "ઉતાવળે આંબા ન પાકે દેવેન્દ્રભાઈ!"
+                
+                3. **GREETING:** Start with "જય શ્રી કૃષ્ણ" only. NO "Hi/Hello".
+                4. **NO REPETITION:** DO NOT repeat the user's question.
+                5. **PERSONALITY:** Sweet, family-like. Drama Queen (Fake anger/complaints sometimes).
+                6. **LAUGHTER:** If you want to laugh, write "હા હા હા". My code handles the audio.
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
@@ -305,9 +310,7 @@
 
                 const data = await response.json();
 
-                if (data.error) {
-                    throw new Error(data.error.message);
-                }
+                if (data.error) throw new Error(data.error.message);
 
                 if (data.choices && data.choices[0]) {
                     const reply = data.choices[0].message.content;
@@ -326,7 +329,7 @@
                 }
             } catch (error) {
                 statusText.innerText = "Error";
-                speak("કંઈક ભૂલ થઈ છે. કદાચ કી પૂરી થઈ ગઈ.");
+                speak("એરર આવી છે.");
                 isConversationActive = false;
                 isProcessing = false;
             }
@@ -335,19 +338,26 @@
         function showImage(prompt) {
             generatedImage.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
             imageOverlay.style.display = 'block';
-            isProcessing = false; // Reset just in case
+            isProcessing = false;
         }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
-        // --- SPEAK (Google Only) ---
+        // --- SPEAK (Google Only + LAUGHTER FILTER) ---
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "").replace(/ખૂબ\s+જ/g, "ખુબજ");
             
+            // 1. Detect Laughter
+            const laughRegex = /(હા\s*હા\s*હા|ha\s*ha\s*ha|હી\s*હી\s*હી)/gi;
+            let hasLaughter = laughRegex.test(cleanText);
+
+            // 2. SILENCE THE LAUGHTER TEXT (So it doesn't speak "Ha Ha Ha")
+            let spokenText = cleanText.replace(laughRegex, ""); 
+
             const happyWords = ["આભાર", "મજા", "સરસ", "ગમ્યું", "હસી", "😊", "😂", "ખુશી", "જય શ્રી કૃષ્ણ", "વાહ", "મજાક"];
-            let isHappy = happyWords.some(word => cleanText.includes(word));
+            let isHappy = happyWords.some(word => cleanText.includes(word)) || hasLaughter;
 
             statusText.innerText = "બોલું છું...";
-            const utterance = new SpeechSynthesisUtterance(cleanText);
+            const utterance = new SpeechSynthesisUtterance(spokenText);
             utterance.lang = 'gu-IN';
             utterance.rate = speechRate; 
             
@@ -363,9 +373,7 @@
 
         function handleLoop() {
             switchVideo('silent');
-            isProcessing = false; // Unlock the mic logic
-            
-            // Only restart if Continuous is ON and Conversation wasn't stopped manually
+            isProcessing = false; 
             if (isContinuousSetting && isConversationActive && errorModal.style.display === 'none') {
                 statusText.innerText = "ફરી સાંભળું છું...";
                 setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
