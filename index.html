@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Super Fast)</title>
+    <title>Vidushi AI (Final)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; }
         
+        /* --- START OVERLAY (To Allow Audio) --- */
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; }
+        .start-btn { padding: 20px 40px; font-size: 24px; border: 2px solid #ff4500; border-radius: 50px; background: transparent; color: white; animation: pulse 2s infinite; }
+
         /* --- VIDEO LAYER --- */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
@@ -61,6 +65,10 @@
     </style>
 </head>
 <body>
+
+    <div id="start-overlay" onclick="initializeApp()">
+        <button class="start-btn">શરૂ કરવા માટે ટચ કરો</button>
+    </div>
 
     <div id="video-container">
         <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
@@ -116,6 +124,7 @@
 
     <script>
         // --- GLOBAL SETUP ---
+        const startOverlay = document.getElementById('start-overlay');
         const silentVideo = document.getElementById('silent-video');
         const talkingVideo = document.getElementById('talking-video');
         const thinkingVideo = document.getElementById('thinking-video');
@@ -146,6 +155,19 @@
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let selfieStream = null;
 
+        // --- STARTUP LOGIC ---
+        function initializeApp() {
+            startOverlay.style.display = 'none'; // Hide overlay
+            
+            // Play Silent Video to unlock audio/video context
+            silentVideo.play().then(() => {
+                // IMMEDIATELY GREET
+                speak("જય શ્રી કૃષ્ણ");
+            }).catch(e => {
+                alert("વિડિયો પ્લે કરવામાં તકલીફ છે. કૃપા કરીને ફરી રિફ્રેશ કરો.");
+            });
+        }
+
         // --- VIDEO CONTROLLER ---
         function switchVideo(state) {
             if(selfieVideo.style.display === 'block') return;
@@ -171,20 +193,14 @@
                 statusText.innerText = "તમે સ્ક્રીન પર દેખાવ છો!";
             } catch (err) { alert("કેમેરાની પરમિશન મળતી નથી."); stopSelfie(); }
         }
-        
         function stopSelfie() {
-            // 1. Hide UI IMMEDIATELY (For instant feel)
+            // Instant UI Hide
             selfieVideo.style.display = 'none';
             closeSelfieBtn.style.display = 'none';
             document.getElementById('video-container').style.display = 'block';
             switchVideo('silent');
-
-            // 2. Stop Hardware in Background
-            if(selfieStream) {
-                const tracks = selfieStream.getTracks();
-                tracks.forEach(track => track.stop());
-                selfieStream = null;
-            }
+            // Background Stop
+            if(selfieStream) { selfieStream.getTracks().forEach(track => track.stop()); selfieStream = null; }
         }
 
         // --- SETTINGS ---
@@ -263,8 +279,6 @@
         // --- COMMAND CENTER ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
-            
-            // App Controls
             if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(found) { speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number); return; }
@@ -289,7 +303,7 @@
             }
             if(cmd.includes('youtube')) { speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com"); return; }
             if(cmd.includes('map') || cmd.includes('નકશો')) { speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com"); return; }
-
+            
             // Ask AI
             askGroq(text);
         }
@@ -297,7 +311,6 @@
         function speakAndAct(speech, url) {
             if(selfieVideo.style.display !== 'block') switchVideo('talking');
             let cleanSpeech = speech.replace(/[#*]/g, "").replace(/\b\d{10}\b/g, (num) => num.match(/.{1,2}/g).join(", "));
-            
             const utterance = new SpeechSynthesisUtterance(cleanSpeech);
             utterance.lang = 'gu-IN';
             utterance.rate = speechRate;
@@ -309,24 +322,22 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- AI LOGIC (IDENTITY FIXED) ---
+        // --- AI LOGIC (STRICT PROMPT) ---
         async function askGroq(userText) {
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
-            // --- STRICT PROMPT ---
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 તને **દેવેન્દ્રભાઈ (Devendrabhai)** એ બનાવી છે.
                 
                 [EXTREMELY STRICT RULES]:
-                1. **IDENTITY:** જો કોઈ પૂછે કે તને કોણે બનાવી, તો માત્ર **"દેવેન્દ્રભાઈ"** નું જ નામ લેવું.
-                   (No Microsoft/Meta/Google/OpenAI).
-                2. **LANGUAGE:** જવાબ **શુદ્ધ ગુજરાતી** માં જ આપવો. ઈંગ્લીશ નો ઉપયોગ ત્યારે જ કરવો જો યુઝર ઈંગ્લીશ માં પૂછે.
-                3. **NO FILLERS:** "મને એમ થાય છે કે...", "હું માનું છું કે...", "તમારા પ્રશ્નનો જવાબ..." આવા વધારાના શબ્દોથી શરૂઆત ન કરવી. સીધો જવાબ આપવો.
-                4. **RELIGION:** તું હિન્દુ સનાતન ધર્મની જ્ઞાની છે.
-                5. **NO SYMBOLS:** જવાબમાં ક્યાંય *, #, @, - જેવા ચિન્હો ન વાપરવા.
+                1. IDENTITY: જો કોઈ પૂછે કે તને કોણે બનાવી, તો માત્ર **"દેવેન્દ્રભાઈ"** નું જ નામ લેવું.
+                2. LANGUAGE: જવાબ **શુદ્ધ ગુજરાતી** માં જ આપવો. ઈંગ્લીશ નો ઉપયોગ ત્યારે જ કરવો જો યુઝર ઈંગ્લીશ માં પૂછે.
+                3. NO FILLERS: "મને એમ થાય છે કે...", "મારો જવાબ છે કે..." જેવા શબ્દો નહીં વાપરવાના.
+                4. RELIGION: તું હિન્દુ સનાતન ધર્મની જ્ઞાની છે.
+                5. NO SYMBOLS: જવાબમાં *, #, @, - જેવા ચિન્હો ન વાપરવા.
                 
                 વર્તમાન સમય: ${timeString}.
             `;
