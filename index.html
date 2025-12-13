@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Seamless)</title>
+    <title>Vidushi AI (Final Perfect)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -13,12 +13,9 @@
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; backdrop-filter: blur(5px); }
         .start-btn { padding: 20px 50px; font-size: 22px; border: 2px solid #ff4500; border-radius: 50px; background: rgba(0,0,0,0.5); color: white; animation: pulse 2s infinite; font-weight: bold; letter-spacing: 1px; }
 
-        /* --- VIDEO LAYER (Fixed White Flash) --- */
+        /* --- VIDEO LAYER --- */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background-color: black; }
-        video { 
-            width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; 
-            display: none; background-color: black; /* Prevents white flash */
-        }
+        video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
         #silent-video { display: block; }
         
         /* --- SELFIE CAMERA --- */
@@ -161,17 +158,17 @@
         // --- INITIALIZE (SMILING START) ---
         function initializeApp() {
             startOverlay.style.display = 'none';
-            // Play all silently to unlock logic
+            // Play all silently
             [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => v.play().catch(e=>{}));
             
-            // Force Smile Immediately
+            // Force Smile
             switchVideo('smiling');
 
             // Wait 3 Seconds then Speak
             setTimeout(() => { speak("જય શ્રી કૃષ્ણ"); }, 3000);
         }
 
-        // --- VIDEO CONTROLLER (SEAMLESS FIX) ---
+        // --- VIDEO CONTROLLER ---
         function switchVideo(state) {
             if(selfieVideo.style.display === 'block') return;
 
@@ -181,11 +178,10 @@
             else if (state === 'smiling') activeVideo = smilingVideo;
             else activeVideo = silentVideo;
 
-            // 1. Show the NEW video FIRST (Overlap)
+            // Overlap logic to prevent flicker
             activeVideo.style.display = 'block';
             activeVideo.play().catch(e=>{});
 
-            // 2. Hide others
             const allVideos = [silentVideo, talkingVideo, thinkingVideo, smilingVideo];
             allVideos.forEach(v => {
                 if(v !== activeVideo) {
@@ -290,8 +286,6 @@
         // --- COMMAND CENTER ---
         function processVoiceCommand(text) {
             let cmd = text.toLowerCase();
-            
-            // App Controls
             if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(found) { speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number); return; }
@@ -316,8 +310,7 @@
             }
             if(cmd.includes('youtube')) { speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com"); return; }
             if(cmd.includes('map') || cmd.includes('નકશો')) { speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com"); return; }
-
-            // Ask AI
+            
             askGroq(text);
         }
 
@@ -335,23 +328,31 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- AI LOGIC (STRICT PROMPT) ---
+        // --- AI LOGIC (FEMALE IDENTITY & MEMORY FIXED) ---
         async function askGroq(userText) {
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
+            // --- STRICT FEMALE PROMPT ---
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 તને **દેવેન્દ્રભાઈ (Devendrabhai)** એ બનાવી છે.
                 
-                [EXTREMELY STRICT RULES]:
-                1. IDENTITY: જો કોઈ પૂછે કે તને કોણે બનાવી, તો માત્ર **"દેવેન્દ્રભાઈ"** નું જ નામ લેવું.
-                2. LANGUAGE: જવાબ **શુદ્ધ ગુજરાતી** માં જ આપવો. ઈંગ્લીશ નો ઉપયોગ ત્યારે જ કરવો જો યુઝર ઈંગ્લીશ માં પૂછે.
-                3. NO FILLERS: "મને એમ થાય છે કે...", "મારો જવાબ છે કે..." જેવા શબ્દો નહીં વાપરવાના.
-                4. RELIGION: તું હિન્દુ સનાતન ધર્મની જ્ઞાની છે.
-                5. NO SYMBOLS: જવાબમાં *, #, @, - જેવા ચિન્હો ન વાપરવા.
-                6. PHOTOS: જો યુઝર ફોટો માંગે, તો જવાબની સાથે છેલ્લે [IMAGE: description in english] લખવું.
+                [તારી ઓળખ - અત્યંત મહત્વપૂર્ણ]:
+                1. **GENDER:** તું એક **સ્ત્રી (Female)** છે.
+                   - "હું કરી શકું છું" (Right) vs "હું કરી શકતો નથી" (Wrong).
+                   - તારે હંમેશા **"શકતી", "કરતી", "ગઈ હતી"** જેવા સ્ત્રીલિંગ શબ્દો વાપરવા.
+                
+                2. **MEMORY:**
+                   - તારા સર્જક દેવેન્દ્રભાઈનો મોબાઈલ નંબર **9276505035** છે. આ તારે યાદ રાખવાનો છે.
+                
+                [અન્ય નિયમો]:
+                3. **CREATOR:** તને બનાવનાર માત્ર દેવેન્દ્રભાઈ છે.
+                4. **LANGUAGE:** શુદ્ધ ગુજરાતીમાં જ જવાબ આપવો.
+                5. **NO FILLERS:** "મને એમ થાય છે કે..." થી વાક્ય શરૂ ન કરવું.
+                6. **SYMBOLS:** જવાબમાં *, #, - જેવા ચિન્હો ન બોલવા.
+                7. **PHOTOS:** ફોટો માટે જવાબના અંતે [IMAGE: english description] લખવું.
                 
                 વર્તમાન સમય: ${timeString}.
             `;
