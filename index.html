@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Final Cute)</title>
+    <title>Vidushi AI (Seamless)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -13,13 +13,16 @@
         #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; backdrop-filter: blur(5px); }
         .start-btn { padding: 20px 50px; font-size: 22px; border: 2px solid #ff4500; border-radius: 50px; background: rgba(0,0,0,0.5); color: white; animation: pulse 2s infinite; font-weight: bold; letter-spacing: 1px; }
 
-        /* --- VIDEO LAYER --- */
-        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
+        /* --- VIDEO LAYER (Fixed White Flash) --- */
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background-color: black; }
+        video { 
+            width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; 
+            display: none; background-color: black; /* Prevents white flash */
+        }
         #silent-video { display: block; }
         
         /* --- SELFIE CAMERA --- */
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; }
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; background: black; }
         #close-selfie-btn { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); z-index: 999; background: red; color: white; padding: 15px 30px; border: 2px solid white; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 18px; box-shadow: 0 5px 20px rgba(0,0,0,0.8); }
         
         /* --- UI LAYER --- */
@@ -155,36 +158,41 @@
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let selfieStream = null;
 
-        // --- INITIALIZE (LONG CUTE SMILE) ---
+        // --- INITIALIZE (SMILING START) ---
         function initializeApp() {
             startOverlay.style.display = 'none';
+            // Play all silently to unlock logic
+            [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => v.play().catch(e=>{}));
             
-            // 1. Play all videos to unlock audio/video
-            silentVideo.play().catch(e=>{});
-            talkingVideo.play().catch(e=>{});
-            smilingVideo.play().catch(e=>{});
-
-            // 2. FORCE SMILE FIRST
+            // Force Smile Immediately
             switchVideo('smiling');
 
-            // 3. WAIT 3 SECONDS (Enjoy the Smile!), THEN SPEAK
-            setTimeout(() => {
-                speak("જય શ્રી કૃષ્ણ");
-            }, 3000); // 3 Second Delay
+            // Wait 3 Seconds then Speak
+            setTimeout(() => { speak("જય શ્રી કૃષ્ણ"); }, 3000);
         }
 
-        // --- VIDEO CONTROLLER ---
+        // --- VIDEO CONTROLLER (SEAMLESS FIX) ---
         function switchVideo(state) {
             if(selfieVideo.style.display === 'block') return;
-            const videos = [silentVideo, talkingVideo, thinkingVideo, smilingVideo];
-            videos.forEach(v => { v.style.display = 'none'; v.pause(); });
+
             let activeVideo;
             if (state === 'talking') activeVideo = talkingVideo;
             else if (state === 'thinking') activeVideo = thinkingVideo;
             else if (state === 'smiling') activeVideo = smilingVideo;
             else activeVideo = silentVideo;
+
+            // 1. Show the NEW video FIRST (Overlap)
             activeVideo.style.display = 'block';
-            activeVideo.play().catch(e => { if (state !== 'silent') { silentVideo.style.display = 'block'; silentVideo.play().catch(e=>{}); } });
+            activeVideo.play().catch(e=>{});
+
+            // 2. Hide others
+            const allVideos = [silentVideo, talkingVideo, thinkingVideo, smilingVideo];
+            allVideos.forEach(v => {
+                if(v !== activeVideo) {
+                    v.style.display = 'none';
+                    v.pause();
+                }
+            });
         }
 
         // --- SELFIE MODE ---
