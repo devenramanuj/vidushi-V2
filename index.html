@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Natural Flow)</title>
+    <title>Vidushi AI (Super Smart)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -21,9 +21,13 @@
         /* Settings Modal */
         #settings-modal, #error-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.95); z-index: 100; justify-content: center; align-items: center; }
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input[type="text"], input[type="password"], select { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        input[type="text"], input[type="password"], input[type="number"], select { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
         .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 15px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; text-align: left; margin-top: 15px; border-bottom: 1px solid #444; }
+
+        /* Contacts List */
+        .contact-item { display: flex; justify-content: space-between; align-items: center; background: #333; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 14px; text-align: left;}
+        .del-contact { color: #ff4500; cursor: pointer; font-weight: bold; padding: 5px; }
 
         /* Speed Slider Style */
         .slider-container { text-align: left; margin: 15px 0; }
@@ -55,6 +59,7 @@
         #close-img-btn { position: absolute; top: -15px; right: -15px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
         
         .clear-mem-btn { background: #444; margin-top: 5px; font-size: 12px; padding: 8px;}
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
 </head>
 <body>
@@ -93,13 +98,18 @@
                 <option value="llama-3.1-70b-versatile">Llama 3.1</option>
             </select>
 
-            <div class="section-title">બોલવાની ઝડપ (VOICE SPEED)</div>
+            <div class="section-title">VIP CONTACTS (For Calling)</div>
+            <div id="contactsListContainer"></div>
+            <button onclick="addNewContact()" style="background:#333; border:1px dashed #777; width:100%; color:#aaa; cursor:pointer; padding:5px; margin-top:5px;">+ Add Contact</button>
+
+            <div class="section-title">અન્ય સેટિંગ્સ</div>
             <div class="slider-container">
+                <label style="font-size:12px; color:#aaa;">બોલવાની ઝડપ</label>
                 <input type="range" id="speedRange" min="0.5" max="1.5" step="0.1" value="0.9" class="range-slider" oninput="updateSpeedLabel(this.value)">
                 <div class="slider-labels">
-                    <span>ધીમું (0.5)</span>
+                    <span>0.5</span>
                     <span id="speedValue" style="color:#ff4500;">0.9</span>
-                    <span>ઝડપી (1.5)</span>
+                    <span>1.5</span>
                 </div>
             </div>
 
@@ -145,6 +155,7 @@
         let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.3-70b-versatile';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
+        let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || [];
         
         let isConversationActive = false;
         let isProcessing = false;
@@ -176,11 +187,10 @@
             continuousToggle.checked = isContinuousSetting;
             speedRange.value = speechRate;
             speedValue.innerText = speechRate;
+            renderContacts();
         }
 
-        function updateSpeedLabel(val) {
-            speedValue.innerText = val;
-        }
+        function updateSpeedLabel(val) { speedValue.innerText = val; }
 
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
@@ -194,13 +204,33 @@
             localStorage.setItem('vidushi_groq_model', currentModel);
             localStorage.setItem('vidushi_continuous', isContinuousSetting);
             localStorage.setItem('vidushi_rate', speechRate);
+            localStorage.setItem('vidushi_contacts', JSON.stringify(contacts));
             settingsModal.style.display = 'none';
         }
 
         function clearMemory() {
-            chatHistory = [];
-            localStorage.removeItem('vidushi_memory');
-            alert("યાદશક્તિ ભૂંસાઈ ગઈ! નવી શરૂઆત.");
+            chatHistory = []; localStorage.removeItem('vidushi_memory'); alert("યાદશક્તિ ભૂંસાઈ ગઈ!");
+        }
+
+        // --- CONTACTS LOGIC ---
+        function renderContacts() {
+            const list = document.getElementById('contactsListContainer');
+            list.innerHTML = '';
+            contacts.forEach((c, i) => {
+                list.innerHTML += `
+                    <div class="contact-item">
+                        <span>${c.name} - ${c.number}</span>
+                        <span class="del-contact" onclick="deleteContact(${i})">✖</span>
+                    </div>`;
+            });
+        }
+        function addNewContact() {
+            let name = prompt("Name (English e.g. Papa):");
+            let num = prompt("Number:");
+            if(name && num) { contacts.push({name, number: num}); renderContacts(); }
+        }
+        function deleteContact(index) {
+            contacts.splice(index, 1); renderContacts();
         }
 
         async function requestWakeLock() { try { if ('wakeLock' in navigator) wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
@@ -239,7 +269,8 @@
                 if(text.trim()) {
                     isProcessing = true;
                     statusText.innerText = "વિચારું છું...";
-                    askGroq(text);
+                    // HERE IS THE NEW LOGIC (Smart Interceptor)
+                    processVoiceCommand(text);
                 }
             };
         } else {
@@ -249,30 +280,78 @@
         function startConversation() {
             if(!apiKey) { alert("પહેલા Settings માં જઈને Groq Key નાખો!"); openSettings(); return; }
             if (window.speechSynthesis.speaking) window.speechSynthesis.cancel();
-            
-            isConversationActive = true; 
-            isProcessing = false;
-            requestWakeLock();
-            recognition.start();
+            isConversationActive = true; isProcessing = false;
+            requestWakeLock(); recognition.start();
         }
 
         function stopConversation() {
-            isConversationActive = false;
-            isProcessing = false;
-            window.speechSynthesis.cancel();
-            recognition.stop();
-            switchVideo('silent');
-            releaseWakeLock();
-            statusText.innerText = "બંધ";
+            isConversationActive = false; isProcessing = false;
+            window.speechSynthesis.cancel(); recognition.stop();
+            switchVideo('silent'); releaseWakeLock(); statusText.innerText = "બંધ";
+        }
+
+        // --- SMART LOGIC (APPS & CALLING) ---
+        function processVoiceCommand(text) {
+            let cmd = text.toLowerCase();
+            
+            // 1. CALLING LOGIC
+            if(cmd.includes('call') || cmd.includes('ફોન') || cmd.includes('કોલ')) {
+                // Check VIP Contacts
+                let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
+                if(found) {
+                    speakAndAct(`${found.name} ને કોલ જોડી રહી છું...`, "tel:" + found.number);
+                    return;
+                }
+                speakAndAct("ડાયલર ખોલી રહી છું...", "tel:");
+                return;
+            }
+
+            // 2. WHATSAPP LOGIC
+            if(cmd.includes('whatsapp') || cmd.includes('મેસેજ')) {
+                // Check if specific contact mentioned
+                let found = contacts.find(c => cmd.includes(c.name.toLowerCase()));
+                if(found) {
+                     // Note: Number should be full (e.g., 9198...) for direct link
+                    speakAndAct(`${found.name} નું ચેટબોક્સ ખોલી રહી છું...`, "https://wa.me/" + found.number);
+                    return;
+                }
+                speakAndAct("વ્હોટસએપ ખોલી રહી છું...", "https://wa.me/");
+                return;
+            }
+
+            // 3. YOUTUBE / MAPS
+            if(cmd.includes('youtube')) {
+                speakAndAct("યૂટ્યૂબ ખોલી રહી છું...", "https://youtube.com");
+                return;
+            }
+            if(cmd.includes('map') || cmd.includes('નકશો')) {
+                speakAndAct("મેપ ખોલી રહી છું...", "https://maps.google.com");
+                return;
+            }
+
+            // 4. IF NO APP COMMAND -> ASK GROQ (CHAT)
+            askGroq(text);
+        }
+
+        function speakAndAct(speech, url) {
+            // Speak first, then open app
+            switchVideo('talking');
+            const utterance = new SpeechSynthesisUtterance(speech);
+            utterance.lang = 'gu-IN';
+            utterance.rate = speechRate;
+            
+            utterance.onend = () => {
+                switchVideo('silent');
+                isProcessing = false;
+                isConversationActive = false; // Stop listening when opening app
+                window.location.href = url;
+            };
+            window.speechSynthesis.speak(utterance);
         }
 
         // --- GROQ API CALL ---
         async function askGroq(userText) {
             switchVideo('thinking');
-
-            if (userText.toLowerCase().includes("youtube")) { window.open("https://youtube.com", "_blank"); speak("YouTube ખોલી રહી છું."); return; }
-            if (userText.toLowerCase().includes("google")) { window.open("https://google.com", "_blank"); speak("Google ખોલી રહી છું."); return; }
-
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
@@ -286,16 +365,12 @@
                    ❌ "એવું કહેવાય છે કે"
                    ❌ "કહેવત છે કે"
                    ❌ "As the saying goes"
-                   (If you use these, I will reset you!)
-
                 2. **CORRECT USAGE:**
-                   ✅ "અરે, ધીરજના ફળ મીઠા હોય!" (Directly use the proverb)
+                   ✅ "અરે, ધીરજના ફળ મીઠા હોય!" 
                    ✅ "ઉતાવળે આંબા ન પાકે દેવેન્દ્રભાઈ!"
-                
                 3. **GREETING:** Start with "જય શ્રી કૃષ્ણ" only. NO "Hi/Hello".
-                4. **NO REPETITION:** DO NOT repeat the user's question.
-                5. **PERSONALITY:** Sweet, family-like. Drama Queen (Fake anger/complaints sometimes).
-                6. **LAUGHTER:** If you want to laugh, write "હા હા હા". My code handles the audio.
+                4. **PERSONALITY:** Sweet, family-like. Drama Queen (Fake anger/complaints sometimes).
+                5. **LAUGHTER:** If you want to laugh, write "હા હા હા".
             `;
 
             let messagesToSend = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-10)];
@@ -309,7 +384,6 @@
                 });
 
                 const data = await response.json();
-
                 if (data.error) throw new Error(data.error.message);
 
                 if (data.choices && data.choices[0]) {
@@ -329,32 +403,25 @@
                 }
             } catch (error) {
                 statusText.innerText = "Error";
-                speak("એરર આવી છે.");
-                isConversationActive = false;
-                isProcessing = false;
+                speak("કંઈક એરર આવી છે.");
+                isConversationActive = false; isProcessing = false;
             }
         }
 
         function showImage(prompt) {
             generatedImage.src = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-            imageOverlay.style.display = 'block';
-            isProcessing = false;
+            imageOverlay.style.display = 'block'; isProcessing = false;
         }
         function closeImage() { imageOverlay.style.display = 'none'; }
 
-        // --- SPEAK (Google Only + LAUGHTER FILTER) ---
+        // --- SPEAK (With Animation) ---
         async function speak(text) {
             let cleanText = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "").replace(/ખૂબ\s+જ/g, "ખુબજ");
-            
-            // 1. Detect Laughter
             const laughRegex = /(હા\s*હા\s*હા|ha\s*ha\s*ha|હી\s*હી\s*હી)/gi;
-            let hasLaughter = laughRegex.test(cleanText);
-
-            // 2. SILENCE THE LAUGHTER TEXT (So it doesn't speak "Ha Ha Ha")
             let spokenText = cleanText.replace(laughRegex, ""); 
-
+            
             const happyWords = ["આભાર", "મજા", "સરસ", "ગમ્યું", "હસી", "😊", "😂", "ખુશી", "જય શ્રી કૃષ્ણ", "વાહ", "મજાક"];
-            let isHappy = happyWords.some(word => cleanText.includes(word)) || hasLaughter;
+            let isHappy = happyWords.some(word => cleanText.includes(word)) || laughRegex.test(cleanText);
 
             statusText.innerText = "બોલું છું...";
             const utterance = new SpeechSynthesisUtterance(spokenText);
@@ -379,8 +446,7 @@
                 setTimeout(() => { try { recognition.start(); } catch(e) {} }, 500);
             } else {
                 if(errorModal.style.display === 'none') statusText.innerText = "વાત કરવા માઈક દબાવો";
-                isConversationActive = false;
-                releaseWakeLock();
+                isConversationActive = false; releaseWakeLock();
             }
         }
     </script>
