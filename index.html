@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Unlimited)</title>
+    <title>Vidushi AI (The Real One)</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -102,8 +102,8 @@
             <div class="section-title">GROQ API (MIND)</div>
             <input type="password" id="apiKeyInput" placeholder="gsk_...">
             <select id="modelSelect">
-                <option value="llama-3.1-8b-instant" selected>Llama 3.1 8b (Fast/Unlimited)</option>
-                <option value="llama-3.3-70b-versatile">Llama 3.3 70b (Smartest)</option>
+                <option value="llama-3.3-70b-versatile" selected>Llama 3.3 (Original Vidushi)</option>
+                <option value="llama-3.1-70b-versatile">Llama 3.1 70b</option>
             </select>
             <div class="section-title">VIP CONTACTS</div>
             <div id="contactsListContainer"></div>
@@ -141,8 +141,8 @@
         const speedValue = document.getElementById('speedValue');
 
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
-        // DEFAULT TO 8B (SAVER) TO AVOID RATE LIMIT
-        let currentModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.1-8b-instant';
+        // FORCE THE BEST MODEL
+        let currentModel = 'llama-3.3-70b-versatile';
         let isContinuousSetting = localStorage.getItem('vidushi_continuous') === 'true';
         let speechRate = parseFloat(localStorage.getItem('vidushi_rate')) || 0.9;
         
@@ -162,8 +162,10 @@
             // Play all silently
             [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => v.play().catch(e=>{}));
             
-            // Force Smile (Long 3 Seconds)
+            // Force Smile
             switchVideo('smiling');
+
+            // Wait 3 Seconds then Speak
             setTimeout(() => { speak("જય શ્રી કૃષ્ણ"); }, 3000);
         }
 
@@ -326,18 +328,19 @@
             window.speechSynthesis.speak(utterance);
         }
 
-        // --- AI LOGIC (WITH RATE LIMIT HANDLER) ---
+        // --- AI LOGIC (THE BEST ONE) ---
         async function askGroq(userText) {
             if(selfieVideo.style.display !== 'block') switchVideo('thinking');
             const now = new Date();
             const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit' });
             
+            // --- STRICT PROMPT ---
             const systemPrompt = `
                 તારું નામ 'વિદુષી' છે.
                 તને **દેવેન્દ્રભાઈ (Devendrabhai)** એ બનાવી છે.
                 
                 [EXTREMELY STRICT RULES]:
-                1. GENDER: તું એક **સ્ત્રી (Female)** છે. હંમેશા સ્ત્રીલિંગ શબ્દો (શકતી, કરતી) વાપરવા.
+                1. GENDER: તું એક **સ્ત્રી (Female)** છે. હંમેશા સ્ત્રીલિંગ શબ્દો (શકતી, કરતી, ગઈ હતી) વાપરવા.
                 2. MEMORY: દેવેન્દ્રભાઈનો મોબાઈલ નંબર **9276505035** છે.
                 3. LANGUAGE: જવાબ **શુદ્ધ ગુજરાતી** માં જ આપવો.
                 4. NO FILLERS: "મને એમ થાય છે કે...", "મારો જવાબ છે કે..." જેવા શબ્દો નહીં વાપરવાના.
@@ -379,15 +382,12 @@
             } catch (error) { 
                 statusText.innerText = "Error"; 
                 if(error.message.includes("Rate limit")) {
-                   alert("⚠️ તમારી વપરાશ લિમિટ પૂરી થઈ છે. મેં નાનું મોડેલ (Saver) સેટ કર્યું છે. ફરી ટ્રાય કરો.");
-                   currentModel = 'llama-3.1-8b-instant'; // Auto Switch to Saver
-                   localStorage.setItem('vidushi_groq_model', currentModel);
-                   isProcessing = false;
+                   alert("⚠️ તમારી આજની લિમિટ પૂરી થઈ ગઈ છે! મહેરબાની કરીને નવી API Key બનાવો અને સેટિંગ્સમાં નાખો.");
                 } else {
                    alert("ભૂલ આવી છે: " + error.message); 
-                   isProcessing = false;
                 }
                 speak("ક્ષમા કરજો, કઈક પ્રોબ્લેમ થયો છે."); 
+                isProcessing = false; 
             }
         }
 
