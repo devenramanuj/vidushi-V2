@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Magic Edition V3 - Slower)</title>
+    <title>Vidushi AI (Magic Edition V4 - Persona Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -240,7 +240,7 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     let lat = position.coords.latitude;
                     let lng = position.coords.longitude;
-                    let mapLink = `http://googleusercontent.com/maps.google.com/3{lat},${lng}`; 
+                    let mapLink = `http://googleusercontent.com/maps.google.com/4{lat},${lng}`; 
                     let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
                     window.open(`https://wa.me/${num}?text=${encodeURIComponent("મારું લાઈવ લોકેશન: " + mapLink)}`, "_blank");
                     speak(`${contact.gu_name} ને લોકેશન મોકલ્યો.`);
@@ -394,7 +394,10 @@
 
         // --- AI ENGINES ---
         async function askGroqText(userText, contextData = "") {
-            const systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
+            // --- UPDATED SYSTEM PROMPT ---
+            const systemPrompt = `તારું નામ વિદુષી છે અને તું દેવેન્દ્રભાઈ (જેણે તને બનાવી છે) ની આસિસ્ટન્ટ છે. તું સનાતન ધર્મ વિશે વિગતવાર જવાબ આપે છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
+            // --- END UPDATED SYSTEM PROMPT ---
+
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -430,18 +433,18 @@
             const u = new SpeechSynthesisUtterance(clean);
             u.lang = 'gu-IN';
             
-            // --- સ્પીડ કંટ્રોલ (New Logic) ---
+            // --- સ્પીડ કંટ્રોલ (Updated Logic) ---
             if(text.includes('😊')) { 
                 u.pitch = 1.3; 
-                u.rate = 0.9; // થોડી ખુશ અને ઝડપી
+                u.rate = 0.9; 
             } 
             else if(text.includes('😔')) { 
                 u.pitch = 0.7; 
-                u.rate = 0.7; // થોડી ધીમી અને દુઃખી
+                u.rate = 0.7; 
             } 
             else { 
                 u.pitch = 1.0; 
-                u.rate = 0.8; // Standard rate (slightly slower)
+                u.rate = 0.8; // Standard rate (0.8)
             }
             // ---------------------------------
 
