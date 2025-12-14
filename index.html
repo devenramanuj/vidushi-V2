@@ -1,12 +1,110 @@
+<!DOCTYPE html>
+<html lang="gu">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vidushi AI - Final Fixed</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* --- BASIC SETUP --- */
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; }
+        
+        /* --- START OVERLAY --- */
+        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; backdrop-filter: blur(5px); }
+        .start-btn { padding: 20px 50px; font-size: 22px; border: 2px solid #ff4500; border-radius: 50px; background: rgba(0,0,0,0.5); color: white; animation: pulse 2s infinite; font-weight: bold; letter-spacing: 1px; }
+
+        /* --- VIDEO LAYER --- */
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background-color: black; }
+        video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
+        #silent-video { display: block; }
+        
+        /* --- SELFIE / VISION CAMERA --- */
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; background: black; }
+        #canvas-capture { display: none; }
+
+        /* --- UI LAYER --- */
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: rgba(0,0,0,0.6); color: white; text-align: center; font-size: 24px; font-weight: bold; z-index: 10; text-shadow: 1px 1px 2px black; letter-spacing: 1px; backdrop-filter: blur(5px); }
+        #settings-btn { position: fixed; top: 5px; right: 15px; z-index: 20; background: transparent; color: white; border: none; font-size: 26px; padding: 10px; cursor: pointer; }
+        
+        /* --- CONTROLS --- */
+        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 90%; }
+        #status-text { color: white; margin-bottom: 15px; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px black; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; text-align: center; max-width: 90%; word-wrap: break-word; backdrop-filter: blur(4px); }
+        .controls-row { display: flex; align-items: center; gap: 20px; }
+        
+        /* BUTTONS */
+        .round-btn { width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.2s; }
+        .round-btn:active { transform: scale(0.9); }
+        #mic-btn { width: 80px; height: 80px; background: #ff4500; font-size: 35px; }
+        #vision-btn { background: #008cff; } 
+        #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
+        .listening { animation: pulse 1.5s infinite; background: red !important; }
+
+        /* --- SETTINGS MODAL --- */
+        #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; justify-content: center; align-items: center; }
+        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 15px; border-radius: 5px; }
+        
+        /* IMAGE OVERLAY */
+        #image-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 15px; border: 2px solid orange; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
+        #generated-image { max-width: 90vw; max-height: 60vh; border-radius: 10px; }
+        #close-img-btn { position: absolute; top: -15px; right: -15px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
+
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
+    </style>
+</head>
+<body>
+
+    <div id="start-overlay" onclick="initializeApp()">
+        <button class="start-btn">શરૂ કરવા માટે ટચ કરો</button>
+    </div>
+
+    <div id="video-container">
+        <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
+        <video id="talking-video" muted loop playsinline><source src="talking.mp4" type="video/mp4"></video>
+        <video id="thinking-video" muted loop playsinline><source src="thinking.mp4" type="video/mp4"></video>
+        <video id="smiling-video" muted loop playsinline><source src="smiling.mp4" type="video/mp4"></video>
+    </div>
+
+    <video id="selfie-video" autoplay playsinline></video>
+    <canvas id="canvas-capture"></canvas>
+
+    <div id="top-bar">વિદુષી AI (Smart & Vision)</div>
+    <button id="settings-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
+
+    <div id="image-overlay">
+        <button id="close-img-btn" onclick="closeImage()">X</button>
+        <img id="generated-image" src="" alt="Generated Image">
+    </div>
+
+    <div id="mic-container">
+        <div id="status-text">વાત કરવા માઈક દબાવો</div>
+        <div class="controls-row">
+            <button id="vision-btn" class="round-btn" onclick="activateVision()"><i class="fas fa-eye"></i></button>
+            <button id="mic-btn" class="round-btn" onclick="startConversation()"><i class="fas fa-microphone"></i></button>
+            <button id="stop-btn" class="round-btn" onclick="stopConversation()"><i class="fas fa-stop"></i></button>
+        </div>
+    </div>
+
+    <div id="settings-modal">
+        <div class="settings-box">
+            <h3>સેટિંગ્સ</h3>
+            <p style="font-size:12px; color:#aaa;">API Key (Groq):</p>
+            <input type="password" id="apiKeyInput" placeholder="gsk_...">
+            <button class="save-btn" onclick="clearMemory()">🧹 Clear Memory (Reset Name)</button>
+            <button class="save-btn" onclick="saveSettings()">SAVE & CLOSE</button>
+        </div>
+    </div>
+
     <script>
         // --- CONFIGURATION ---
         const MODEL_TEXT = "llama-3.3-70b-versatile";     
-        const MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct"; 
+        const MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct"; // New Llama 4 Model
         
         // --- MEMORY VARIABLES ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
-        // NEW: કાયમી નામ યાદ રાખવા માટે
+        // યાદશક્તિ: નામ અહીં સેવ થશે
         let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ"; 
 
         // --- DOM ELEMENTS ---
@@ -31,6 +129,7 @@
         function initializeApp() {
             document.getElementById('start-overlay').style.display = 'none';
             playVideo('smiling');
+            // શરૂઆતમાં જ નામ બોલશે
             setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}! હું તૈયાર છું.`); }, 2000);
         }
 
@@ -53,10 +152,10 @@
         }
         function clearMemory() { 
             localStorage.removeItem('vidushi_memory'); 
-            localStorage.removeItem('vidushi_user_name'); // નામ પણ ભૂંસી નાખશે
+            localStorage.removeItem('vidushi_user_name'); 
             chatHistory = []; 
             userName = "સાહેબ";
-            alert("બધું ભૂલી ગઈ છું!"); 
+            alert("હું બધું ભૂલી ગઈ છું. ફરીથી ઓળખાણ આપજો."); 
         }
 
         // --- SPEECH RECOGNITION ---
@@ -112,23 +211,21 @@
             await askGroqVision(base64Image);
         }
 
-        // --- LOGIC CENTER (SMART MEMORY) ---
+        // --- SMART LOGIC ---
         async function processUserStats(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
 
-            // 1. SMART NAME DETECTION (આપમેળે નામ યાદ રાખશે)
-            // જો યુઝર બોલે: "મારું નામ દેવેન્દ્ર છે"
-            if (text.includes("મારું નામ") && text.includes("છે")) {
-                let tempName = text.split("મારું નામ")[1].split("છે")[0].trim();
-                if(tempName) {
+            // 1. નામ પકડવાનું લોજિક
+            if ((text.includes("મારું નામ") || text.includes("હું")) && text.includes("છું")) {
+                let tempName = text.replace("મારું નામ", "").replace("છે", "").replace("હું", "").replace("છું", "").trim();
+                if(tempName.length > 2) {
                     userName = tempName;
                     localStorage.setItem('vidushi_user_name', userName);
-                    // System will now reply acknowledging the name
                 }
             }
-
+            
             // 2. Weather Tool
             if(text.includes("હવામાન") || text.includes("ગરમી") || text.includes("તાપમાન")) {
                 const weatherInfo = await getLiveWeather();
@@ -145,15 +242,13 @@
             } catch(e) { return "N/A"; }
         }
 
-        // --- AI: TEXT ENGINE (UPDATED SYSTEM PROMPT) ---
+        // --- AI: TEXT ENGINE ---
         async function askGroqText(userText) {
-            // અહીં જાદુ છે: આપણે userName સીધો પ્રોમ્પ્ટમાં મૂકી દીધો
+            // અહીં આપમેળે અપડેટ થયેલું નામ જશે
             const systemPrompt = `
                 તારું નામ વિદુષી છે.
-                તું **${userName}** ની પર્સનલ આસિસ્ટન્ટ છે. (હંમેશા યાદ રાખજે કે યુઝરનું નામ ${userName} છે).
-                
+                તું **${userName}** ની પર્સનલ આસિસ્ટન્ટ છે.
                 તારે શુદ્ધ ગુજરાતીમાં જવાબ આપવાનો છે.
-                સનાતન ધર્મ, ભગવદ ગીતા અને ટેકનોલોજીનું જ્ઞાન રાખવું.
                 જો યુઝર પૂછે "મારું નામ શું છે?", તો કહેવું "તમારું નામ ${userName} છે."
             `;
 
@@ -192,10 +287,22 @@
                     })
                 });
                 const data = await res.json();
-                if(data.error) { speak("Vision Error."); return; }
-                const reply = data.choices[0].message.content;
-                speak(reply);
-            } catch(e) { speak("કનેક્શનમાં પ્રોબ્લેમ છે."); playVideo('silent'); }
+                
+                if(data.error) {
+                    alert("Vision Error: " + data.error.message);
+                    speak("વિઝન મોડેલમાં કંઈક પ્રોબ્લેમ છે.");
+                    return;
+                }
+
+                if (data.choices && data.choices[0]) {
+                    const reply = data.choices[0].message.content;
+                    speak(reply);
+                }
+            } catch(e) { 
+                console.error(e);
+                speak("કનેક્શનમાં પ્રોબ્લેમ છે."); 
+                playVideo('silent');
+            }
         }
 
         function handleResponseOutput(reply) {
@@ -218,3 +325,5 @@
             window.speechSynthesis.speak(u);
         }
     </script>
+</body>
+</html>
