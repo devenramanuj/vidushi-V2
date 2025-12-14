@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Emotional)</title>
+    <title>Vidushi AI (Internet & Vision)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -94,10 +94,13 @@
     <div id="settings-modal">
         <div class="settings-box">
             <h3>સેટિંગ્સ</h3>
-            <label>API Key (Groq):</label>
+            <label>Groq API Key (Mind):</label>
             <input type="password" id="apiKeyInput" placeholder="gsk_...">
             
-            <label>Contacts (For WhatsApp):</label>
+            <label>Serper API Key (Internet):</label>
+            <input type="password" id="serperKeyInput" placeholder="Search Key here...">
+
+            <label>Contacts:</label>
             <div id="contacts-display" class="contact-list"></div>
             <button class="save-btn" onclick="addContact()" style="background:#444;">+ Add Contact</button>
 
@@ -113,6 +116,7 @@
         
         // --- STORAGE ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
+        let serperKey = localStorage.getItem('vidushi_serper_key') || ''; // NEW KEY
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
@@ -142,7 +146,7 @@
         // --- INITIALIZE ---
         window.onload = () => {
             playVideo('smiling');
-            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}! હું તૈયાર છું.`); }, 2000);
+            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}! ઈન્ટરનેટ પાવર સાથે તૈયાર છું.`); }, 2000);
             renderContacts();
         };
 
@@ -153,10 +157,17 @@
         }
 
         // --- SETTINGS ---
-        function openSettings() { settingsModal.style.display = 'flex'; document.getElementById('apiKeyInput').value = apiKey; renderContacts(); }
+        function openSettings() { 
+            settingsModal.style.display = 'flex'; 
+            document.getElementById('apiKeyInput').value = apiKey; 
+            document.getElementById('serperKeyInput').value = serperKey;
+            renderContacts(); 
+        }
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
+            serperKey = document.getElementById('serperKeyInput').value.trim();
             localStorage.setItem('vidushi_groq_key', apiKey);
+            localStorage.setItem('vidushi_serper_key', serperKey);
             localStorage.setItem('vidushi_contacts', JSON.stringify(contacts));
             settingsModal.style.display = 'none';
         }
@@ -222,6 +233,29 @@
             await askGroqVision(base64Image);
         }
 
+        // --- GOOGLE SEARCH TOOL 🌍 ---
+        async function performGoogleSearch(query) {
+            if (!serperKey) return "ઇન્ટરનેટ કી નથી મળી. સેટિંગ્સમાં Serper Key નાખો.";
+            try {
+                const response = await fetch("https://google.serper.dev/search", {
+                    method: "POST",
+                    headers: { "X-API-KEY": serperKey, "Content-Type": "application/json" },
+                    body: JSON.stringify({ q: query, gl: "in", hl: "gu" }) // gl=India, hl=Gujarati
+                });
+                const data = await response.json();
+                
+                // Extract useful info
+                let snippet = "Search Results:\n";
+                if (data.answerBox) snippet += `Direct Answer: ${data.answerBox.answer || data.answerBox.snippet}\n`;
+                if (data.organic) {
+                    data.organic.slice(0, 3).forEach(item => {
+                        snippet += `- ${item.title}: ${item.snippet}\n`;
+                    });
+                }
+                return snippet;
+            } catch (e) { return "Search Error."; }
+        }
+
         // --- MASTER LOGIC ---
         async function processCommand(text) {
             isProcessing = true;
@@ -229,6 +263,7 @@
             playVideo('thinking');
             let cmd = text.toLowerCase();
 
+            // Notes
             if(cmd.includes("નોંધ લખ") || cmd.includes("યાદ રાખ")) {
                 addNote(text.replace("નોંધ લખ", "").replace("યાદ રાખ", "").trim());
                 isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return;
@@ -236,6 +271,7 @@
             if(cmd.includes("નોંધ બતાવ") || cmd.includes("ડાયરી")) {
                 toggleNotes(); speak("આ રહી ડાયરી."); isProcessing = false; playVideo('silent'); return;
             }
+            // WhatsApp
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let contact = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(contact) {
@@ -245,26 +281,41 @@
                 } else speak("કોન્ટેક્ટ નથી મળતો.");
                 isProcessing = false; playVideo('silent'); return;
             }
+            // Name Update
             if (cmd.includes("મારું નામ") && cmd.includes("છે")) {
                 userName = text.replace("મારું નામ", "").replace("છે", "").trim();
                 localStorage.setItem('vidushi_user_name', userName);
             }
-            await askGroqText(text);
+
+            // 🌍 INTELLIGENT SEARCH DETECTION 🌍
+            // જો પ્રશ્નમાં "ભાવ", "સમાચાર", "સ્કોર", "ક્યારે", "કોણ" હોય તો સર્ચ કરશે.
+            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "ન્યૂઝ", "સ્કોર", "કોણ છે", "ક્યારે છે", "latest", "today", "આજે", "હાલમાં"];
+            let needsSearch = searchKeywords.some(keyword => cmd.includes(keyword));
+
+            let extraContext = "";
+            if (needsSearch && serperKey) {
+                statusText.innerText = "ઈન્ટરનેટ પર જોવું છું...";
+                let searchResult = await performGoogleSearch(text);
+                extraContext = `[REAL-TIME INTERNET DATA]: ${searchResult}`;
+            }
+
+            await askGroqText(text, extraContext);
         }
 
         // --- AI ENGINES ---
-        async function askGroqText(userText) {
-            // PROMPT UPDATED FOR EMOTION DETECTION
+        async function askGroqText(userText, contextData = "") {
             const systemPrompt = `
                 તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે.
-                શુદ્ધ ગુજરાતીમાં જવાબ આપ.
                 
+                [IMPORTANT DATA]:
+                ${contextData}
+                (જો ઉપર ડેટા હોય તો તેનો ઉપયોગ કરીને જવાબ આપવો).
+
                 [EMOTION RULES]:
                 - જવાબની શરૂઆતમાં ભાવ પ્રમાણે ઈમોજી વાપરજે.
-                - ખુશી હોય તો: 😊
-                - દુઃખ કે ગંભીર હોય તો: 😔
+                - ખુશી હોય તો: 😊 (High Pitch)
+                - દુઃખ હોય તો: 😔 (Low Pitch)
                 - સામાન્ય હોય તો: 😐
-                - આશ્ચર્ય હોય તો: 😲
             `;
 
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
@@ -287,7 +338,7 @@
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: MODEL_VISION,
-                        messages: [{ role: "user", content: [{ type: "text", text: `આ ફોટામાં શું છે? ગુજરાતીમાં ટૂંકમાં ${userName} ને સમજાવ.` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
+                        messages: [{ role: "user", content: [{ type: "text", text: `આ ફોટામાં શું છે? ગુજરાતીમાં ${userName} ને સમજાવ.` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
                     })
                 });
                 const data = await res.json();
@@ -295,7 +346,7 @@
             } catch(e) { speak("Vision Error."); playVideo('silent'); }
         }
 
-        // --- UTILS & TTS (EMOTIONAL VOICE) ---
+        // --- TTS (EMOTIONAL) ---
         function handleResponseOutput(reply) {
             if (reply.includes("[IMAGE:")) {
                 const imgPrompt = reply.match(/\[IMAGE: (.*?)\]/)[1];
@@ -306,7 +357,6 @@
         }
         function closeImage() { document.getElementById('image-overlay').style.display = 'none'; }
 
-        // 🔥 NEW EMOTIONAL TTS FUNCTION 🔥
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             statusText.innerText = "બોલું છું..."; playVideo('talking');
@@ -314,19 +364,10 @@
             const u = new SpeechSynthesisUtterance(clean);
             u.lang = 'gu-IN';
             
-            // Emotion Logic
-            if(text.includes('😊') || text.includes('😂') || text.includes('ખુશી')) {
-                u.pitch = 1.3; // High Pitch (Happy)
-                u.rate = 1.1;  // Faster
-            } else if(text.includes('😔') || text.includes('🙏') || text.includes('દુઃખ') || text.includes('ગંભીર')) {
-                u.pitch = 0.7; // Low Pitch (Serious)
-                u.rate = 0.8;  // Slower
-            } else if(text.includes('😲')) {
-                u.pitch = 1.5; // Very High (Surprise)
-            } else {
-                u.pitch = 1.0; // Normal
-                u.rate = 0.9;
-            }
+            if(text.includes('😊') || text.includes('😂')) { u.pitch = 1.3; u.rate = 1.1; } 
+            else if(text.includes('😔') || text.includes('🙏')) { u.pitch = 0.7; u.rate = 0.8; } 
+            else if(text.includes('😲')) { u.pitch = 1.5; } 
+            else { u.pitch = 1.0; u.rate = 0.9; }
 
             u.onend = () => { playVideo('smiling'); setTimeout(() => playVideo('silent'), 3000); isProcessing = false; };
             window.speechSynthesis.speak(u);
