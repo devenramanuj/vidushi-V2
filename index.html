@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Ultimate)</title>
+    <title>Vidushi AI (Magic Edition)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -25,7 +25,7 @@
         #settings-btn { top: 15px; right: 15px; left: auto; }
         #notes-btn { top: 15px; }
         #music-btn { top: 70px; color: #00e5ff; }
-        #expense-btn { top: 125px; color: #00ff00; } /* Green for Money */
+        #expense-btn { top: 125px; color: #00ff00; }
 
         /* --- MODALS --- */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
@@ -34,7 +34,7 @@
         /* LIST STYLES */
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
-        .expense-item { border-left: 4px solid #00ff00; } /* Green border for money */
+        .expense-item { border-left: 4px solid #00ff00; }
         
         /* SETTINGS */
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
@@ -53,10 +53,10 @@
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
 
-        /* --- IMAGE OVERLAY --- */
-        #image-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; padding: 5px; background: #000; border: 2px solid #ff4500; border-radius: 10px; }
-        #generated-image { max-width: 90vw; max-height: 60vh; border-radius: 5px; }
-        #close-img-btn { position: absolute; top: -15px; right: -15px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; }
+        /* --- IMAGE OVERLAY (MAGIC CANVAS) --- */
+        #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction:column; justify-content:center; align-items:center; }
+        #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; }
+        #close-img-btn { margin-top: 20px; padding: 10px 30px; background: red; color: white; border: none; font-size: 18px; border-radius: 50px; cursor: pointer; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
@@ -114,8 +114,8 @@
     </div>
 
     <div id="image-overlay">
-        <button id="close-img-btn" onclick="closeImage()">X</button>
-        <img id="generated-image" src="" alt="Generated">
+        <img id="generated-image" src="" alt="Magic Image">
+        <button id="close-img-btn" onclick="closeImage()">બંધ કરો</button>
     </div>
 
     <div id="mic-container">
@@ -167,9 +167,8 @@
         // --- INIT ---
         window.onload = () => {
             playVideo('smiling');
-            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 2000);
-            renderContacts();
-            renderExpenses();
+            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}! જાદુ બતાવવા તૈયાર છું.`); }, 2000);
+            renderContacts(); renderExpenses();
         };
 
         function playVideo(type) {
@@ -200,16 +199,14 @@
         }
 
         // --- FEATURES ---
-        
         // 1. NOTES
         function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); speak("નોંધ લખી લીધી છે."); }
         function renderNotes() { document.getElementById('notes-list').innerHTML = notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red;" onclick="deleteNote(${i})">x</span></div>`).join(''); }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
         function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
 
-        // 2. EXPENSES (HISAB)
+        // 2. EXPENSES
         function addExpense(text) {
-            // Extract number from text
             let amount = text.match(/\d+/);
             if(amount) {
                 let desc = text.replace(amount[0], "").replace("રૂપિયા", "").replace("લખ", "").replace("જમા કર", "").trim();
@@ -236,7 +233,7 @@
             toggleModal('music');
         }
 
-        // 4. GPS LOCATION 📍
+        // 4. GPS LOCATION
         function sendLocation(contact) {
             if (navigator.geolocation) {
                 statusText.innerText = "લોકેશન લઉં છું...";
@@ -251,6 +248,23 @@
                 }, () => { speak("GPS લોકેશન મળતું નથી."); isProcessing = false; playVideo('silent'); });
             } else { speak("તમારા ફોનમાં GPS નથી."); }
         }
+
+        // --- 🎨 MAGIC IMAGE GENERATOR 🎨 ---
+        function generateMagicImage(prompt) {
+            statusText.innerText = "ચિત્ર બનાવું છું...";
+            playVideo('thinking');
+            
+            // Generate Image URL (Free API)
+            // Translating Gujarati prompt to English usually gives better results, but let's try direct first or assume user gives simple prompts
+            // Or better: Let's assume the prompt is in Gujarati, we will send it as is.
+            let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
+            
+            document.getElementById('generated-image').src = url;
+            document.getElementById('image-overlay').style.display = 'flex';
+            speak("આ રહ્યું તમારું જાદુઈ ચિત્ર!");
+            isProcessing = false;
+        }
+        function closeImage() { document.getElementById('image-overlay').style.display = 'none'; playVideo('silent'); }
 
         // --- SPEECH ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -318,31 +332,29 @@
             playVideo('thinking');
             let cmd = text.toLowerCase();
 
-            // 1. LOCATION (GPS) 📍
+            // 🎨 MAGIC IMAGE TRIGGER 🎨
+            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) {
+                let prompt = text.replace("ચિત્ર બનાવ", "").replace("ફોટો બનાવ", "").replace("નું", "").replace("બતાવ", "").trim();
+                // If prompt is empty or too short, ask for more details
+                if(prompt.length < 2) { speak("શેનું ચિત્ર બનાવું? નામ બોલો."); isProcessing = false; playVideo('silent'); return; }
+                generateMagicImage(prompt);
+                return;
+            }
+
+            // 1. LOCATION
             if(cmd.includes("લોકેશન મોકલ") || cmd.includes("location")) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { sendLocation(found); } 
-                else { speak("કોને લોકેશન મોકલું? નામ સમજાયું નહીં."); isProcessing = false; playVideo('silent'); }
+                else { speak("કોને લોકેશન મોકલું?"); isProcessing = false; playVideo('silent'); }
                 return;
             }
 
-            // 2. EXPENSE (HISAB) 💰
-            if(cmd.includes("રૂપિયા") && (cmd.includes("લખ") || cmd.includes("જમા") || cmd.includes("ઉધાર"))) {
+            // 2. EXPENSE
+            if(cmd.includes("રૂપિયા") && (cmd.includes("લખ") || cmd.includes("જમા"))) {
                 addExpense(text); isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return;
             }
-            if(cmd.includes("હિસાબ બતાવ") || cmd.includes("ખર્ચો બતાવ")) {
-                toggleModal('expense'); speak("આ રહ્યો આજનો હિસાબ."); isProcessing = false; playVideo('silent'); return;
-            }
 
-            // 3. NEWS (SAMACHAR) 📰
-            if(cmd.includes("સમાચાર") || cmd.includes("news")) {
-                statusText.innerText = "સમાચાર લાવું છું...";
-                let news = await performGoogleSearch("top news in india gujarati today");
-                await askGroqText(text, `[NEWS DATA]: ${news}`);
-                return;
-            }
-
-            // 4. WhatsApp
+            // 3. WHATSAPP
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) {
@@ -355,14 +367,13 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // 5. Notes & Music & Translate & Others
+            // 4. NOTES & MUSIC
             if(cmd.includes("નોંધ લખ")) { addNote(text.replace("નોંધ લખ", "").trim()); isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return; }
             if(cmd.includes("નોંધ બતાવ")) { toggleModal('notes'); speak("ડાયરી."); isProcessing = false; playVideo('silent'); return; }
-            if(cmd.includes("વગાડ") || cmd.includes("play")) { playMusic(text.replace("વગાડ","").replace("play","").trim()); isProcessing = false; playVideo('silent'); return; }
-            if(cmd.startsWith("translate") || cmd.includes("અનુવાદ")) { await askGroqTranslator(text); return; }
+            if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing = false; playVideo('silent'); return; }
 
-            // 6. Search Fallback
-            let searchKeywords = ["ભાવ", "કિંમત", "સ્કોર", "કોણ", "ક્યારે"];
+            // 5. SEARCH FALLBACK
+            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "કોણ", "ક્યારે"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
                 statusText.innerText = "ઈન્ટરનેટ...";
@@ -374,21 +385,8 @@
         }
 
         // --- AI ENGINES ---
-        async function askGroqTranslator(userText) {
-            const systemPrompt = `You are a Translator. Output ONLY translated text.`;
-            let messages = [{ role: "system", content: systemPrompt }, { role: "user", content: userText }];
-            try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: MODEL_TEXT, messages: messages })
-                });
-                const data = await res.json();
-                speak(data.choices[0].message.content);
-            } catch(e) { speak("Translation Error."); isProcessing = false; playVideo('silent'); }
-        }
-
         async function askGroqText(userText, contextData = "") {
-            const systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે. [Data]: ${contextData} [RULES]: News હોય તો ન્યૂઝ એન્કર જેમ બોલજે.`;
+            const systemPrompt = `તારું નામ વિદુષી છે. તું ${દેવેન્દ્રભાઈ} ની આસિસ્ટન્ટ છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -399,7 +397,7 @@
                 const reply = data.choices[0].message.content;
                 chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
-                handleResponseOutput(reply);
+                speak(reply);
             } catch(e) { speak("Error."); isProcessing = false; playVideo('silent'); }
         }
 
@@ -409,7 +407,7 @@
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: MODEL_VISION,
-                        messages: [{ role: "user", content: [{ type: "text", text: `આ શું છે? ગુજરાતીમાં ટૂંકમાં કહે.` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
+                        messages: [{ role: "user", content: [{ type: "text", text: `આ શું છે?` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
                     })
                 });
                 const data = await res.json();
@@ -417,16 +415,6 @@
             } catch(e) { speak("Vision Error."); playVideo('silent'); }
         }
 
-        // --- TTS ---
-        function handleResponseOutput(reply) {
-            if (reply.includes("[IMAGE:")) {
-                const imgPrompt = reply.match(/\[IMAGE: (.*?)\]/)[1];
-                document.getElementById('generated-image').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}`;
-                document.getElementById('image-overlay').style.display = 'block';
-                speak("આ રહ્યું ચિત્ર.");
-            } else { speak(reply); }
-        }
-        function closeImage() { document.getElementById('image-overlay').style.display = 'none'; }
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             statusText.innerText = "બોલું છું..."; playVideo('talking');
