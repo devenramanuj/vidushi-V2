@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Super App)</title>
+    <title>Vidushi AI (Emotional)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,13 +22,11 @@
         #settings-btn { position: fixed; top: 10px; right: 15px; z-index: 20; background: transparent; color: white; border: none; font-size: 24px; cursor: pointer; }
         #notes-btn { position: fixed; top: 10px; left: 15px; z-index: 20; background: transparent; color: white; border: none; font-size: 24px; cursor: pointer; }
 
-        /* --- NOTES MODAL --- */
+        /* --- MODALS --- */
         #notes-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; }
         .notes-header { display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .note-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; display: flex; justify-content: space-between; }
-        .delete-note { color: red; cursor: pointer; }
-
-        /* --- SETTINGS MODAL --- */
+        
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; justify-content: center; align-items: center; }
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
         input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
@@ -75,8 +73,7 @@
             <span>મારી ડાયરી</span>
             <span onclick="toggleNotes()" style="cursor:pointer">✖</span>
         </div>
-        <div id="notes-list" style="overflow-y:auto; flex:1;">
-            </div>
+        <div id="notes-list" style="overflow-y:auto; flex:1;"></div>
         <button class="save-btn" onclick="speakNotes()">🔊 વાંચી સંભળાવ</button>
     </div>
 
@@ -114,14 +111,14 @@
         const MODEL_TEXT = "llama-3.3-70b-versatile";     
         const MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct";
         
-        // --- DATA STORAGE ---
+        // --- STORAGE ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
-        let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || []; // {name: "Rahul", number: "98..."}
+        let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || [];
 
-        // --- DOM ELEMENTS ---
+        // --- DOM ---
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
         const visionBtn = document.getElementById('vision-btn');
@@ -130,7 +127,6 @@
         const selfieVideo = document.getElementById('selfie-video');
         const canvas = document.getElementById('canvas-capture');
         
-        // Videos
         const videos = {
             silent: document.getElementById('silent-video'),
             talking: document.getElementById('talking-video'),
@@ -156,7 +152,7 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        // --- SETTINGS & CONTACTS ---
+        // --- SETTINGS ---
         function openSettings() { settingsModal.style.display = 'flex'; document.getElementById('apiKeyInput').value = apiKey; renderContacts(); }
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
@@ -175,31 +171,12 @@
         }
         function clearAllData() { localStorage.clear(); location.reload(); }
 
-        // --- NOTES SYSTEM ---
-        function toggleNotes() {
-            if(notesModal.style.display === 'flex') {
-                notesModal.style.display = 'none';
-            } else {
-                notesModal.style.display = 'flex';
-                renderNotes();
-            }
-        }
-        function addNote(text) {
-            notes.push({ text: text, time: new Date().toLocaleDateString() });
-            localStorage.setItem('vidushi_notes', JSON.stringify(notes));
-            speak("નોંધ લખી લીધી છે.");
-        }
-        function renderNotes() {
-            const list = document.getElementById('notes-list');
-            list.innerHTML = notes.length === 0 ? "<p style='color:#777'>કોઈ નોંધ નથી.</p>" : 
-                notes.map((n, i) => `<div class="note-item"><span>${n.text}</span><span class="delete-note" onclick="deleteNote(${i})"><i class="fas fa-trash"></i></span></div>`).join('');
-        }
+        // --- NOTES ---
+        function toggleNotes() { notesModal.style.display = notesModal.style.display === 'flex' ? 'none' : 'flex'; renderNotes(); }
+        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); speak("નોંધ લખી લીધી છે."); }
+        function renderNotes() { document.getElementById('notes-list').innerHTML = notes.map((n, i) => `<div class="note-item"><span>${n.text}</span><span style="color:red;cursor:pointer" onclick="deleteNote(${i})">x</span></div>`).join(''); }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
-        function speakNotes() {
-            if(notes.length === 0) { speak("ડાયરી ખાલી છે."); return; }
-            let allNotes = "તમારી નોંધ આ મુજબ છે. " + notes.map(n => n.text).join(". પછી, ");
-            speak(allNotes);
-        }
+        function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
 
         // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -213,7 +190,6 @@
                 if(text.trim()) processCommand(text);
             };
         }
-
         function startConversation() { if(!apiKey) { alert("API Key Missing!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); }
 
@@ -246,56 +222,51 @@
             await askGroqVision(base64Image);
         }
 
-        // --- MASTER LOGIC (COMMAND CENTER) ---
+        // --- MASTER LOGIC ---
         async function processCommand(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
             let cmd = text.toLowerCase();
 
-            // 1. NOTES (નોંધ)
             if(cmd.includes("નોંધ લખ") || cmd.includes("યાદ રાખ")) {
-                let note = text.replace("નોંધ લખ", "").replace("યાદ રાખજે કે", "").replace("યાદ રાખ", "").trim();
-                addNote(note);
-                isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000);
-                return;
+                addNote(text.replace("નોંધ લખ", "").replace("યાદ રાખ", "").trim());
+                isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return;
             }
-            if(cmd.includes("નોંધ બતાવ") || cmd.includes("ડાયરી ખોલ")) {
-                toggleNotes();
-                speak("આ રહી તમારી ડાયરી.");
-                isProcessing = false; playVideo('silent');
-                return;
+            if(cmd.includes("નોંધ બતાવ") || cmd.includes("ડાયરી")) {
+                toggleNotes(); speak("આ રહી ડાયરી."); isProcessing = false; playVideo('silent'); return;
             }
-
-            // 2. WHATSAPP (મેસેજ)
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
-                // Find contact name in text
                 let contact = contacts.find(c => cmd.includes(c.name.toLowerCase()));
                 if(contact) {
                     let msg = text.replace(contact.name, "").replace("ને મેસેજ કર", "").replace("કહેજે કે", "").trim();
-                    let url = `https://wa.me/91${contact.number}?text=${encodeURIComponent(msg)}`;
-                    speak(`${contact.name} ને વોટ્સએપ ખોલું છું.`);
-                    window.open(url, "_blank");
-                } else {
-                    speak("તમારા કોન્ટેક્ટ લિસ્ટમાં આ નામ નથી. સેટિંગ્સમાં જઈને એડ કરો.");
-                }
-                isProcessing = false; playVideo('silent');
-                return;
+                    window.open(`https://wa.me/91${contact.number}?text=${encodeURIComponent(msg)}`, "_blank");
+                    speak("મેસેજ ખૂલી રહ્યો છે.");
+                } else speak("કોન્ટેક્ટ નથી મળતો.");
+                isProcessing = false; playVideo('silent'); return;
             }
-
-            // 3. NAME UPDATE
             if (cmd.includes("મારું નામ") && cmd.includes("છે")) {
                 userName = text.replace("મારું નામ", "").replace("છે", "").trim();
                 localStorage.setItem('vidushi_user_name', userName);
             }
-
-            // 4. NORMAL AI CHAT
             await askGroqText(text);
         }
 
         // --- AI ENGINES ---
         async function askGroqText(userText) {
-            const systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે. શુદ્ધ ગુજરાતીમાં વાત કર.`;
+            // PROMPT UPDATED FOR EMOTION DETECTION
+            const systemPrompt = `
+                તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે.
+                શુદ્ધ ગુજરાતીમાં જવાબ આપ.
+                
+                [EMOTION RULES]:
+                - જવાબની શરૂઆતમાં ભાવ પ્રમાણે ઈમોજી વાપરજે.
+                - ખુશી હોય તો: 😊
+                - દુઃખ કે ગંભીર હોય તો: 😔
+                - સામાન્ય હોય તો: 😐
+                - આશ્ચર્ય હોય તો: 😲
+            `;
+
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -316,7 +287,7 @@
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: MODEL_VISION,
-                        messages: [{ role: "user", content: [{ type: "text", text: `આ ફોટામાં શું છે? ગુજરાતીમાં ${userName} ને સમજાવ.` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
+                        messages: [{ role: "user", content: [{ type: "text", text: `આ ફોટામાં શું છે? ગુજરાતીમાં ટૂંકમાં ${userName} ને સમજાવ.` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
                     })
                 });
                 const data = await res.json();
@@ -324,7 +295,7 @@
             } catch(e) { speak("Vision Error."); playVideo('silent'); }
         }
 
-        // --- UTILS ---
+        // --- UTILS & TTS (EMOTIONAL VOICE) ---
         function handleResponseOutput(reply) {
             if (reply.includes("[IMAGE:")) {
                 const imgPrompt = reply.match(/\[IMAGE: (.*?)\]/)[1];
@@ -334,11 +305,29 @@
             } else { speak(reply); }
         }
         function closeImage() { document.getElementById('image-overlay').style.display = 'none'; }
+
+        // 🔥 NEW EMOTIONAL TTS FUNCTION 🔥
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             statusText.innerText = "બોલું છું..."; playVideo('talking');
+            
             const u = new SpeechSynthesisUtterance(clean);
-            u.lang = 'gu-IN'; u.rate = 0.9;
+            u.lang = 'gu-IN';
+            
+            // Emotion Logic
+            if(text.includes('😊') || text.includes('😂') || text.includes('ખુશી')) {
+                u.pitch = 1.3; // High Pitch (Happy)
+                u.rate = 1.1;  // Faster
+            } else if(text.includes('😔') || text.includes('🙏') || text.includes('દુઃખ') || text.includes('ગંભીર')) {
+                u.pitch = 0.7; // Low Pitch (Serious)
+                u.rate = 0.8;  // Slower
+            } else if(text.includes('😲')) {
+                u.pitch = 1.5; // Very High (Surprise)
+            } else {
+                u.pitch = 1.0; // Normal
+                u.rate = 0.9;
+            }
+
             u.onend = () => { playVideo('smiling'); setTimeout(() => playVideo('silent'), 3000); isProcessing = false; };
             window.speechSynthesis.speak(u);
         }
