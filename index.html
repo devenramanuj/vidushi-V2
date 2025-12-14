@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Magic Edition)</title>
+    <title>Vidushi AI (Magic Edition V2)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -240,10 +240,10 @@
                 navigator.geolocation.getCurrentPosition((position) => {
                     let lat = position.coords.latitude;
                     let lng = position.coords.longitude;
-                    let mapLink = `https://www.google.com/maps?q=${lat},${lng}`;
+                    let mapLink = `http://maps.google.com/?q=${lat},${lng}`; // Corrected Map Link
                     let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
                     window.open(`https://wa.me/${num}?text=${encodeURIComponent("મારું લાઈવ લોકેશન: " + mapLink)}`, "_blank");
-                    speak(`${contact.gu_name} ને લોકેશન મોકલ્યું.`);
+                    speak(`${contact.gu_name} ને લોકેશન મોકલ્યો.`);
                     isProcessing = false; playVideo('silent');
                 }, () => { speak("GPS લોકેશન મળતું નથી."); isProcessing = false; playVideo('silent'); });
             } else { speak("તમારા ફોનમાં GPS નથી."); }
@@ -251,20 +251,26 @@
 
         // --- 🎨 MAGIC IMAGE GENERATOR 🎨 ---
         function generateMagicImage(prompt) {
-            statusText.innerText = "ચિત્ર બનાવું છું...";
             playVideo('thinking');
+            statusText.innerText = "ચિત્ર બનાવું છું...";
             
-            // Generate Image URL (Free API)
-            // Translating Gujarati prompt to English usually gives better results, but let's try direct first or assume user gives simple prompts
-            // Or better: Let's assume the prompt is in Gujarati, we will send it as is.
+            // Pollination API does not need an API key and is fast
             let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
             
             document.getElementById('generated-image').src = url;
             document.getElementById('image-overlay').style.display = 'flex';
-            speak("આ રહ્યું તમારું જાદુઈ ચિત્ર!");
-            isProcessing = false;
+            
+            // Speak and set status after a small delay to allow image to start loading
+            setTimeout(() => {
+                speak("આ રહ્યું તમારું જાદુઈ ચિત્ર! 😊");
+            }, 1000);
+            // NOTE: isProcessing will be set to false in the speak function's onend
         }
-        function closeImage() { document.getElementById('image-overlay').style.display = 'none'; playVideo('silent'); }
+        function closeImage() { 
+            document.getElementById('image-overlay').style.display = 'none'; 
+            playVideo('silent');
+            isProcessing = false; // Just in case, set to false
+        }
 
         // --- SPEECH ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -272,14 +278,14 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'gu-IN';
             recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = "સાંભળું છું..."; };
-            recognition.onend = () => { micBtn.classList.remove('listening'); if(!isProcessing) statusText.innerText = "ટેપ કરો"; };
+            recognition.onend = () => { micBtn.classList.remove('listening'); if(!isProcessing) statusText.innerText = "વાત કરવા માઈક દબાવો"; };
             recognition.onresult = (e) => {
                 let text = e.results[0][0].transcript;
                 if(text.trim()) processCommand(text);
             };
         }
         function startConversation() { if(!apiKey) { alert("API Key Missing!"); openSettings(); return; } recognition.start(); }
-        function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); }
+        function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; statusText.innerText = "વાત કરવા માઈક દબાવો"; }
 
         // --- VISION ---
         async function activateVision() {
@@ -332,10 +338,9 @@
             playVideo('thinking');
             let cmd = text.toLowerCase();
 
-            // 🎨 MAGIC IMAGE TRIGGER 🎨
-            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) {
-                let prompt = text.replace("ચિત્ર બનાવ", "").replace("ફોટો બનાવ", "").replace("નું", "").replace("બતાવ", "").trim();
-                // If prompt is empty or too short, ask for more details
+            // 🎨 MAGIC IMAGE TRIGGER 🎨 (High Priority)
+            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image") || cmd.includes("ડ્રોઈંગ")) {
+                let prompt = text.replace("ચિત્ર બનાવ", "").replace("ફોટો બનાવ", "").replace("નું", "").replace("બતાવ", "").replace("ડ્રોઈંગ", "").trim();
                 if(prompt.length < 2) { speak("શેનું ચિત્ર બનાવું? નામ બોલો."); isProcessing = false; playVideo('silent'); return; }
                 generateMagicImage(prompt);
                 return;
@@ -352,6 +357,9 @@
             // 2. EXPENSE
             if(cmd.includes("રૂપિયા") && (cmd.includes("લખ") || cmd.includes("જમા"))) {
                 addExpense(text); isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return;
+            }
+            if(cmd.includes("હિસાબ બતાવ") || cmd.includes("ખર્ચો બતાવ")) {
+                toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing = false; playVideo('silent'); return;
             }
 
             // 3. WHATSAPP
@@ -386,7 +394,7 @@
 
         // --- AI ENGINES ---
         async function askGroqText(userText, contextData = "") {
-            const systemPrompt = `તારું નામ વિદુષી છે. તું ${દેવેન્દ્રભાઈ} ની આસિસ્ટન્ટ છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
+            const systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -398,7 +406,7 @@
                 chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
                 speak(reply);
-            } catch(e) { speak("Error."); isProcessing = false; playVideo('silent'); }
+            } catch(e) { speak("Error in AI response."); isProcessing = false; playVideo('silent'); }
         }
 
         async function askGroqVision(base64Image) {
@@ -415,6 +423,7 @@
             } catch(e) { speak("Vision Error."); playVideo('silent'); }
         }
 
+        // --- TTS (Speech) ---
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             statusText.innerText = "બોલું છું..."; playVideo('talking');
@@ -423,7 +432,19 @@
             if(text.includes('😊')) { u.pitch = 1.3; u.rate = 1.1; } 
             else if(text.includes('😔')) { u.pitch = 0.7; u.rate = 0.8; } 
             else { u.pitch = 1.0; u.rate = 0.9; }
-            u.onend = () => { playVideo('smiling'); setTimeout(() => playVideo('silent'), 3000); isProcessing = false; };
+            u.onend = () => { 
+                playVideo('smiling'); 
+                setTimeout(() => playVideo('silent'), 3000); 
+                isProcessing = false;
+                statusText.innerText = "વાત કરવા માઈક દબાવો"; // Reset status after speaking
+            };
+            // Error handling for TTS start
+            u.onerror = (e) => {
+                console.error('TTS Error:', e);
+                isProcessing = false;
+                playVideo('silent');
+                statusText.innerText = "TTS Error. Try again.";
+            };
             window.speechSynthesis.speak(u);
         }
     </script>
