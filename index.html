@@ -3,61 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Fixed</title>
+    <title>Vidushi AI (Super App)</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         
-        /* --- START OVERLAY --- */
-        #start-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; cursor: pointer; backdrop-filter: blur(5px); }
-        .start-btn { padding: 20px 50px; font-size: 22px; border: 2px solid #ff4500; border-radius: 50px; background: rgba(0,0,0,0.5); color: white; animation: pulse 2s infinite; font-weight: bold; letter-spacing: 1px; }
-
-        /* --- VIDEO LAYER --- */
-        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background-color: black; }
-        video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; display: none; }
+        /* --- VIDEOS --- */
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+        video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
-        
-        /* --- SELFIE / VISION CAMERA --- */
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; background: black; }
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
         #canvas-capture { display: none; }
 
-        /* --- UI LAYER --- */
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: rgba(0,0,0,0.6); color: white; text-align: center; font-size: 24px; font-weight: bold; z-index: 10; text-shadow: 1px 1px 2px black; letter-spacing: 1px; backdrop-filter: blur(5px); }
-        #settings-btn { position: fixed; top: 5px; right: 15px; z-index: 20; background: transparent; color: white; border: none; font-size: 26px; padding: 10px; cursor: pointer; }
-        
-        /* --- CONTROLS --- */
-        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 90%; }
-        #status-text { color: white; margin-bottom: 15px; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px black; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; text-align: center; max-width: 90%; word-wrap: break-word; backdrop-filter: blur(4px); }
-        .controls-row { display: flex; align-items: center; gap: 20px; }
-        
-        /* BUTTONS */
-        .round-btn { width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.2s; }
-        .round-btn:active { transform: scale(0.9); }
-        #mic-btn { width: 80px; height: 80px; background: #ff4500; font-size: 35px; }
-        #vision-btn { background: #008cff; } 
-        #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
-        .listening { animation: pulse 1.5s infinite; background: red !important; }
+        /* --- UI ELEMENTS --- */
+        #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); color: white; text-align: center; font-size: 20px; font-weight: bold; z-index: 10; letter-spacing: 1px; }
+        #settings-btn { position: fixed; top: 10px; right: 15px; z-index: 20; background: transparent; color: white; border: none; font-size: 24px; cursor: pointer; }
+        #notes-btn { position: fixed; top: 10px; left: 15px; z-index: 20; background: transparent; color: white; border: none; font-size: 24px; cursor: pointer; }
+
+        /* --- NOTES MODAL --- */
+        #notes-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; }
+        .notes-header { display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .note-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; display: flex; justify-content: space-between; }
+        .delete-note { color: red; cursor: pointer; }
 
         /* --- SETTINGS MODAL --- */
         #settings-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; justify-content: center; align-items: center; }
-        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 12px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
-        .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 15px; border-radius: 5px; }
-        
-        /* IMAGE OVERLAY */
-        #image-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; background: rgba(0,0,0,0.8); padding: 10px; border-radius: 15px; border: 2px solid orange; box-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        #generated-image { max-width: 90vw; max-height: 60vh; border-radius: 10px; }
-        #close-img-btn { position: absolute; top: -15px; right: -15px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; font-weight: bold; }
+        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
+        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
+        .contact-list { text-align: left; margin-top: 10px; font-size: 13px; color: #ccc; }
+
+        /* --- CONTROLS --- */
+        #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
+        #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
+        .controls-row { display: flex; gap: 20px; align-items: center; }
+        .round-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; transition: 0.2s; }
+        .round-btn:active { transform: scale(0.9); }
+        #mic-btn { width: 75px; height: 75px; background: #ff4500; font-size: 32px; border: 4px solid rgba(255,255,255,0.2); }
+        #vision-btn { background: #008cff; }
+        #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
+        .listening { animation: pulse 1.5s infinite; background: red !important; }
+
+        /* --- IMAGE OVERLAY --- */
+        #image-overlay { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 50; padding: 5px; background: #000; border: 2px solid #ff4500; border-radius: 10px; }
+        #generated-image { max-width: 90vw; max-height: 60vh; border-radius: 5px; }
+        #close-img-btn { position: absolute; top: -15px; right: -15px; background: red; color: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-weight: bold; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
 </head>
 <body>
-
-    <div id="start-overlay" onclick="initializeApp()">
-        <button class="start-btn">શરૂ કરવા માટે ટચ કરો</button>
-    </div>
 
     <div id="video-container">
         <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
@@ -69,12 +66,23 @@
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
-    <div id="top-bar">વિદુષી AI (Smart & Vision)</div>
+    <div id="top-bar">Vidushi AI</div>
     <button id="settings-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
+    <button id="notes-btn" onclick="toggleNotes()"><i class="fas fa-book"></i></button>
+
+    <div id="notes-modal">
+        <div class="notes-header">
+            <span>મારી ડાયરી</span>
+            <span onclick="toggleNotes()" style="cursor:pointer">✖</span>
+        </div>
+        <div id="notes-list" style="overflow-y:auto; flex:1;">
+            </div>
+        <button class="save-btn" onclick="speakNotes()">🔊 વાંચી સંભળાવ</button>
+    </div>
 
     <div id="image-overlay">
         <button id="close-img-btn" onclick="closeImage()">X</button>
-        <img id="generated-image" src="" alt="Generated Image">
+        <img id="generated-image" src="" alt="Generated">
     </div>
 
     <div id="mic-container">
@@ -89,73 +97,108 @@
     <div id="settings-modal">
         <div class="settings-box">
             <h3>સેટિંગ્સ</h3>
-            <p style="font-size:12px; color:#aaa;">API Key (Groq):</p>
+            <label>API Key (Groq):</label>
             <input type="password" id="apiKeyInput" placeholder="gsk_...">
-            <button class="save-btn" onclick="clearMemory()">🧹 Clear Memory (Reset Name)</button>
+            
+            <label>Contacts (For WhatsApp):</label>
+            <div id="contacts-display" class="contact-list"></div>
+            <button class="save-btn" onclick="addContact()" style="background:#444;">+ Add Contact</button>
+
             <button class="save-btn" onclick="saveSettings()">SAVE & CLOSE</button>
+            <button class="save-btn" onclick="clearAllData()" style="background:red; margin-top:20px;">⚠️ Reset All</button>
         </div>
     </div>
 
     <script>
         // --- CONFIGURATION ---
         const MODEL_TEXT = "llama-3.3-70b-versatile";     
-        const MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct"; // New Llama 4 Model
+        const MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct";
         
-        // --- MEMORY VARIABLES ---
+        // --- DATA STORAGE ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
-        // યાદશક્તિ: નામ અહીં સેવ થશે
-        let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ"; 
+        let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ";
+        let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
+        let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || []; // {name: "Rahul", number: "98..."}
 
         // --- DOM ELEMENTS ---
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
         const visionBtn = document.getElementById('vision-btn');
         const settingsModal = document.getElementById('settings-modal');
+        const notesModal = document.getElementById('notes-modal');
         const selfieVideo = document.getElementById('selfie-video');
         const canvas = document.getElementById('canvas-capture');
         
-        const silentVideo = document.getElementById('silent-video');
-        const talkingVideo = document.getElementById('talking-video');
-        const thinkingVideo = document.getElementById('thinking-video');
-        const smilingVideo = document.getElementById('smiling-video');
+        // Videos
+        const videos = {
+            silent: document.getElementById('silent-video'),
+            talking: document.getElementById('talking-video'),
+            thinking: document.getElementById('thinking-video'),
+            smiling: document.getElementById('smiling-video')
+        };
 
         let recognition;
         let isProcessing = false;
         let visionMode = false;
         let visionStream = null;
 
-        // --- INITIALIZATION ---
-        function initializeApp() {
-            document.getElementById('start-overlay').style.display = 'none';
+        // --- INITIALIZE ---
+        window.onload = () => {
             playVideo('smiling');
-            // શરૂઆતમાં જ નામ બોલશે
             setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}! હું તૈયાર છું.`); }, 2000);
-        }
+            renderContacts();
+        };
 
         function playVideo(type) {
             if(selfieVideo.style.display === 'block') return;
-            [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => { v.style.display = 'none'; v.pause(); });
-            let active = silentVideo;
-            if(type === 'talking') active = talkingVideo;
-            if(type === 'thinking') active = thinkingVideo;
-            if(type === 'smiling') active = smilingVideo;
-            active.style.display = 'block';
-            active.play().catch(()=>{});
+            Object.values(videos).forEach(v => { v.style.display = 'none'; v.pause(); });
+            if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        function openSettings() { settingsModal.style.display = 'flex'; document.getElementById('apiKeyInput').value = apiKey; }
+        // --- SETTINGS & CONTACTS ---
+        function openSettings() { settingsModal.style.display = 'flex'; document.getElementById('apiKeyInput').value = apiKey; renderContacts(); }
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
             localStorage.setItem('vidushi_groq_key', apiKey);
+            localStorage.setItem('vidushi_contacts', JSON.stringify(contacts));
             settingsModal.style.display = 'none';
         }
-        function clearMemory() { 
-            localStorage.removeItem('vidushi_memory'); 
-            localStorage.removeItem('vidushi_user_name'); 
-            chatHistory = []; 
-            userName = "સાહેબ";
-            alert("હું બધું ભૂલી ગઈ છું. ફરીથી ઓળખાણ આપજો."); 
+        function addContact() {
+            let name = prompt("નામ (Name):");
+            let num = prompt("નંબર (Number 10 digits):");
+            if(name && num) { contacts.push({name, number: num}); renderContacts(); }
+        }
+        function renderContacts() {
+            const div = document.getElementById('contacts-display');
+            div.innerHTML = contacts.map((c,i) => `<div>${c.name}: ${c.number} <span onclick="contacts.splice(${i},1);renderContacts()" style="color:red;cursor:pointer">x</span></div>`).join('');
+        }
+        function clearAllData() { localStorage.clear(); location.reload(); }
+
+        // --- NOTES SYSTEM ---
+        function toggleNotes() {
+            if(notesModal.style.display === 'flex') {
+                notesModal.style.display = 'none';
+            } else {
+                notesModal.style.display = 'flex';
+                renderNotes();
+            }
+        }
+        function addNote(text) {
+            notes.push({ text: text, time: new Date().toLocaleDateString() });
+            localStorage.setItem('vidushi_notes', JSON.stringify(notes));
+            speak("નોંધ લખી લીધી છે.");
+        }
+        function renderNotes() {
+            const list = document.getElementById('notes-list');
+            list.innerHTML = notes.length === 0 ? "<p style='color:#777'>કોઈ નોંધ નથી.</p>" : 
+                notes.map((n, i) => `<div class="note-item"><span>${n.text}</span><span class="delete-note" onclick="deleteNote(${i})"><i class="fas fa-trash"></i></span></div>`).join('');
+        }
+        function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
+        function speakNotes() {
+            if(notes.length === 0) { speak("ડાયરી ખાલી છે."); return; }
+            let allNotes = "તમારી નોંધ આ મુજબ છે. " + notes.map(n => n.text).join(". પછી, ");
+            speak(allNotes);
         }
 
         // --- SPEECH RECOGNITION ---
@@ -164,96 +207,96 @@
             recognition = new SpeechRecognition();
             recognition.lang = 'gu-IN';
             recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = "સાંભળું છું..."; };
-            recognition.onend = () => { micBtn.classList.remove('listening'); if(!isProcessing) statusText.innerText = "વાત કરવા માઈક દબાવો"; };
+            recognition.onend = () => { micBtn.classList.remove('listening'); if(!isProcessing) statusText.innerText = "ટેપ કરો"; };
             recognition.onresult = (e) => {
                 let text = e.results[0][0].transcript;
-                if(text.trim()) processUserStats(text);
+                if(text.trim()) processCommand(text);
             };
         }
 
-        function startConversation() { if(!apiKey) { alert("API Key નાખો!"); openSettings(); return; } recognition.start(); }
+        function startConversation() { if(!apiKey) { alert("API Key Missing!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); }
 
-        // --- VISION MODULE ---
+        // --- VISION ---
         async function activateVision() {
             if(visionMode) { captureAndAnalyze(); return; } 
             try {
-                statusText.innerText = "કેમેરો ચાલુ કરું છું...";
                 visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
                 selfieVideo.srcObject = visionStream;
                 selfieVideo.style.display = 'block';
                 document.getElementById('video-container').style.display = 'none'; 
                 visionMode = true;
-                visionBtn.innerHTML = '<i class="fas fa-camera"></i>'; 
-                visionBtn.style.background = "red";
-                speak("મને ફોટો બતાવો.");
-            } catch(e) { alert("Camera Error: " + e.message); }
+                visionBtn.innerHTML = '<i class="fas fa-camera"></i>'; visionBtn.style.background = "red";
+                speak("ફોટો બતાવો.");
+            } catch(e) { alert("Camera Error"); }
         }
-
         function stopVisionCamera() {
             if(visionStream) visionStream.getTracks().forEach(t => t.stop());
             selfieVideo.style.display = 'none';
             document.getElementById('video-container').style.display = 'block';
             visionMode = false;
-            visionBtn.innerHTML = '<i class="fas fa-eye"></i>';
-            visionBtn.style.background = "#008cff";
+            visionBtn.innerHTML = '<i class="fas fa-eye"></i>'; visionBtn.style.background = "#008cff";
             playVideo('silent');
         }
-
         async function captureAndAnalyze() {
-            statusText.innerText = "ફોટો અપલોડ થાય છે...";
-            canvas.width = selfieVideo.videoWidth;
-            canvas.height = selfieVideo.videoHeight;
+            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
-            stopVisionCamera(); 
-            playVideo('thinking');
+            stopVisionCamera(); playVideo('thinking');
             await askGroqVision(base64Image);
         }
 
-        // --- SMART LOGIC ---
-        async function processUserStats(text) {
+        // --- MASTER LOGIC (COMMAND CENTER) ---
+        async function processCommand(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
+            let cmd = text.toLowerCase();
 
-            // 1. નામ પકડવાનું લોજિક
-            if ((text.includes("મારું નામ") || text.includes("હું")) && text.includes("છું")) {
-                let tempName = text.replace("મારું નામ", "").replace("છે", "").replace("હું", "").replace("છું", "").trim();
-                if(tempName.length > 2) {
-                    userName = tempName;
-                    localStorage.setItem('vidushi_user_name', userName);
+            // 1. NOTES (નોંધ)
+            if(cmd.includes("નોંધ લખ") || cmd.includes("યાદ રાખ")) {
+                let note = text.replace("નોંધ લખ", "").replace("યાદ રાખજે કે", "").replace("યાદ રાખ", "").trim();
+                addNote(note);
+                isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000);
+                return;
+            }
+            if(cmd.includes("નોંધ બતાવ") || cmd.includes("ડાયરી ખોલ")) {
+                toggleNotes();
+                speak("આ રહી તમારી ડાયરી.");
+                isProcessing = false; playVideo('silent');
+                return;
+            }
+
+            // 2. WHATSAPP (મેસેજ)
+            if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
+                // Find contact name in text
+                let contact = contacts.find(c => cmd.includes(c.name.toLowerCase()));
+                if(contact) {
+                    let msg = text.replace(contact.name, "").replace("ને મેસેજ કર", "").replace("કહેજે કે", "").trim();
+                    let url = `https://wa.me/91${contact.number}?text=${encodeURIComponent(msg)}`;
+                    speak(`${contact.name} ને વોટ્સએપ ખોલું છું.`);
+                    window.open(url, "_blank");
+                } else {
+                    speak("તમારા કોન્ટેક્ટ લિસ્ટમાં આ નામ નથી. સેટિંગ્સમાં જઈને એડ કરો.");
                 }
+                isProcessing = false; playVideo('silent');
+                return;
             }
-            
-            // 2. Weather Tool
-            if(text.includes("હવામાન") || text.includes("ગરમી") || text.includes("તાપમાન")) {
-                const weatherInfo = await getLiveWeather();
-                text += ` [SYSTEM DATA: ${weatherInfo}]`; 
+
+            // 3. NAME UPDATE
+            if (cmd.includes("મારું નામ") && cmd.includes("છે")) {
+                userName = text.replace("મારું નામ", "").replace("છે", "").trim();
+                localStorage.setItem('vidushi_user_name', userName);
             }
+
+            // 4. NORMAL AI CHAT
             await askGroqText(text);
         }
 
-        async function getLiveWeather() {
-            try {
-                const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=22.2587&longitude=71.1924&current_weather=true");
-                const data = await res.json();
-                return `Temp: ${data.current_weather.temperature}°C`;
-            } catch(e) { return "N/A"; }
-        }
-
-        // --- AI: TEXT ENGINE ---
+        // --- AI ENGINES ---
         async function askGroqText(userText) {
-            // અહીં આપમેળે અપડેટ થયેલું નામ જશે
-            const systemPrompt = `
-                તારું નામ વિદુષી છે.
-                તું **${userName}** ની પર્સનલ આસિસ્ટન્ટ છે.
-                તારે શુદ્ધ ગુજરાતીમાં જવાબ આપવાનો છે.
-                જો યુઝર પૂછે "મારું નામ શું છે?", તો કહેવું "તમારું નામ ${userName} છે."
-            `;
-
+            const systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની આસિસ્ટન્ટ છે. શુદ્ધ ગુજરાતીમાં વાત કર.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
-            
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -261,50 +304,27 @@
                 });
                 const data = await res.json();
                 const reply = data.choices[0].message.content;
-                
-                chatHistory.push({ role: "user", content: userText });
-                chatHistory.push({ role: "assistant", content: reply });
+                chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
-
                 handleResponseOutput(reply);
-            } catch(e) { speak("Error in Text AI."); isProcessing = false; playVideo('silent'); }
+            } catch(e) { speak("Error."); isProcessing = false; playVideo('silent'); }
         }
 
-        // --- AI: VISION ENGINE ---
         async function askGroqVision(base64Image) {
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({
                         model: MODEL_VISION,
-                        messages: [{
-                            role: "user",
-                            content: [
-                                { type: "text", text: `આ ફોટામાં શું છે? ગુજરાતીમાં ${userName} ને સમજાવ.` },
-                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
-                            ]
-                        }]
+                        messages: [{ role: "user", content: [{ type: "text", text: `આ ફોટામાં શું છે? ગુજરાતીમાં ${userName} ને સમજાવ.` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }]
                     })
                 });
                 const data = await res.json();
-                
-                if(data.error) {
-                    alert("Vision Error: " + data.error.message);
-                    speak("વિઝન મોડેલમાં કંઈક પ્રોબ્લેમ છે.");
-                    return;
-                }
-
-                if (data.choices && data.choices[0]) {
-                    const reply = data.choices[0].message.content;
-                    speak(reply);
-                }
-            } catch(e) { 
-                console.error(e);
-                speak("કનેક્શનમાં પ્રોબ્લેમ છે."); 
-                playVideo('silent');
-            }
+                speak(data.choices[0].message.content);
+            } catch(e) { speak("Vision Error."); playVideo('silent'); }
         }
 
+        // --- UTILS ---
         function handleResponseOutput(reply) {
             if (reply.includes("[IMAGE:")) {
                 const imgPrompt = reply.match(/\[IMAGE: (.*?)\]/)[1];
@@ -314,11 +334,9 @@
             } else { speak(reply); }
         }
         function closeImage() { document.getElementById('image-overlay').style.display = 'none'; }
-
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
-            statusText.innerText = "બોલું છું...";
-            playVideo('talking');
+            statusText.innerText = "બોલું છું..."; playVideo('talking');
             const u = new SpeechSynthesisUtterance(clean);
             u.lang = 'gu-IN'; u.rate = 0.9;
             u.onend = () => { playVideo('smiling'); setTimeout(() => playVideo('silent'), 3000); isProcessing = false; };
