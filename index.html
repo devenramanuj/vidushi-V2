@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - The Super Bot</title>
+    <title>Vidushi AI - Vision Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -20,7 +20,7 @@
         
         /* --- SELFIE / VISION CAMERA --- */
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 5px solid #ff4500; background: black; }
-        #canvas-capture { display: none; } /* Hidden canvas for taking photos */
+        #canvas-capture { display: none; }
 
         /* --- UI LAYER --- */
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: rgba(0,0,0,0.6); color: white; text-align: center; font-size: 24px; font-weight: bold; z-index: 10; text-shadow: 1px 1px 2px black; letter-spacing: 1px; backdrop-filter: blur(5px); }
@@ -29,17 +29,14 @@
         /* --- CONTROLS --- */
         #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 90%; }
         #status-text { color: white; margin-bottom: 15px; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px black; background: rgba(0,0,0,0.6); padding: 8px 15px; border-radius: 12px; text-align: center; max-width: 90%; word-wrap: break-word; backdrop-filter: blur(4px); }
-        
         .controls-row { display: flex; align-items: center; gap: 20px; }
         
         /* BUTTONS */
         .round-btn { width: 60px; height: 60px; border-radius: 50%; border: 3px solid white; color: white; font-size: 24px; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 15px rgba(0,0,0,0.5); transition: 0.2s; }
         .round-btn:active { transform: scale(0.9); }
-
         #mic-btn { width: 80px; height: 80px; background: #ff4500; font-size: 35px; }
-        #vision-btn { background: #008cff; } /* Blue for Vision */
+        #vision-btn { background: #008cff; } 
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
-
         .listening { animation: pulse 1.5s infinite; background: red !important; }
 
         /* --- SETTINGS MODAL --- */
@@ -72,7 +69,7 @@
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
-    <div id="top-bar">વિદુષી AI</div>
+    <div id="top-bar">વિદુષી AI (Vision Fixed)</div>
     <button id="settings-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="image-overlay">
@@ -101,8 +98,8 @@
 
     <script>
         // --- CONFIGURATION ---
-        const MODEL_TEXT = "llama-3.3-70b-versatile";     // For chatting (Smart)
-        const MODEL_VISION = "llama-3.2-11b-vision-preview"; // For seeing (Eyes)
+        const MODEL_TEXT = "llama-3.3-70b-versatile";     
+        const MODEL_VISION = "llama-3.2-90b-vision-preview"; // SWITCHED TO BIGGER MODEL
         
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
@@ -115,7 +112,6 @@
         const selfieVideo = document.getElementById('selfie-video');
         const canvas = document.getElementById('canvas-capture');
         
-        // Video Elements
         const silentVideo = document.getElementById('silent-video');
         const talkingVideo = document.getElementById('talking-video');
         const thinkingVideo = document.getElementById('thinking-video');
@@ -123,26 +119,23 @@
 
         let recognition;
         let isProcessing = false;
-        let visionMode = false; // Is camera active for vision?
+        let visionMode = false;
         let visionStream = null;
 
         // --- INITIALIZATION ---
         function initializeApp() {
             document.getElementById('start-overlay').style.display = 'none';
             playVideo('smiling');
-            setTimeout(() => { speak("જય શ્રી કૃષ્ણ! હું તૈયાર છું. તમે મારી સાથે વાત કરી શકો છો અથવા આંખના બટનથી મને કંઈક બતાવી શકો છો."); }, 2000);
+            setTimeout(() => { speak("જય શ્રી કૃષ્ણ! વિઝન મોડ અપડેટ કર્યો છે."); }, 2000);
         }
 
         function playVideo(type) {
             if(selfieVideo.style.display === 'block') return;
-            
             [silentVideo, talkingVideo, thinkingVideo, smilingVideo].forEach(v => { v.style.display = 'none'; v.pause(); });
-
             let active = silentVideo;
             if(type === 'talking') active = talkingVideo;
             if(type === 'thinking') active = thinkingVideo;
             if(type === 'smiling') active = smilingVideo;
-            
             active.style.display = 'block';
             active.play().catch(()=>{});
         }
@@ -169,27 +162,25 @@
             };
         }
 
-        function startConversation() { 
-            if(!apiKey) { alert("API Key નાખો!"); openSettings(); return; }
-            recognition.start(); 
-        }
+        function startConversation() { if(!apiKey) { alert("API Key નાખો!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); }
 
-        // --- VISION MODULE (THE EYES) 👁️ ---
+        // --- VISION MODULE ---
         async function activateVision() {
-            if(visionMode) { captureAndAnalyze(); return; } // If already open, take photo
+            if(visionMode) { captureAndAnalyze(); return; } 
 
             try {
                 statusText.innerText = "કેમેરો ચાલુ કરું છું...";
-                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); // Rear camera preferred
+                // Prefer Rear Camera for Vision
+                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
                 selfieVideo.srcObject = visionStream;
                 selfieVideo.style.display = 'block';
-                document.getElementById('video-container').style.display = 'none'; // Hide avatar
+                document.getElementById('video-container').style.display = 'none'; 
                 visionMode = true;
-                visionBtn.innerHTML = '<i class="fas fa-camera"></i>'; // Change icon to camera
+                visionBtn.innerHTML = '<i class="fas fa-camera"></i>'; 
                 visionBtn.style.background = "red";
                 statusText.innerText = "ફોટો પાડવા માટે લાલ બટન દબાવો";
-                speak("મને જે બતાવવું હોય તે કેમેરા સામે રાખો, અને લાલ બટન દબાવો.");
+                speak("હવે મને ફોટો બતાવો.");
             } catch(e) { alert("Camera Error: " + e.message); }
         }
 
@@ -204,64 +195,44 @@
         }
 
         async function captureAndAnalyze() {
-            statusText.innerText = "ફોટો જોઈ રહી છું...";
+            statusText.innerText = "ફોટો અપલોડ થાય છે...";
             
-            // Capture Image
             canvas.width = selfieVideo.videoWidth;
             canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
-            const base64Image = canvas.toDataURL('image/jpeg').split(',')[1]; // Get pure base64
             
-            stopVisionCamera(); // Close camera
+            // COMPRESS IMAGE TO 0.5 QUALITY FOR SPEED
+            const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
+            
+            stopVisionCamera(); 
             playVideo('thinking');
 
-            // Send to AI
             await askGroqVision(base64Image);
         }
 
-        // --- LOGIC CENTER ---
+        // --- LOGIC ---
         async function processUserStats(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
-
-            // 1. Tool: Weather Check (Live Internet)
-            if(text.includes("હવામાન") || text.includes("ગરમી") || text.includes("તાપમાન")) {
+            if(text.includes("હવામાન") || text.includes("ગરમી")) {
                 const weatherInfo = await getLiveWeather();
-                text += ` [SYSTEM DATA: ${weatherInfo}]`; // Inject data into prompt
+                text += ` [SYSTEM DATA: ${weatherInfo}]`; 
             }
-
-            // 2. Normal Chat
             await askGroqText(text);
         }
 
-        // --- TOOL: LIVE WEATHER (No Key Required) ---
         async function getLiveWeather() {
             try {
-                // Using Open-Meteo (Free, No Key). Defaulting to Gujarat coordinates approx.
                 const res = await fetch("https://api.open-meteo.com/v1/forecast?latitude=22.2587&longitude=71.1924&current_weather=true");
                 const data = await res.json();
-                return `Current Temperature in Gujarat is ${data.current_weather.temperature}°C, Windspeed: ${data.current_weather.windspeed} km/h.`;
-            } catch(e) { return "Weather data unavailable."; }
+                return `Temp: ${data.current_weather.temperature}°C`;
+            } catch(e) { return "N/A"; }
         }
 
-        // --- AI: TEXT ENGINE (Llama 3.3) ---
         async function askGroqText(userText) {
-            const systemPrompt = `
-                તારું નામ વિદુષી છે. તું દેવેન્દ્રભાઈની આસિસ્ટન્ટ છે.
-                
-                [તારી શક્તિઓ]:
-                1. **સનાતન ધર્મ:** જો યુઝર દુઃખી હોય, ચિંતિત હોય કે સલાહ માંગે, તો તારે **ભગવદ ગીતા** ના શ્લોક (Sanskrit quote) અને તેના ગુજરાતી અર્થ સાથે જવાબ આપવો.
-                2. **હવામાન:** તારી પાસે વેધર ડેટા છે, જો પૂછે તો જણાવવો.
-                
-                [નિયમો]:
-                - જવાબ શુદ્ધ ગુજરાતીમાં આપવો.
-                - ફોટો જનરેટ કરવા માટે: [IMAGE: english description]
-                - ટૂંકો અને સ્વીટ જવાબ આપવો.
-            `;
-
+            const systemPrompt = `તારું નામ વિદુષી છે. તું ભગવદ ગીતાની જાણકાર છે અને ટેકનિકલ આસિસ્ટન્ટ પણ છે. શુદ્ધ ગુજરાતીમાં જવાબ આપ.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
-
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
@@ -269,16 +240,12 @@
                 });
                 const data = await res.json();
                 const reply = data.choices[0].message.content;
-                
                 chatHistory.push({ role: "user", content: userText });
                 chatHistory.push({ role: "assistant", content: reply });
-                localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
-
                 handleResponseOutput(reply);
-            } catch(e) { speak("માફ કરજો, કઈક ભૂલ થઈ છે."); isProcessing = false; playVideo('silent'); }
+            } catch(e) { speak("Error in Text AI."); isProcessing = false; playVideo('silent'); }
         }
 
-        // --- AI: VISION ENGINE (Llama 3.2 Vision) ---
         async function askGroqVision(base64Image) {
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -288,49 +255,48 @@
                         messages: [{
                             role: "user",
                             content: [
-                                { type: "text", text: "What is in this image? Describe it in Gujarati language briefly." },
+                                { type: "text", text: "What is this? Answer in Gujarati." },
                                 { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                             ]
                         }]
                     })
                 });
                 const data = await res.json();
+                
+                // ERROR HANDLING DISPLAY
+                if(data.error) {
+                    alert("Vision Error: " + data.error.message);
+                    speak("માફ કરજો, વિઝન મોડેલમાં એરર છે.");
+                    return;
+                }
+
                 const reply = data.choices[0].message.content;
                 speak(reply);
             } catch(e) { 
                 console.error(e);
-                speak("હું ફોટો જોઈ શકતી નથી. કદાચ મોડેલ બીજી છે."); 
+                alert("Network Error: " + e.message);
+                speak("કનેક્શનમાં પ્રોબ્લેમ છે."); 
                 playVideo('silent');
             }
         }
 
-        // --- OUTPUT HANDLER ---
         function handleResponseOutput(reply) {
             if (reply.includes("[IMAGE:")) {
                 const imgPrompt = reply.match(/\[IMAGE: (.*?)\]/)[1];
                 document.getElementById('generated-image').src = `https://image.pollinations.ai/prompt/${encodeURIComponent(imgPrompt)}`;
                 document.getElementById('image-overlay').style.display = 'block';
-                speak("આ રહ્યું તમારું ચિત્ર.");
-            } else {
-                speak(reply);
-            }
+                speak("આ રહ્યું ચિત્ર.");
+            } else { speak(reply); }
         }
         function closeImage() { document.getElementById('image-overlay').style.display = 'none'; }
 
-        // --- TTS (SPEAKING) ---
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "").replace(/\[IMAGE:.*?\]/g, "");
             statusText.innerText = "બોલું છું...";
             playVideo('talking');
-            
             const u = new SpeechSynthesisUtterance(clean);
-            u.lang = 'gu-IN';
-            u.rate = 0.9;
-            u.onend = () => { 
-                playVideo('smiling'); 
-                setTimeout(() => playVideo('silent'), 3000); 
-                isProcessing = false; 
-            };
+            u.lang = 'gu-IN'; u.rate = 0.9;
+            u.onend = () => { playVideo('smiling'); setTimeout(() => playVideo('silent'), 3000); isProcessing = false; };
             window.speechSynthesis.speak(u);
         }
     </script>
