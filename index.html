@@ -69,7 +69,7 @@
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
-    <div id="top-bar">વિદુષી AI (Vision Fixed)</div>
+    <div id="top-bar">વિદુષી AI (Final)</div>
     <button id="settings-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="image-overlay">
@@ -97,14 +97,14 @@
     </div>
 
     <script>
-        // --- CONFIGURATION ---
+        // --- CONFIGURATION (UPDATED) ---
         const MODEL_TEXT = "llama-3.3-70b-versatile";     
-        const MODEL_VISION = "llama-3.2-90b-vision-preview"; // SWITCHED TO BIGGER MODEL
+        // 90b is deprecated, switching to 11b which is stable for now
+        const MODEL_VISION = "llama-3.2-11b-vision-preview"; 
         
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         
-        // --- DOM ELEMENTS ---
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
         const visionBtn = document.getElementById('vision-btn');
@@ -122,11 +122,10 @@
         let visionMode = false;
         let visionStream = null;
 
-        // --- INITIALIZATION ---
         function initializeApp() {
             document.getElementById('start-overlay').style.display = 'none';
             playVideo('smiling');
-            setTimeout(() => { speak("જય શ્રી કૃષ્ણ! વિઝન મોડ અપડેટ કર્યો છે."); }, 2000);
+            setTimeout(() => { speak("જય શ્રી કૃષ્ણ! હું તૈયાર છું."); }, 2000);
         }
 
         function playVideo(type) {
@@ -140,7 +139,6 @@
             active.play().catch(()=>{});
         }
 
-        // --- SETTINGS ---
         function openSettings() { settingsModal.style.display = 'flex'; document.getElementById('apiKeyInput').value = apiKey; }
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
@@ -149,7 +147,6 @@
         }
         function clearMemory() { localStorage.removeItem('vidushi_memory'); chatHistory = []; alert("Memory Cleared"); }
 
-        // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -165,13 +162,10 @@
         function startConversation() { if(!apiKey) { alert("API Key નાખો!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); }
 
-        // --- VISION MODULE ---
         async function activateVision() {
             if(visionMode) { captureAndAnalyze(); return; } 
-
             try {
                 statusText.innerText = "કેમેરો ચાલુ કરું છું...";
-                // Prefer Rear Camera for Vision
                 visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
                 selfieVideo.srcObject = visionStream;
                 selfieVideo.style.display = 'block';
@@ -196,21 +190,15 @@
 
         async function captureAndAnalyze() {
             statusText.innerText = "ફોટો અપલોડ થાય છે...";
-            
             canvas.width = selfieVideo.videoWidth;
             canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
-            
-            // COMPRESS IMAGE TO 0.5 QUALITY FOR SPEED
             const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
-            
             stopVisionCamera(); 
             playVideo('thinking');
-
             await askGroqVision(base64Image);
         }
 
-        // --- LOGIC ---
         async function processUserStats(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
@@ -231,7 +219,7 @@
         }
 
         async function askGroqText(userText) {
-            const systemPrompt = `તારું નામ વિદુષી છે. તું ભગવદ ગીતાની જાણકાર છે અને ટેકનિકલ આસિસ્ટન્ટ પણ છે. શુદ્ધ ગુજરાતીમાં જવાબ આપ.`;
+            const systemPrompt = `તારું નામ વિદુષી છે. તું દેવેન્દ્રભાઈની આસિસ્ટન્ટ છે. શુદ્ધ ગુજરાતીમાં જવાબ આપ.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -255,7 +243,7 @@
                         messages: [{
                             role: "user",
                             content: [
-                                { type: "text", text: "What is this? Answer in Gujarati." },
+                                { type: "text", text: "આ ફોટામાં શું છે? ગુજરાતીમાં ટૂંકમાં વર્ણન કરો." },
                                 { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
                             ]
                         }]
@@ -263,10 +251,9 @@
                 });
                 const data = await res.json();
                 
-                // ERROR HANDLING DISPLAY
                 if(data.error) {
                     alert("Vision Error: " + data.error.message);
-                    speak("માફ કરજો, વિઝન મોડેલમાં એરર છે.");
+                    speak("વિઝન મોડેલમાં ભૂલ આવી છે.");
                     return;
                 }
 
@@ -274,7 +261,6 @@
                 speak(reply);
             } catch(e) { 
                 console.error(e);
-                alert("Network Error: " + e.message);
                 speak("કનેક્શનમાં પ્રોબ્લેમ છે."); 
                 playVideo('silent');
             }
