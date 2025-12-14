@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Vision Fixed</title>
+    <title>Vidushi AI - Llama 4 Vision</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -69,7 +69,7 @@
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
-    <div id="top-bar">વિદુષી AI (Final)</div>
+    <div id="top-bar">વિદુષી AI (Llama 4)</div>
     <button id="settings-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="image-overlay">
@@ -97,14 +97,15 @@
     </div>
 
     <script>
-        // --- CONFIGURATION (UPDATED) ---
+        // --- CONFIGURATION (UPDATED for Llama 4) ---
         const MODEL_TEXT = "llama-3.3-70b-versatile";     
-        // 90b is deprecated, switching to 11b which is stable for now
-        const MODEL_VISION = "llama-3.2-11b-vision-preview"; 
+        // NEW MODEL: Llama 4 Scout (Replaces the old decommissioned ones)
+        const MODEL_VISION = "meta-llama/llama-4-scout-17b-16e-instruct"; 
         
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         
+        // --- DOM ELEMENTS ---
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
         const visionBtn = document.getElementById('vision-btn');
@@ -122,10 +123,11 @@
         let visionMode = false;
         let visionStream = null;
 
+        // --- INITIALIZATION ---
         function initializeApp() {
             document.getElementById('start-overlay').style.display = 'none';
             playVideo('smiling');
-            setTimeout(() => { speak("જય શ્રી કૃષ્ણ! હું તૈયાર છું."); }, 2000);
+            setTimeout(() => { speak("જય શ્રી કૃષ્ણ! હું Llama 4 પાવર સાથે તૈયાર છું."); }, 2000);
         }
 
         function playVideo(type) {
@@ -147,6 +149,7 @@
         }
         function clearMemory() { localStorage.removeItem('vidushi_memory'); chatHistory = []; alert("Memory Cleared"); }
 
+        // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -162,10 +165,12 @@
         function startConversation() { if(!apiKey) { alert("API Key નાખો!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); }
 
+        // --- VISION MODULE ---
         async function activateVision() {
             if(visionMode) { captureAndAnalyze(); return; } 
             try {
                 statusText.innerText = "કેમેરો ચાલુ કરું છું...";
+                // Prefer Rear Camera
                 visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
                 selfieVideo.srcObject = visionStream;
                 selfieVideo.style.display = 'block';
@@ -193,17 +198,23 @@
             canvas.width = selfieVideo.videoWidth;
             canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            
+            // Optimization: Resize image to speed up upload
             const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
+            
             stopVisionCamera(); 
             playVideo('thinking');
             await askGroqVision(base64Image);
         }
 
+        // --- LOGIC CENTER ---
         async function processUserStats(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
-            if(text.includes("હવામાન") || text.includes("ગરમી")) {
+            
+            // Tool: Weather
+            if(text.includes("હવામાન") || text.includes("ગરમી") || text.includes("તાપમાન")) {
                 const weatherInfo = await getLiveWeather();
                 text += ` [SYSTEM DATA: ${weatherInfo}]`; 
             }
@@ -218,8 +229,9 @@
             } catch(e) { return "N/A"; }
         }
 
+        // --- AI: TEXT ENGINE ---
         async function askGroqText(userText) {
-            const systemPrompt = `તારું નામ વિદુષી છે. તું દેવેન્દ્રભાઈની આસિસ્ટન્ટ છે. શુદ્ધ ગુજરાતીમાં જવાબ આપ.`;
+            const systemPrompt = `તારું નામ વિદુષી છે. તું દેવેન્દ્રભાઈની પર્સનલ આસિસ્ટન્ટ છે. શુદ્ધ ગુજરાતીમાં જવાબ આપ. સનાતન ધર્મનું જ્ઞાન અને ટેકનિકલ નોલેજ બંને રાખ.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -234,6 +246,7 @@
             } catch(e) { speak("Error in Text AI."); isProcessing = false; playVideo('silent'); }
         }
 
+        // --- AI: VISION ENGINE (UPDATED) ---
         async function askGroqVision(base64Image) {
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -253,12 +266,17 @@
                 
                 if(data.error) {
                     alert("Vision Error: " + data.error.message);
-                    speak("વિઝન મોડેલમાં ભૂલ આવી છે.");
+                    speak("વિઝન મોડેલમાં કંઈક પ્રોબ્લેમ છે.");
                     return;
                 }
 
-                const reply = data.choices[0].message.content;
-                speak(reply);
+                if (data.choices && data.choices[0]) {
+                    const reply = data.choices[0].message.content;
+                    speak(reply);
+                } else {
+                    speak("હું જોઈ શકતી નથી.");
+                }
+
             } catch(e) { 
                 console.error(e);
                 speak("કનેક્શનમાં પ્રોબ્લેમ છે."); 
