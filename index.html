@@ -343,28 +343,51 @@
         function startConversation() { recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; }
 
-        // --- VISION (CAMERA) ---
-        async function activateVision() {
-            if(visionMode) { captureAndAnalyze(); return; } 
-            try {
-                statusText.innerText = "કેમેરો ચાલુ કરું છું...";
-                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
-                selfieVideo.srcObject = visionStream;
-                selfieVideo.style.display = 'block';
-                document.getElementById('video-container').style.display = 'none'; 
-                visionMode = true;
-                document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red";
-                speak("તમારો ફોટો બતાવો.");
-            } catch(e) { alert("કેમેરો ખુલતો નથી."); console.error(e); }
+               async function processCommand(text) {
+            isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
+            let cmd = text.toLowerCase();
+
+            // ૧. કેમેરા માટેના કમાન્ડ (સુધારેલા)
+            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("સેલ્ફી") || cmd.includes("selfie") || cmd.includes("મને જો") || cmd.includes("look")) { 
+                activateVision(); 
+                return; 
+            }
+
+            // ૨. ચિત્ર બનાવવા માટે (Image Gen)
+            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { 
+                generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); 
+                return; 
+            }
+
+            // ૩. લોકેશન માટે
+            if(cmd.includes("લોકેશન મોકલ")) { 
+                let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
+                found ? sendLocation(found) : speak("કોને લોકેશન મોકલું?"); 
+                return; 
+            }
+
+            // ૪. ખર્ચ અને હિસાબ
+            if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
+            if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
+
+            // ૫. અન્ય ટૂલ્સ
+            if(cmd.includes("નોંધ લખ")) { addNote(text.replace("નોંધ લખ","").trim()); isProcessing=false; playVideo('silent'); return; }
+            if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
+
+            // ૬. ઈન્ટરનેટ સર્ચ (Serper)
+            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "કોણ", "ક્યારે", "news", "price"];
+            let extraContext = "";
+            if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
+                statusText.innerText = "ઈન્ટરનેટ...";
+                let res = await performGoogleSearch(text);
+                extraContext = `[Internet Info]: ${res}`;
+            }
+
+            // ૭. AI ને પૂછો (છેલ્લે)
+            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext); } 
+            else { await askGroqText(text, extraContext); }
         }
-        function stopVisionCamera() {
-            if(visionStream) visionStream.getTracks().forEach(t => t.stop());
-            selfieVideo.style.display = 'none';
-            document.getElementById('video-container').style.display = 'block';
-            visionMode = false;
-            document.getElementById('vision-btn').innerHTML = '<i class="fas fa-eye"></i>'; document.getElementById('vision-btn').style.background = "#008cff";
-            playVideo('silent');
-        }
+
         
         async function captureAndAnalyze() {
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
