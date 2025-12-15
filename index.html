@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Stable V3)</title>
+    <title>Vidushi AI (Final Update)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -133,8 +133,8 @@
 
     <script>
         // --- CONFIG ---
-        // NEW STABLE MODELS
-        const MODEL_TEXT = "llama3-70b-8192";     
+        // UPDATE: 'llama-3.3-70b-versatile' is the new active model
+        const MODEL_TEXT = "llama-3.3-70b-versatile";     
         const MODEL_VISION = "llama-3.2-11b-vision-preview";
 
         const fixedContacts = [
@@ -269,6 +269,7 @@
             generatedImage.style.display = "none";
             imageOverlay.style.display = 'flex';
             
+            // New Image URL Logic
             let url = `https://pollinations.ai/p/${encodeURIComponent(prompt)}`;
             
             generatedImage.onload = () => {
@@ -402,7 +403,7 @@
             await askGroqText(text, extraContext);
         }
 
-        // --- AI ENGINES (IMPROVED ERROR HANDLING) ---
+        // --- AI ENGINES (FINAL FIX) ---
         async function askGroqText(userText, contextData = "") {
             const systemPrompt = `તારું નામ વિદુષી છે અને તું દેવેન્દ્રભાઈ (જેણે તને બનાવી છે) ની આસિસ્ટન્ટ છે. તું સનાતન ધર્મ વિશે વિગતવાર જવાબ આપે છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
@@ -417,7 +418,8 @@
 
                 if(!res.ok) {
                     const err = await res.json();
-                    alert("API Error: " + (err.error?.message || "Check Key"));
+                    // Show exact error in alert so we know if model is wrong
+                    alert("API Error: " + (err.error?.message || JSON.stringify(err)));
                     speak("તમારી કી અથવા નેટવર્કમાં પ્રોબ્લેમ છે.");
                     isProcessing = false; playVideo('silent');
                     return;
