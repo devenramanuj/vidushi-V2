@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Memory Edition</title>
+    <title>Vidushi AI - Ayurveda Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -120,7 +120,6 @@
             <input type="password" id="serperKeyInput" placeholder="Search Key...">
             
             <button class="save-btn" onclick="clearMemories()" style="background:#555; margin-top:20px;">🧠 મેમરી સાફ કરો</button>
-            
             <button class="save-btn" onclick="saveSettings()">SAVE & CLOSE</button>
         </div>
     </div>
@@ -179,7 +178,6 @@
         let userName = "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
-        // NEW: Permanent Memory Storage
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
         
         const fixedContacts = [
@@ -269,7 +267,6 @@
             speak("સેટિંગ્સ સેવ થઈ ગયા.");
         }
 
-        // New: Clear Memory
         function clearMemories() {
             if(confirm("શું તમે બધી યાદશક્તિ (Facts) ભૂંસી નાખવા માંગો છો?")) {
                 permanentMemories = [];
@@ -408,7 +405,7 @@
             else await askGroqVision(base64Image);
         }
 
-        // --- MASTER COMMAND CENTER (Memory Logic Added) ---
+        // --- MASTER COMMAND CENTER ---
         async function processCommand(text) {
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
@@ -484,7 +481,7 @@
             else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- 1. GEMINI ENGINE ---
+        // --- 1. GEMINI ENGINE (Updated for Ayurveda) ---
         function getGeminiKey() {
             let savedKeys = localStorage.getItem('vidushi_gemini_key') || "";
             if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); return null; }
@@ -502,10 +499,10 @@
             You are "Vidushi", a knowledgeable AI created by Devendrabhai.
             **Core Rules:**
             1. **Sanatan Dharma:** For questions about religion/panchang, give detailed answers.
-            2. **General:** For daily talks, give simple, natural answers.
-            3. **Memory:** The user has told you these facts in the past, USE THEM if relevant:
-               ${memories}
-            4. **Vision:** You can estimate measurements from photos.
+            2. **Ayurveda (Health):** If user asks about minor health issues, suggest Ayurvedic home remedies (Ghar-gathhu upchar) using kitchen spices (Ginger, Turmeric, Jeera). MANDATORY: Always add "આ સામાન્ય ઘરગથ્થુ ઉપાય છે, ડોક્ટરની સલાહ લેવી."
+            3. **General:** For daily talks, give simple, natural answers.
+            4. **Memory:** Use past facts if relevant: ${memories}
+            5. **Translation:** Translate if asked.
             [Context]: ${contextData}`;
             
             let contents = [];
@@ -545,11 +542,11 @@
             } catch(e) { speak("ફોટો જોવામાં ભૂલ આવી."); playVideo('silent'); }
         }
 
-        // --- 2. GROQ ENGINE ---
+        // --- 2. GROQ ENGINE (Updated for Ayurveda) ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let messages = [{ role: "system", content: `You are Vidushi. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            let messages = [{ role: "system", content: `You are Vidushi. Expert in Sanatan Dharma and Ayurveda. If asked about health, give home remedies with disclaimer. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
