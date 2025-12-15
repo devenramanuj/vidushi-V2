@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI Agent</title>
+    <title>Vidushi AI - Ultimate</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -38,9 +38,9 @@
         
         /* SETTINGS */
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
-        input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box;}
+        input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
-        .section-title { color: #aaa; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #444; padding-bottom: 5px; }
+        .section-title { color: #aaa; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #444; padding-bottom: 5px; text-align: left; }
 
         /* --- CONTROLS --- */
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
@@ -86,26 +86,35 @@
         <div class="settings-box">
             <h3>સેટિંગ્સ</h3>
             
-            <div class="section-title">AI મગજ (Engine)</div>
+            <div class="section-title">Step 1: AI Provider</div>
             <select id="providerSelect" onchange="toggleProviderSettings()">
                 <option value="gemini">Google Gemini (Recommended)</option>
-                <option value="groq">Groq (Backup)</option>
+                <option value="groq">Groq (Llama)</option>
             </select>
 
             <div id="gemini-settings">
-                <label>Gemini API Keys:</label>
-                <textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2, Key3 (અલ્પવિરામથી અલગ પાડો)"></textarea>
+                <div class="section-title">Step 2: Select Gemini Model</div>
+                <select id="geminiModelSelect">
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (New & Fast)</option>
+                    <option value="gemini-1.5-pro">Gemini 1.5 Pro (Best Quality)</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash (Standard)</option>
+                </select>
+
+                <div class="section-title">Step 3: API Keys</div>
+                <textarea id="geminiKeyInput" rows="3" placeholder="Paste Keys here... (AIza1..., AIza2...)"></textarea>
                 <div style="font-size:10px; color:#aaa; margin-top:5px;">એક સાથે 3-4 કી નાખો એટલે Limit નો પ્રોબ્લેમ ન આવે.</div>
             </div>
 
             <div id="groq-settings" style="display:none;">
-                <label>Groq API Key:</label>
-                <input type="password" id="groqKeyInput" placeholder="gsk_...">
-                <label>Model:</label>
-                <select id="modelSelect">
+                <div class="section-title">Step 2: Select Groq Model</div>
+                <select id="groqModelSelect">
                     <option value="llama-3.1-8b-instant">Llama 8B (Fast)</option>
                     <option value="llama-3.3-70b-versatile">Llama 70B (Smart)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral</option>
                 </select>
+
+                <div class="section-title">Step 3: Groq Key</div>
+                <input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
             
             <div class="section-title">Other Tools</div>
@@ -159,7 +168,9 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        let selectedModel = localStorage.getItem('vidushi_model') || "llama-3.1-8b-instant";
+        
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.0-flash-exp";
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let userName = "સાહેબ";
@@ -211,10 +222,14 @@
         function openSettings() { 
             document.getElementById('settings-modal').style.display = 'flex'; 
             document.getElementById('providerSelect').value = aiProvider;
-            document.getElementById('geminiKeyInput').value = geminiKeys; // Shows all keys
+            
+            document.getElementById('geminiKeyInput').value = geminiKeys; 
+            document.getElementById('geminiModelSelect').value = geminiModel;
+
             document.getElementById('groqKeyInput').value = groqKey;
+            document.getElementById('groqModelSelect').value = groqModel;
+            
             document.getElementById('serperKeyInput').value = serperKey; 
-            document.getElementById('modelSelect').value = selectedModel;
             toggleProviderSettings();
         }
 
@@ -231,22 +246,29 @@
 
         function saveSettings() {
             aiProvider = document.getElementById('providerSelect').value;
+            
             geminiKeys = document.getElementById('geminiKeyInput').value.trim();
+            geminiModel = document.getElementById('geminiModelSelect').value;
+
             groqKey = document.getElementById('groqKeyInput').value.trim();
+            groqModel = document.getElementById('groqModelSelect').value;
+            
             serperKey = document.getElementById('serperKeyInput').value.trim();
-            selectedModel = document.getElementById('modelSelect').value;
             
             localStorage.setItem('vidushi_provider', aiProvider);
             localStorage.setItem('vidushi_gemini_key', geminiKeys);
+            localStorage.setItem('vidushi_gemini_model', geminiModel);
+            
             localStorage.setItem('vidushi_groq_key', groqKey);
+            localStorage.setItem('vidushi_groq_model', groqModel);
+            
             localStorage.setItem('vidushi_serper_key', serperKey);
-            localStorage.setItem('vidushi_model', selectedModel);
             
             document.getElementById('settings-modal').style.display = 'none';
             speak("સેટિંગ્સ સેવ થઈ ગયા.");
         }
 
-        // --- FEATURE FUNCTIONS ---
+        // --- FEATURE FUNCTIONS (Notes, Music, etc.) ---
         function toggleModal(type) {
             const modal = document.getElementById(type + '-modal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
@@ -342,15 +364,23 @@
             document.getElementById('vision-btn').innerHTML = '<i class="fas fa-eye"></i>'; document.getElementById('vision-btn').style.background = "#008cff";
             playVideo('silent');
         }
+        
         async function captureAndAnalyze() {
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
-            const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; 
+            
             stopVisionCamera(); playVideo('thinking');
             
-            // Vision always uses Groq (Llama Vision) because it's easier for images
-            if(!groqKey) { speak("ફોટો જોવા માટે Groq Key જોઈએ."); return; }
-            await askGroqVision(base64Image); 
+            // Check Provider to decide which Vision Logic to use
+            if(aiProvider === 'gemini') {
+                 // Gemini Vision (Native)
+                const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+                await askGeminiVision(base64Image);
+            } else {
+                // Groq Vision
+                const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
+                await askGroqVision(base64Image);
+            }
         }
 
         // --- MASTER COMMAND CENTER ---
@@ -382,19 +412,21 @@
             else { await askGroqText(text, extraContext); }
         }
 
-        // --- 1. GEMINI ENGINE (ROTATION + LATEST MODEL) ---
-        async function askGeminiText(userText, contextData = "") {
-            // Get keys from settings
+        // --- 1. GEMINI ENGINE (Updated for 2.0/Pro/Flash) ---
+        function getGeminiKey() {
             let savedKeys = localStorage.getItem('vidushi_gemini_key') || "";
-            if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
-
-            // Split keys by comma and pick random
+            if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); return null; }
             const allKeys = savedKeys.split(',').map(k => k.trim()).filter(k => k !== "");
-            if(allKeys.length === 0) { alert("Key બરાબર નાખો."); return; }
-            const randomKey = allKeys[Math.floor(Math.random() * allKeys.length)];
+            if(allKeys.length === 0) { alert("Key બરાબર નાખો."); return null; }
+            return allKeys[Math.floor(Math.random() * allKeys.length)];
+        }
 
-            // Model: Using gemini-1.5-flash (Standard). You can change to 'gemini-2.0-flash-exp' if you have beta access.
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${randomKey}`;
+        async function askGeminiText(userText, contextData = "") {
+            const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
+
+            // USE SELECTED MODEL FROM SETTINGS
+            const modelName = geminiModel; 
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
 
             const systemInstruction = `તારું નામ વિદુષી છે. તું સનાતન ધર્મની જાણકાર છે. ગુજરાતીમાં ટૂંકા જવાબ આપ. [Context]: ${contextData}`;
             
@@ -413,7 +445,7 @@
                 if(data.error) {
                     console.error("Gemini Error:", data.error);
                     if(data.error.code === 429) speak("આ કી ની લિમિટ પૂરી થઈ ગઈ. ફરી ટ્રાય કરો.");
-                    else speak("Gemini માં એરર છે.");
+                    else speak(`એરર આવી: ${data.error.message}`);
                     playVideo('silent'); isProcessing=false; return;
                 }
 
@@ -426,7 +458,30 @@
             } catch(e) { console.error(e); speak("નેટવર્ક એરર છે."); playVideo('silent'); isProcessing=false; }
         }
 
-        // --- 2. GROQ ENGINE (BACKUP) ---
+        async function askGeminiVision(base64Image) {
+            const key = getGeminiKey(); if(!key) return;
+            // Vision also uses the selected model (2.0 and 1.5 both support vision)
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
+
+            try {
+                const response = await fetch(url, {
+                    method: "POST", headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{
+                            role: "user",
+                            parts: [
+                                { text: "આ ફોટામાં શું છે? ગુજરાતીમાં ટૂંકમાં કહે." },
+                                { inline_data: { mime_type: "image/jpeg", data: base64Image } }
+                            ]
+                        }]
+                    })
+                });
+                const data = await response.json();
+                speak(data.candidates[0].content.parts[0].text);
+            } catch(e) { speak("ફોટો જોવામાં ભૂલ આવી."); playVideo('silent'); }
+        }
+
+        // --- 2. GROQ ENGINE ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Settings માં Groq Key નાખો!"); openSettings(); return; }
             const systemPrompt = `તારું નામ વિદુષી છે. [Data]: ${contextData}`;
@@ -435,7 +490,7 @@
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: selectedModel, messages: messages })
+                    body: JSON.stringify({ model: groqModel, messages: messages })
                 });
                 const data = await res.json();
                 const reply = data.choices[0].message.content;
