@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Final Update)</title>
+    <title>Vidushi AI (Multi-Model)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -38,7 +38,7 @@
         
         /* SETTINGS */
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        input[type="text"], input[type="password"], select { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
         .contact-list { text-align: left; margin-top: 10px; font-size: 13px; color: #ccc; }
 
@@ -109,9 +109,18 @@
     <div id="settings-modal" class="modal">
         <div class="settings-box">
             <h3>સેટિંગ્સ</h3>
+            <label>AI Model (પસંદ કરો):</label>
+            <select id="modelSelect">
+                <option value="llama-3.1-8b-instant">Fast (ઝડપી - 8B)</option>
+                <option value="llama-3.3-70b-versatile">Smart (હોશિયાર - 70B)</option>
+                <option value="mixtral-8x7b-32768">Balanced (Mixtral)</option>
+            </select>
+            
             <label>Groq Key:</label><input type="password" id="apiKeyInput" placeholder="gsk_...">
             <label>Serper Key:</label><input type="password" id="serperKeyInput" placeholder="Search Key...">
+            
             <label>Contacts:</label><div id="contacts-display" class="contact-list"></div>
+            
             <button class="save-btn" onclick="saveSettings()">SAVE & CLOSE</button>
         </div>
     </div>
@@ -133,10 +142,8 @@
 
     <script>
         // --- CONFIG ---
-        // UPDATE: 'llama-3.3-70b-versatile' is the new active model
-        const MODEL_TEXT = "llama-3.3-70b-versatile";     
         const MODEL_VISION = "llama-3.2-11b-vision-preview";
-
+        
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
@@ -146,6 +153,10 @@
         // --- STORAGE ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
+        
+        // Save selected model (Default: Fast)
+        let selectedModel = localStorage.getItem('vidushi_model') || "llama-3.1-8b-instant";
+
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
@@ -193,15 +204,28 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        // --- SETTINGS ---
-        function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; document.getElementById('apiKeyInput').value = apiKey; document.getElementById('serperKeyInput').value = serperKey; renderContacts(); }
+        // --- SETTINGS (UPDATED WITH MODEL SELECTOR) ---
+        function openSettings() { 
+            document.getElementById('settings-modal').style.display = 'flex'; 
+            document.getElementById('apiKeyInput').value = apiKey; 
+            document.getElementById('serperKeyInput').value = serperKey; 
+            document.getElementById('modelSelect').value = selectedModel; // Set current model
+            renderContacts(); 
+        }
+        
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
             serperKey = document.getElementById('serperKeyInput').value.trim();
+            selectedModel = document.getElementById('modelSelect').value; // Get selected model
+
             localStorage.setItem('vidushi_groq_key', apiKey);
             localStorage.setItem('vidushi_serper_key', serperKey);
+            localStorage.setItem('vidushi_model', selectedModel); // Save model
+
             document.getElementById('settings-modal').style.display = 'none';
+            speak("સેટિંગ્સ સેવ થઈ ગયા.");
         }
+
         function renderContacts() {
             document.getElementById('contacts-display').innerHTML = contacts.map(c => `<div style="padding:5px; border-bottom:1px solid #444;">${c.name} / ${c.gu_name}</div>`).join('');
         }
@@ -269,7 +293,6 @@
             generatedImage.style.display = "none";
             imageOverlay.style.display = 'flex';
             
-            // New Image URL Logic
             let url = `https://pollinations.ai/p/${encodeURIComponent(prompt)}`;
             
             generatedImage.onload = () => {
@@ -403,7 +426,7 @@
             await askGroqText(text, extraContext);
         }
 
-        // --- AI ENGINES (FINAL FIX) ---
+        // --- AI ENGINES (USES SELECTED MODEL) ---
         async function askGroqText(userText, contextData = "") {
             const systemPrompt = `તારું નામ વિદુષી છે અને તું દેવેન્દ્રભાઈ (જેણે તને બનાવી છે) ની આસિસ્ટન્ટ છે. તું સનાતન ધર્મ વિશે વિગતવાર જવાબ આપે છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
@@ -411,14 +434,14 @@
             try {
                 if(!apiKey) { alert("Settings માં API Key નથી!"); isProcessing = false; return; }
 
+                // USE THE SELECTED MODEL VARIABLE
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({ model: MODEL_TEXT, messages: messages })
+                    body: JSON.stringify({ model: selectedModel, messages: messages })
                 });
 
                 if(!res.ok) {
                     const err = await res.json();
-                    // Show exact error in alert so we know if model is wrong
                     alert("API Error: " + (err.error?.message || JSON.stringify(err)));
                     speak("તમારી કી અથવા નેટવર્કમાં પ્રોબ્લેમ છે.");
                     isProcessing = false; playVideo('silent');
