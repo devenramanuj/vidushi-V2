@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Final Speed Fix)</title>
+    <title>Vidushi AI (Final Fixes)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -55,8 +55,9 @@
 
         /* --- IMAGE OVERLAY (MAGIC CANVAS) --- */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction:column; justify-content:center; align-items:center; }
-        #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; }
+        #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; }
         #close-img-btn { margin-top: 20px; padding: 10px 30px; background: red; color: white; border: none; font-size: 18px; border-radius: 50px; cursor: pointer; }
+        #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
 
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
@@ -117,6 +118,7 @@
 
     <div id="image-overlay">
         <img id="generated-image" src="" alt="Magic Image">
+        <div id="image-loading-text">લોડ થઈ રહ્યું છે...</div>
         <button id="close-img-btn" onclick="closeImage()">બંધ કરો</button>
     </div>
 
@@ -154,6 +156,9 @@
         const selfieVideo = document.getElementById('selfie-video');
         const canvas = document.getElementById('canvas-capture');
         const ttsPreloadAudio = document.getElementById('tts-preload-audio');
+        const imageOverlay = document.getElementById('image-overlay');
+        const generatedImage = document.getElementById('generated-image');
+        const imageLoadingText = document.getElementById('image-loading-text');
         
         const videos = {
             silent: document.getElementById('silent-video'),
@@ -261,20 +266,34 @@
             } else { speak("તમારા ફોનમાં GPS નથી."); }
         }
 
-        // --- 🎨 MAGIC IMAGE GENERATOR 🎨 ---
+        // --- 🎨 MAGIC IMAGE GENERATOR (UPDATED FIX) 🎨 ---
         function generateMagicImage(prompt) {
             playVideo('thinking');
             statusText.innerText = "ચિત્ર બનાવું છું...";
-            let url = `https://image.pollinations.ai/prompt/${encodeURIComponent(prompt)}`;
-            document.getElementById('generated-image').src = url;
-            document.getElementById('image-overlay').style.display = 'flex';
+            imageLoadingText.style.display = "block";
+            generatedImage.style.display = "none"; // Hide until loaded
+            imageOverlay.style.display = 'flex';
+
+            // Updated URL endpoint
+            let url = `https://pollinations.ai/p/${encodeURIComponent(prompt)}`;
             
-            setTimeout(() => {
+            generatedImage.onload = () => {
+                imageLoadingText.style.display = "none";
+                generatedImage.style.display = "block";
                 speak("આ રહ્યું તમારું જાદુઈ ચિત્ર! 😊");
-            }, 1000);
+            };
+            
+            generatedImage.onerror = () => {
+                imageLoadingText.innerText = "ચિત્ર લોડ કરવામાં ભૂલ આવી.";
+                speak("માફ કરજો, ચિત્ર બની શક્યું નહીં.");
+            };
+
+            // Force reload image by adding timestamp
+            generatedImage.src = url + "?t=" + new Date().getTime();
         }
+
         function closeImage() { 
-            document.getElementById('image-overlay').style.display = 'none'; 
+            imageOverlay.style.display = 'none'; 
             playVideo('silent');
             isProcessing = false;
         }
@@ -294,19 +313,44 @@
         function startConversation() { if(!apiKey) { alert("API Key Missing!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; statusText.innerText = "વાત કરવા માઈક દબાવો"; }
 
-        // --- VISION ---
+        // --- VISION (UPDATED FOR SELFIE) ---
         async function activateVision() {
-            if(visionMode) { captureAndAnalyze(); return; } 
+            if(visionMode) { 
+                captureAndAnalyze(); 
+                return; 
+            } 
+
             try {
-                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }); 
+                statusText.innerText = "કેમેરો ચાલુ કરું છું...";
+                // Fix: 'user' facingMode for selfie camera
+                visionStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { facingMode: "user" } 
+                }); 
+                
                 selfieVideo.srcObject = visionStream;
                 selfieVideo.style.display = 'block';
                 document.getElementById('video-container').style.display = 'none'; 
+                
                 visionMode = true;
-                document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red";
-                speak("ફોટો બતાવો.");
-            } catch(e) { alert("Camera Error"); }
+                
+                document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; 
+                document.getElementById('vision-btn').style.background = "red";
+                
+                speak("તમારો ફોટો બતાવો.");
+            
+            } catch(e) { 
+                console.error(e);
+                if (e.name === 'NotAllowedError') {
+                    alert("પ્લીઝ બ્રાઉઝર સેટિંગ્સમાં જઈને કેમેરાની પરમિશન આપો (Allow Camera Access).");
+                } else {
+                    alert("કેમેરો ખોલવામાં તકલીફ છે. (Error: " + e.name + ")"); 
+                }
+                statusText.innerText = "Error";
+                isProcessing = false;
+                playVideo('silent');
+            }
         }
+
         function stopVisionCamera() {
             if(visionStream) visionStream.getTracks().forEach(t => t.stop());
             selfieVideo.style.display = 'none';
@@ -347,7 +391,7 @@
 
             // 🎨 MAGIC IMAGE TRIGGER 🎨
             if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image") || cmd.includes("ડ્રોઈંગ")) {
-                let prompt = text.replace("ચિત્ર બનાવ", "").replace("ફોટો બનાવ", "").replace("નું", "").replace("બતાવ", "").replace("ડ્રોઈંગ", "").trim();
+                let prompt = text.replace("ચિત્ર બનાવ", "").replace("ફોટો બનાવ", "").replace("નું", "").replace("બતાવ", "").replace("ડ્રોઈંગ", "").replace("એક", "").trim();
                 if(prompt.length < 2) { speak("શેનું ચિત્ર બનાવું? નામ બોલો."); isProcessing = false; playVideo('silent'); return; }
                 generateMagicImage(prompt);
                 return;
