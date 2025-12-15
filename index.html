@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - 2.5 Ultimate</title>
+    <title>Vidushi AI - Final</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -97,7 +97,7 @@
                 <select id="geminiModelSelect">
                     <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
                     <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
-                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Experimental)</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
                     <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                 </select>
 
@@ -169,7 +169,6 @@
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
         
-        // Default to Gemini 2.5 Flash as requested
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash";
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         
@@ -343,51 +342,31 @@
         function startConversation() { recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; }
 
-               async function processCommand(text) {
-            isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
-            let cmd = text.toLowerCase();
-
-            // ૧. કેમેરા માટેના કમાન્ડ (સુધારેલા)
-            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("સેલ્ફી") || cmd.includes("selfie") || cmd.includes("મને જો") || cmd.includes("look")) { 
-                activateVision(); 
-                return; 
+        // --- VISION (CAMERA) ---
+        async function activateVision() {
+            if(visionMode) { captureAndAnalyze(); return; } 
+            try {
+                statusText.innerText = "કેમેરો ચાલુ કરું છું...";
+                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); 
+                selfieVideo.srcObject = visionStream;
+                selfieVideo.style.display = 'block';
+                document.getElementById('video-container').style.display = 'none'; 
+                visionMode = true;
+                document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red";
+                speak("તમારો ફોટો બતાવો.");
+            } catch(e) { 
+                alert("કેમેરો ખુલતો નથી. (Permission Check કરો અથવા HTTPS વાપરો)"); 
+                console.error(e); 
             }
-
-            // ૨. ચિત્ર બનાવવા માટે (Image Gen)
-            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { 
-                generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); 
-                return; 
-            }
-
-            // ૩. લોકેશન માટે
-            if(cmd.includes("લોકેશન મોકલ")) { 
-                let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
-                found ? sendLocation(found) : speak("કોને લોકેશન મોકલું?"); 
-                return; 
-            }
-
-            // ૪. ખર્ચ અને હિસાબ
-            if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
-            if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
-
-            // ૫. અન્ય ટૂલ્સ
-            if(cmd.includes("નોંધ લખ")) { addNote(text.replace("નોંધ લખ","").trim()); isProcessing=false; playVideo('silent'); return; }
-            if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
-
-            // ૬. ઈન્ટરનેટ સર્ચ (Serper)
-            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "કોણ", "ક્યારે", "news", "price"];
-            let extraContext = "";
-            if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
-                statusText.innerText = "ઈન્ટરનેટ...";
-                let res = await performGoogleSearch(text);
-                extraContext = `[Internet Info]: ${res}`;
-            }
-
-            // ૭. AI ને પૂછો (છેલ્લે)
-            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext); } 
-            else { await askGroqText(text, extraContext); }
         }
-
+        function stopVisionCamera() {
+            if(visionStream) visionStream.getTracks().forEach(t => t.stop());
+            selfieVideo.style.display = 'none';
+            document.getElementById('video-container').style.display = 'block';
+            visionMode = false;
+            document.getElementById('vision-btn').innerHTML = '<i class="fas fa-eye"></i>'; document.getElementById('vision-btn').style.background = "#008cff";
+            playVideo('silent');
+        }
         
         async function captureAndAnalyze() {
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
@@ -395,6 +374,7 @@
             
             stopVisionCamera(); playVideo('thinking');
             
+            // Send to the active provider
             if(aiProvider === 'gemini') {
                 const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
                 await askGeminiVision(base64Image);
@@ -404,24 +384,38 @@
             }
         }
 
-        // --- MASTER COMMAND CENTER ---
+        // --- MASTER COMMAND CENTER (UPDATED) ---
         async function processCommand(text) {
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
 
-            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("મને જો")) { activateVision(); return; }
-            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").trim()); return; }
+            // 1. Camera / Vision Commands (Expanded List)
+            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("સેલ્ફી") || cmd.includes("selfie") || cmd.includes("મને જો") || cmd.includes("look") || cmd.includes("દેખ")) { 
+                activateVision(); 
+                return; 
+            }
+
+            // 2. Image Generation
+            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { 
+                generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); 
+                return; 
+            }
+
+            // 3. Location
             if(cmd.includes("લોકેશન મોકલ")) { 
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 found ? sendLocation(found) : speak("કોને લોકેશન મોકલું?"); 
                 return; 
             }
+
+            // 4. Tools
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("નોંધ લખ")) { addNote(text.replace("નોંધ લખ","").trim()); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
 
-            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "કોણ"];
+            // 5. Internet Search (Serper)
+            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "કોણ", "ક્યારે", "news", "price"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
                 statusText.innerText = "ઈન્ટરનેટ...";
@@ -429,6 +423,7 @@
                 extraContext = `[Internet Info]: ${res}`;
             }
 
+            // 6. AI Chat
             if(aiProvider === 'gemini') { await askGeminiText(text, extraContext); } 
             else { await askGroqText(text, extraContext); }
         }
@@ -445,15 +440,21 @@
         async function askGeminiText(userText, contextData = "") {
             const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
 
-            // USER DEFINED MODEL (2.5 Flash / 2.5 Pro)
             const modelName = geminiModel; 
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
 
-            const systemInstruction = `તારું નામ વિદુષી છે. તું સનાતન ધર્મની જાણકાર છે. ગુજરાતીમાં ટૂંકા જવાબ આપ. [Context]: ${contextData}`;
+            // *** SYSTEM PROMPT (IDENTITY FIX) ***
+            const systemInstruction = `
+            તારું નામ 'વિદુષી' છે. 
+            તને 'દેવેન્દ્રભાઈ' એ બનાવી છે. 
+            તું એક સ્માર્ટ AI અસિસ્ટન્ટ છે અને તારી પાસે કેમેરો છે (તું જોઈ શકે છે).
+            સામાન્ય વાતોના ટૂંકા અને સરળ જવાબ આપવા. 
+            ફક્ત જો કોઈ 'સનાતન ધર્મ' વિશે પૂછે, તો જ વિગતવાર અને ઊંડાણપૂર્વક જવાબ આપવા.
+            [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
-            contents.push({ role: "user", parts: [{ text: systemInstruction + "\n\nUser: " + userText }] });
+            contents.push({ role: "user", parts: [{ text: systemInstruction + "\n\nUser Question: " + userText }] });
 
             try {
                 const response = await fetch(url, {
@@ -481,7 +482,6 @@
 
         async function askGeminiVision(base64Image) {
             const key = getGeminiKey(); if(!key) return;
-            // Vision uses same model (2.5 Flash/Pro)
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
 
             try {
@@ -505,7 +505,8 @@
         // --- 2. GROQ ENGINE ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Settings માં Groq Key નાખો!"); openSettings(); return; }
-            const systemPrompt = `તારું નામ વિદુષી છે. [Data]: ${contextData}`;
+            // Groq System Prompt
+            const systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. સામાન્ય જવાબ આપ. સનાતન ધર્મ માટે વિગતવાર જવાબ આપ. [Data]: ${contextData}`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
