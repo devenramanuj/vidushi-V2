@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Llama 3.1 Speed)</title>
+    <title>Vidushi AI (Voice Camera Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -76,7 +76,7 @@
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
-    <div id="top-bar">Vidushi AI (Groq)</div>
+    <div id="top-bar">Vidushi AI</div>
     
     <button id="settings-btn" class="side-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
     <button id="notes-btn" class="side-btn" onclick="toggleModal('notes')"><i class="fas fa-book"></i></button>
@@ -111,9 +111,9 @@
             <h3>સેટિંગ્સ</h3>
             <label>AI Model (પસંદ કરો):</label>
             <select id="modelSelect">
-                <option value="llama-3.1-8b-instant">Llama 3.1 Fast (Recommended)</option>
-                <option value="llama-3.3-70b-versatile">Llama 3.3 Smart (Limited)</option>
-                <option value="mixtral-8x7b-32768">Mixtral</option>
+                <option value="llama-3.1-8b-instant">Fast (ઝડપી - 8B)</option>
+                <option value="llama-3.3-70b-versatile">Smart (હોશિયાર - 70B)</option>
+                <option value="mixtral-8x7b-32768">Balanced (Mixtral)</option>
             </select>
             
             <label>Groq Key:</label><input type="password" id="apiKeyInput" placeholder="gsk_...">
@@ -142,8 +142,7 @@
 
     <script>
         // --- CONFIG ---
-        // Using Llama 3.2 11B Vision (The one you likely called 2.5) for Images
-        const MODEL_VISION = "llama-3.2-11b-vision-preview"; 
+        const MODEL_VISION = "llama-3.2-11b-vision-preview";
         
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
@@ -154,9 +153,7 @@
         // --- STORAGE ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        // Default to Llama 3.1 8B (Fastest)
         let selectedModel = localStorage.getItem('vidushi_model') || "llama-3.1-8b-instant";
-
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
@@ -349,14 +346,14 @@
             } catch (e) { return "Error."; }
         }
 
-        // --- MASTER LOGIC ---
+        // --- MASTER LOGIC (VOICE COMMAND FIX) ---
         async function processCommand(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
             let cmd = text.toLowerCase();
 
-            // 1. OPEN CAMERA BY VOICE
+            // 1. OPEN CAMERA BY VOICE (NEW FIX)
             if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("મને જો")) {
                 activateVision();
                 return;
@@ -416,7 +413,7 @@
             await askGroqText(text, extraContext);
         }
 
-        // --- GROQ AI ENGINES (Fixed for Speed) ---
+        // --- AI ENGINES ---
         async function askGroqText(userText, contextData = "") {
             const systemPrompt = `તારું નામ વિદુષી છે અને તું દેવેન્દ્રભાઈ (જેણે તને બનાવી છે) ની આસિસ્ટન્ટ છે. તું સનાતન ધર્મ વિશે વિગતવાર જવાબ આપે છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
@@ -424,7 +421,6 @@
             try {
                 if(!apiKey) { alert("Settings માં API Key નથી!"); isProcessing = false; return; }
 
-                // Uses the Selected Model (Default: Llama 3.1 8B Instant)
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ model: selectedModel, messages: messages })
@@ -432,7 +428,7 @@
 
                 if(!res.ok) {
                     const err = await res.json();
-                    alert("Groq Error: " + (err.error?.message || JSON.stringify(err)));
+                    alert("API Error: " + (err.error?.message || JSON.stringify(err)));
                     speak("તમારી કી અથવા નેટવર્કમાં પ્રોબ્લેમ છે.");
                     isProcessing = false; playVideo('silent');
                     return;
