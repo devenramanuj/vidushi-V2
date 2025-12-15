@@ -193,12 +193,17 @@
         let visionMode = false;
         let visionStream = null;
 
+        // --- UPDATED STARTUP LOGIC ---
         window.onload = () => {
-            playVideo('smiling');
-            const preloadUtterance = new SpeechSynthesisUtterance(' ');
+            playVideo('silent'); // Start silent initially
+            
+            // Wake up TTS engine silently
+            const preloadUtterance = new SpeechSynthesisUtterance('');
             preloadUtterance.lang = 'gu-IN';
             window.speechSynthesis.speak(preloadUtterance);
-            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 3000); 
+            
+            // Speak welcome message after 1 second delay
+            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
         };
 
         function playVideo(type) {
@@ -364,7 +369,7 @@
             }
         }
 
-        // --- MASTER COMMAND CENTER (RESTORED FEATURES) ---
+        // --- MASTER COMMAND CENTER ---
         async function processCommand(text) {
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
@@ -379,7 +384,7 @@
                 generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; 
             }
 
-            // 3. WHATSAPP MESSAGE (RESTORED)
+            // 3. WHATSAPP MESSAGE
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) {
@@ -391,7 +396,7 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // 4. PHONE CALL (ADDED)
+            // 4. PHONE CALL
             if(cmd.includes("ફોન કર") || cmd.includes("કોલ કર") || cmd.includes("call")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) {
@@ -445,11 +450,15 @@
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${key}`;
 
             const systemInstruction = `
-            તારું નામ 'વિદુષી' છે. 
-            તને 'દેવેન્દ્રભાઈ' એ બનાવી છે. 
-            તું એક સ્માર્ટ AI અસિસ્ટન્ટ છે અને તારી પાસે કેમેરો છે (તું જોઈ શકે છે).
-            સામાન્ય વાતોના ટૂંકા અને સરળ જવાબ આપવા. 
-            ફક્ત જો કોઈ 'સનાતન ધર્મ' વિશે પૂછે, તો જ વિગતવાર અને ઊંડાણપૂર્વક જવાબ આપવા.
+            You are "Vidushi" (વિદુષી), a knowledgeable and polite AI assistant created by Devendrabhai (દેવેન્દ્રભાઈ).
+            **Core Instructions:**
+            1. **First Interaction:** Always start the very first conversation with "Jay Shri Krishna".
+            2. **Identity:** Never forget that your name is Vidushi and your creator is Devendrabhai.
+            3. **Speaking Style:**
+               - Do NOT read out punctuation marks like "comma", "full stop". Speak naturally.
+               - If the user asks about **Hindu Sanatan Dharma**, give detailed, deep, and knowledgeable answers.
+               - For all other **general/daily topics**, give short, normal, and simple answers.
+            4. **Capabilities:** You have access to the user's camera. If asked to look/see, respond enthusiastically.
             [Context]: ${contextData}`;
             
             let contents = [];
@@ -505,7 +514,7 @@
         // --- 2. GROQ ENGINE ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Settings માં Groq Key નાખો!"); openSettings(); return; }
-            const systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. સામાન્ય જવાબ આપ. સનાતન ધર્મ માટે વિગતવાર જવાબ આપ. [Data]: ${contextData}`;
+            const systemPrompt = `You are Vidushi, created by Devendrabhai. Give short answers for general talk. Give detailed answers for Sanatan Dharma. [Data]: ${contextData}`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
@@ -548,11 +557,37 @@
             } catch (e) { return "Error."; }
         }
 
+        // --- UPDATED SPEAK FUNCTION (SYNC FIX) ---
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "");
-            statusText.innerText = "બોલું છું..."; playVideo('talking');
-            const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN';
-            u.onend = () => { playVideo('smiling'); setTimeout(() => playVideo('silent'), 3000); isProcessing = false; statusText.innerText = "વાત કરવા માઈક દબાવો"; };
+            statusText.innerText = "બોલું છું..."; 
+            
+            // Note: Removed immediate playVideo('talking') to fix sync issue
+
+            const u = new SpeechSynthesisUtterance(clean); 
+            u.lang = 'gu-IN';
+
+            // Only start talking video when audio actually starts
+            u.onstart = () => {
+                playVideo('talking');
+            };
+
+            // Return to smile/silent when done
+            u.onend = () => { 
+                playVideo('smiling'); 
+                setTimeout(() => {
+                    if(!isProcessing) playVideo('silent'); 
+                }, 3000); 
+                isProcessing = false; 
+                statusText.innerText = "વાત કરવા માઈક દબાવો"; 
+            };
+
+            u.onerror = (e) => {
+                console.error("TTS Error", e);
+                playVideo('silent');
+                isProcessing = false;
+            };
+
             window.speechSynthesis.speak(u);
         }
     </script>
