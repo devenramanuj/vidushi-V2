@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI (Multi-Model)</title>
+    <title>Vidushi AI (Voice Camera Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -153,10 +153,7 @@
         // --- STORAGE ---
         let apiKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        
-        // Save selected model (Default: Fast)
         let selectedModel = localStorage.getItem('vidushi_model') || "llama-3.1-8b-instant";
-
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let userName = localStorage.getItem('vidushi_user_name') || "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
@@ -188,14 +185,10 @@
         window.onload = () => {
             playVideo('smiling');
             renderContacts(); renderExpenses();
-            
             const preloadUtterance = new SpeechSynthesisUtterance(' ');
             preloadUtterance.lang = 'gu-IN';
             window.speechSynthesis.speak(preloadUtterance);
-
-            setTimeout(() => { 
-                speak(`જય શ્રી કૃષ્ણ ${userName}!`); 
-            }, 3000); 
+            setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 3000); 
         };
 
         function playVideo(type) {
@@ -204,31 +197,25 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        // --- SETTINGS (UPDATED WITH MODEL SELECTOR) ---
+        // --- SETTINGS ---
         function openSettings() { 
             document.getElementById('settings-modal').style.display = 'flex'; 
             document.getElementById('apiKeyInput').value = apiKey; 
             document.getElementById('serperKeyInput').value = serperKey; 
-            document.getElementById('modelSelect').value = selectedModel; // Set current model
+            document.getElementById('modelSelect').value = selectedModel;
             renderContacts(); 
         }
-        
         function saveSettings() {
             apiKey = document.getElementById('apiKeyInput').value.trim();
             serperKey = document.getElementById('serperKeyInput').value.trim();
-            selectedModel = document.getElementById('modelSelect').value; // Get selected model
-
+            selectedModel = document.getElementById('modelSelect').value;
             localStorage.setItem('vidushi_groq_key', apiKey);
             localStorage.setItem('vidushi_serper_key', serperKey);
-            localStorage.setItem('vidushi_model', selectedModel); // Save model
-
+            localStorage.setItem('vidushi_model', selectedModel);
             document.getElementById('settings-modal').style.display = 'none';
             speak("સેટિંગ્સ સેવ થઈ ગયા.");
         }
-
-        function renderContacts() {
-            document.getElementById('contacts-display').innerHTML = contacts.map(c => `<div style="padding:5px; border-bottom:1px solid #444;">${c.name} / ${c.gu_name}</div>`).join('');
-        }
+        function renderContacts() { document.getElementById('contacts-display').innerHTML = contacts.map(c => `<div style="padding:5px; border-bottom:1px solid #444;">${c.name} / ${c.gu_name}</div>`).join(''); }
 
         // --- MODALS ---
         function toggleModal(type) {
@@ -292,18 +279,9 @@
             imageLoadingText.style.display = "block";
             generatedImage.style.display = "none";
             imageOverlay.style.display = 'flex';
-            
             let url = `https://pollinations.ai/p/${encodeURIComponent(prompt)}`;
-            
-            generatedImage.onload = () => {
-                imageLoadingText.style.display = "none";
-                generatedImage.style.display = "block";
-                speak("આ રહ્યું તમારું જાદુઈ ચિત્ર! 😊");
-            };
-            generatedImage.onerror = () => {
-                imageLoadingText.innerText = "ચિત્ર લોડ કરવામાં ભૂલ આવી.";
-                speak("માફ કરજો, ચિત્ર બની શક્યું નહીં.");
-            };
+            generatedImage.onload = () => { imageLoadingText.style.display = "none"; generatedImage.style.display = "block"; speak("આ રહ્યું તમારું જાદુઈ ચિત્ર! 😊"); };
+            generatedImage.onerror = () => { imageLoadingText.innerText = "ચિત્ર લોડ કરવામાં ભૂલ આવી."; speak("માફ કરજો, ચિત્ર બની શક્યું નહીં."); };
             generatedImage.src = url + "?t=" + new Date().getTime();
         }
         function closeImage() { imageOverlay.style.display = 'none'; playVideo('silent'); isProcessing = false; }
@@ -323,7 +301,7 @@
         function startConversation() { if(!apiKey) { alert("Settings માં જઈને API Key નાખો!"); openSettings(); return; } recognition.start(); }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; statusText.innerText = "વાત કરવા માઈક દબાવો"; }
 
-        // --- VISION (SELFIE CAMERA) ---
+        // --- VISION (CAMERA) ---
         async function activateVision() {
             if(visionMode) { captureAndAnalyze(); return; } 
             try {
@@ -334,11 +312,8 @@
                 document.getElementById('video-container').style.display = 'none'; 
                 visionMode = true;
                 document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red";
-                speak("ફોટો બતાવો.");
-            } catch(e) { 
-                alert("કેમેરો ખુલતો નથી. બ્રાઉઝર પરમિશન ચેક કરો."); 
-                console.error(e); 
-            }
+                speak("તમારો ફોટો બતાવો.");
+            } catch(e) { alert("કેમેરો ખુલતો નથી. બ્રાઉઝર પરમિશન ચેક કરો."); console.error(e); }
         }
         function stopVisionCamera() {
             if(visionStream) visionStream.getTracks().forEach(t => t.stop());
@@ -371,13 +346,20 @@
             } catch (e) { return "Error."; }
         }
 
-        // --- MASTER LOGIC ---
+        // --- MASTER LOGIC (VOICE COMMAND FIX) ---
         async function processCommand(text) {
             isProcessing = true;
             statusText.innerText = "વિચારું છું...";
             playVideo('thinking');
             let cmd = text.toLowerCase();
 
+            // 1. OPEN CAMERA BY VOICE (NEW FIX)
+            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("મને જો")) {
+                activateVision();
+                return;
+            }
+
+            // 2. MAGIC IMAGE
             if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image") || cmd.includes("ડ્રોઈંગ")) {
                 let prompt = text.replace("ચિત્ર બનાવ", "").replace("ફોટો બનાવ", "").replace("નું", "").replace("બતાવ", "").replace("ડ્રોઈંગ", "").replace("એક", "").trim();
                 if(prompt.length < 2) { speak("શેનું ચિત્ર બનાવું? નામ બોલો."); isProcessing = false; playVideo('silent'); return; }
@@ -385,6 +367,7 @@
                 return;
             }
 
+            // 3. LOCATION
             if(cmd.includes("લોકેશન મોકલ") || cmd.includes("location")) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { sendLocation(found); } 
@@ -392,6 +375,7 @@
                 return;
             }
 
+            // 4. EXPENSE
             if(cmd.includes("રૂપિયા") && (cmd.includes("લખ") || cmd.includes("જમા"))) {
                 addExpense(text); isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return;
             }
@@ -399,6 +383,7 @@
                 toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing = false; playVideo('silent'); return;
             }
 
+            // 5. WHATSAPP
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = contacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) {
@@ -411,10 +396,12 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
+            // 6. NOTES & MUSIC
             if(cmd.includes("નોંધ લખ")) { addNote(text.replace("નોંધ લખ", "").trim()); isProcessing = false; playVideo('smiling'); setTimeout(()=>playVideo('silent'), 2000); return; }
             if(cmd.includes("નોંધ બતાવ")) { toggleModal('notes'); speak("ડાયરી."); isProcessing = false; playVideo('silent'); return; }
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing = false; playVideo('silent'); return; }
 
+            // 7. SEARCH FALLBACK
             let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "કોણ", "ક્યારે"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
@@ -426,7 +413,7 @@
             await askGroqText(text, extraContext);
         }
 
-        // --- AI ENGINES (USES SELECTED MODEL) ---
+        // --- AI ENGINES ---
         async function askGroqText(userText, contextData = "") {
             const systemPrompt = `તારું નામ વિદુષી છે અને તું દેવેન્દ્રભાઈ (જેણે તને બનાવી છે) ની આસિસ્ટન્ટ છે. તું સનાતન ધર્મ વિશે વિગતવાર જવાબ આપે છે. [Data]: ${contextData} [RULES]: ખુશી હોય તો 😊, દુઃખ હોય તો 😔, નોર્મલ હોય તો 😐.`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
@@ -434,7 +421,6 @@
             try {
                 if(!apiKey) { alert("Settings માં API Key નથી!"); isProcessing = false; return; }
 
-                // USE THE SELECTED MODEL VARIABLE
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
                     method: "POST", headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
                     body: JSON.stringify({ model: selectedModel, messages: messages })
