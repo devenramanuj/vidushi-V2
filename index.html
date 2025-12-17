@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Smart Diary</title>
+    <title>Vidushi AI - Error Free</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -455,8 +455,7 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // *** FIX: STRICTER DIARY LOGIC (કોઈ બહાના નહિ!) ***
-            // "Diary" + "Write/Note" or "Note" + "Write/Do"
+            // STRICTER DIARY LOGIC
             if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) ) { 
                 let noteText = text.replace("નોંધ લખ","").replace("ડાયરીમાં લખ","").replace("ડાયરી","").replace("લખજે","").replace("નોંધ","").trim();
                 if(noteText) addNote(noteText);
@@ -486,11 +485,12 @@
             else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- 1. GEMINI ENGINE ---
+        // --- 1. GEMINI ENGINE (Updated Key Logic & Error Handling) ---
         function getGeminiKey() {
             let savedKeys = localStorage.getItem('vidushi_gemini_key') || "";
             if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); return null; }
-            const allKeys = savedKeys.split(',').map(k => k.trim()).filter(k => k !== "");
+            // FIX: Split by comma OR newline to handle user formatting errors
+            const allKeys = savedKeys.split(/[\n,]+/).map(k => k.trim()).filter(k => k !== "");
             return allKeys[Math.floor(Math.random() * allKeys.length)];
         }
 
@@ -500,7 +500,6 @@
 
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
 
-            // System Prompt: Strictly forbid saying "I don't have a diary".
             const systemInstruction = `
             તારું નામ 'વિદુષી' છે. તું એક સ્ત્રી (Female AI) છે.
             તને 'દેવેન્દ્રભાઈ રામાનુજે' બનાવી છે.
@@ -508,7 +507,6 @@
             **ખાસ નિયમ:** 1. દરેક જવાબની શરૂઆત "મારું નામ વિદુષી છે" થી ન કરવી. સીધો જવાબ આપવો.
             2. જો કોઈ 'ડાયરી' વિશે પૂછે, તો એમ ન કહેતી કે "મારી પાસે ડાયરી નથી". (કોડમાં ડિજિટલ ડાયરી છે).
             3. સનાતન ધર્મ અને પંચાંગ વિશે વિગતવાર જવાબ આપવા.
-            
             [Context]: ${contextData}`;
             
             let contents = [];
@@ -518,13 +516,25 @@
             try {
                 const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
                 const data = await response.json();
-                if(data.error) { speak("એરર આવી."); isProcessing=false; return; }
+                
+                // *** IMPROVED ERROR HANDLING ***
+                if(data.error) {
+                    console.error("Gemini Error:", data.error);
+                    if(data.error.code === 429) speak("સર્વર બીઝી છે, થોડીવાર પછી ટ્રાય કરો.");
+                    else speak("ટેકનિકલ એરર આવી છે.");
+                    isProcessing=false; playVideo('silent'); return;
+                }
+
                 const reply = data.candidates[0].content.parts[0].text;
                 chatHistory.push({ role: "user", content: userText });
                 chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
                 speak(reply);
-            } catch(e) { console.error(e); speak("નેટવર્ક એરર છે."); playVideo('silent'); isProcessing=false; }
+            } catch(e) { 
+                console.error(e); 
+                speak("ઈન્ટરનેટ ચેક કરો."); // Friendly network error
+                playVideo('silent'); isProcessing=false; 
+            }
         }
 
         async function askGeminiVision(base64Image) {
