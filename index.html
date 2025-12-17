@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Diary Guaranteed</title>
+    <title>Vidushi AI - Best Stable Version</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -28,14 +28,10 @@
         #music-btn { top: 70px; color: #00e5ff; }
         #expense-btn { top: 125px; color: #00ff00; }
 
-        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
-        
-        /* NOTE ITEM STYLE */
-        .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; font-size: 16px; }
+        .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
         .expense-item { border-left: 4px solid #00ff00; }
         
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
@@ -60,7 +56,6 @@
         #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; }
         #close-img-btn { margin-top: 20px; padding: 10px 30px; background: red; color: white; border: none; font-size: 18px; border-radius: 50px; cursor: pointer; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
 </head>
 <body>
@@ -100,12 +95,10 @@
                 <select id="geminiModelSelect">
                     <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
                     <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
-                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash (Exp)</option>
                     <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                 </select>
                 <div class="section-title">Step 3: API Keys</div>
-                <textarea id="geminiKeyInput" rows="3" placeholder="Paste Keys here... (AIza1..., AIza2...)"></textarea>
-                <div style="font-size:10px; color:#aaa; margin-top:5px;">એક સાથે 3-4 કી નાખો એટલે Limit નો પ્રોબ્લેમ ન આવે.</div>
+                <textarea id="geminiKeyInput" rows="3" placeholder="Paste Keys here..."></textarea>
             </div>
             <div id="groq-settings" style="display:none;">
                 <div class="section-title">Step 2: Select Groq Model</div>
@@ -166,7 +159,6 @@
     </div>
 
     <script>
-        // --- STORAGE & INIT ---
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -187,7 +179,6 @@
             { name: "Shyam", gu_name: "શ્યામ", number: "8200026682" }
         ];
 
-        // --- DOM ELEMENTS ---
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
         const selfieVideo = document.getElementById('selfie-video');
@@ -223,7 +214,6 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        // --- SETTINGS LOGIC ---
         function openSettings() { 
             document.getElementById('settings-modal').style.display = 'flex'; 
             document.getElementById('providerSelect').value = aiProvider;
@@ -238,13 +228,8 @@
 
         function toggleProviderSettings() {
             const provider = document.getElementById('providerSelect').value;
-            if(provider === 'gemini') {
-                document.getElementById('gemini-settings').style.display = 'block';
-                document.getElementById('groq-settings').style.display = 'none';
-            } else {
-                document.getElementById('gemini-settings').style.display = 'none';
-                document.getElementById('groq-settings').style.display = 'block';
-            }
+            document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none';
+            document.getElementById('groq-settings').style.display = provider === 'gemini' ? 'none' : 'block';
         }
 
         function saveSettings() {
@@ -269,14 +254,13 @@
         }
 
         function clearMemories() {
-            if(confirm("શું તમે બધી યાદશક્તિ (Facts) ભૂંસી નાખવા માંગો છો?")) {
+            if(confirm("બધી યાદશક્તિ ભૂંસી નાખવી છે?")) {
                 permanentMemories = [];
                 localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
                 speak("બધી જૂની વાતો ભૂલી ગઈ છું.");
             }
         }
 
-        // --- FEATURE FUNCTIONS ---
         function toggleModal(type) {
             const modal = document.getElementById(type + '-modal');
             modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
@@ -284,25 +268,17 @@
             if(type === 'expense') renderExpenses();
         }
         
-        // **UPDATED ADD NOTE**
         function addNote(text) { 
             notes.push({ text, time: new Date().toLocaleDateString() }); 
             localStorage.setItem('vidushi_notes', JSON.stringify(notes)); 
-            
-            // Force Open Modal so user sees it
             document.getElementById('notes-modal').style.display = 'flex';
-            renderNotes(); 
-            
-            speak("ડાયરીમાં લખી લીધું છે."); 
+            renderNotes();
+            speak("નોંધી લીધું છે."); 
         }
 
         function renderNotes() { 
             const list = document.getElementById('notes-list');
-            if(notes.length === 0) {
-                list.innerHTML = "<div style='color:#777;'>કોઈ નોંધ નથી</div>";
-            } else {
-                list.innerHTML = notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red; cursor:pointer;" onclick="deleteNote(${i})">✖</span></div>`).join(''); 
-            }
+            list.innerHTML = notes.length ? notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red; cursor:pointer;" onclick="deleteNote(${i})">✖</span></div>`).join('') : "<div style='color:#777;'>કોઈ નોંધ નથી</div>"; 
         }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
         function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
@@ -342,7 +318,7 @@
                     window.open(`https://wa.me/${num}?text=${encodeURIComponent("મારું લાઈવ લોકેશન: " + mapLink)}`, "_blank");
                     speak(`${contact.gu_name} ને લોકેશન મોકલ્યો.`);
                     isProcessing = false; playVideo('silent');
-                }, () => { speak("GPS લોકેશન મળતું નથી."); isProcessing = false; playVideo('silent'); });
+                }, () => { speak("GPS નથી."); isProcessing = false; playVideo('silent'); });
             } else { speak("GPS નથી."); }
         }
 
@@ -354,42 +330,17 @@
         }
         function closeImage() { imageOverlay.style.display = 'none'; playVideo('silent'); isProcessing = false; }
 
-        // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             recognition = new SpeechRecognition();
             recognition.lang = 'gu-IN';
-            
-            recognition.onstart = () => { 
-                micBtn.classList.add('listening'); 
-                statusText.innerText = continuousMode ? "સતત સાંભળું છું..." : "સાંભળું છું..."; 
-            };
-            
-            recognition.onend = () => { 
-                micBtn.classList.remove('listening'); 
-                if (continuousMode && !isAiSpeaking && !isProcessing) {
-                    try { recognition.start(); } catch(e) {}
-                } else {
-                    if(!isProcessing) statusText.innerText = "વાત કરવા માઈક દબાવો";
-                }
-            };
-            
-            recognition.onresult = (e) => {
-                let text = e.results[0][0].transcript;
-                if(text.trim()) processCommand(text);
-            };
+            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = continuousMode ? "સતત સાંભળું છું..." : "સાંભળું છું..."; };
+            recognition.onend = () => { micBtn.classList.remove('listening'); if (continuousMode && !isAiSpeaking && !isProcessing) { try { recognition.start(); } catch(e) {} } else { if(!isProcessing) statusText.innerText = "વાત કરવા માઈક દબાવો"; } };
+            recognition.onresult = (e) => { let text = e.results[0][0].transcript; if(text.trim()) processCommand(text); };
         }
         function startConversation() { try{recognition.start();}catch(e){} }
-        function stopConversation() { 
-            recognition.stop(); 
-            window.speechSynthesis.cancel(); 
-            playVideo('silent'); 
-            stopVisionCamera(); 
-            isProcessing = false; 
-            isAiSpeaking = false;
-        }
+        function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; isAiSpeaking = false; }
 
-        // --- VISION (CAMERA) ---
         async function activateVision() {
             if(visionMode) { captureAndAnalyze(); return; } 
             try {
@@ -401,10 +352,7 @@
                 visionMode = true;
                 document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red";
                 speak("તમારો ફોટો બતાવો.");
-            } catch(e) { 
-                alert("કેમેરો ખુલતો નથી. (Permission/HTTPS Check)"); 
-                console.error(e); 
-            }
+            } catch(e) { alert("કેમેરો ખુલતો નથી."); }
         }
         function stopVisionCamera() {
             if(visionStream) visionStream.getTracks().forEach(t => t.stop());
@@ -420,93 +368,51 @@
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             stopVisionCamera(); playVideo('thinking');
             const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
-            
-            if(aiProvider === 'gemini') await askGeminiVision(base64Image);
-            else await askGroqVision(base64Image);
+            if(aiProvider === 'gemini') await askGeminiVision(base64Image); else await askGroqVision(base64Image);
         }
 
-        // --- MASTER COMMAND CENTER ---
         async function processCommand(text) {
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
             let extraInstructions = "";
 
-            // 1. MEMORY
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let fact = text.replace("યાદ રાખજે કે", "").replace("યાદ રાખજે", "").replace("યાદ રાખ", "").trim();
-                if(fact) {
-                    permanentMemories.push(fact);
-                    localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
-                    speak(`મેં યાદ રાખી લીધું કે: ${fact}`);
-                } else { speak("શું યાદ રાખું?"); }
+                if(fact) { permanentMemories.push(fact); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak(`મેં યાદ રાખી લીધું કે: ${fact}`); } 
                 isProcessing = false; playVideo('silent'); return;
             }
-
-            // 2. Camera
-            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("સેલ્ફી") || cmd.includes("selfie") || cmd.includes("મને જો") || cmd.includes("look")) { 
-                activateVision(); return; 
-            }
-
-            // 3. Image Gen
-            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { 
-                generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; 
-            }
-
-            // 4. WhatsApp / Call
+            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("selfie") || cmd.includes("મને જો")) { activateVision(); return; }
+            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; }
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
-                if(found) {
-                    let msg = text.replace(found.name, "").replace(found.gu_name, "").replace("ને મેસેજ કર", "").replace("whatsapp", "").trim();
-                    let num = "91" + found.number.replace(/\D/g, '').slice(-10);
-                    window.open(`https://wa.me/${num}?text=${encodeURIComponent(msg)}`, "_blank");
-                    speak(`${found.gu_name} ને મેસેજ કરું છું.`);
-                } else { speak("નામ મળતું નથી."); }
+                if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak(`${found.gu_name} ને મેસેજ કરું છું.`); } 
+                else { speak("નામ મળતું નથી."); }
                 isProcessing = false; playVideo('silent'); return;
             }
             if(cmd.includes("ફોન કર") || cmd.includes("કોલ કર")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
-                if(found) {
-                    let num = "+91" + found.number.replace(/\D/g, '').slice(-10);
-                    window.open(`tel:${num}`, "_self");
-                    speak(`${found.gu_name} ને ફોન જોડું છું.`);
-                } else { speak("નામ મળતું નથી."); }
+                if(found) { window.open(`tel:+91${found.number}`, "_self"); speak(`${found.gu_name} ને ફોન જોડું છું.`); } 
+                else { speak("નામ મળતું નથી."); }
                 isProcessing = false; playVideo('silent'); return;
             }
-
-            // 5. Tools
             if(cmd.includes("લોકેશન મોકલ")) { let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name)); found ? sendLocation(found) : speak("કોને?"); return; }
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // *** FIXED: BROAD DIARY COMMANDS ***
-            // Now detects ANY mention of "Note" or "Diary" + "Write/Add"
-            // Also handles "Dairy" typo just in case
-            if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ") || cmd.includes("dairy") || cmd.includes("note")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર") || cmd.includes("write")) ) { 
-                let noteText = text;
-                // Remove command words
-                ["નોંધ લખ", "ડાયરીમાં લખ", "ડાયરીમાં", "નોંધ કર", "નોંધ", "ડાયરી", "dairy", "note"].forEach(phrase => {
-                    noteText = noteText.replace(phrase, "");
-                });
-                noteText = noteText.replace("કે", "").replace("એવી", "").trim();
-
-                if(noteText.length > 0) {
-                    addNote(noteText); // Save and Open Modal
-                } else {
-                    speak("શું લખું?");
-                }
-                isProcessing=false; playVideo('silent'); return; 
+            // --- SIMPLE ROBUST LOGIC FOR NOTES ---
+            if(cmd.includes("નોંધ") || cmd.includes("ડાયરી")) { 
+                 if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) {
+                    let noteText = text.replace("નોંધ લખ","").replace("ડાયરીમાં લખ","").replace("ડાયરી","").replace("નોંધ","").replace("લખજે","").trim();
+                    if(noteText) addNote(noteText); else speak("શું લખું?");
+                    isProcessing=false; playVideo('silent'); return; 
+                 }
+                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ")) { toggleModal('notes'); speak("આ રહી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
             }
-            if(cmd.includes("ડાયરી ખોલ") || cmd.includes("નોંધ બતાવ")) { toggleModal('notes'); speak("આ રહી તમારી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
 
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
+            if(cmd.includes("અંગ્રેજી કર")) { extraInstructions = " [Translate to English] "; }
 
-            // 6. Translate
-            if(cmd.includes("અંગ્રેજી કર") || cmd.includes("translate") || cmd.includes("english")) {
-                extraInstructions = " [System Note: The user wants to TRANSLATE the following text into English. Do not answer the question, just translate it.] ";
-            }
-
-            // 7. Search
-            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "price", "પંચાંગ", "panchang", "તિથિ", "ચોઘડિયા", "મુહૂર્ત", "tithi"];
+            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "price", "પંચાંગ", "panchang", "તિથિ", "મુહૂર્ત"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
                 statusText.innerText = "ઈન્ટરનેટ...";
@@ -514,12 +420,9 @@
                 extraContext = `[Internet Info]: ${res}`;
             }
 
-            // 8. AI Chat
-            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } 
-            else { await askGroqText(text, extraContext + extraInstructions); }
+            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- 1. GEMINI ENGINE ---
         function getGeminiKey() {
             let savedKeys = localStorage.getItem('vidushi_gemini_key') || "";
             if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); return null; }
@@ -530,76 +433,41 @@
         async function askGeminiText(userText, contextData = "") {
             const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
-
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
-
-            const systemInstruction = `
-            તારું નામ 'વિદુષી' છે. તું એક સ્ત્રી (Female AI) છે.
-            તને 'દેવેન્દ્રભાઈ રામાનુજે' બનાવી છે.
-            
-            **ખાસ નિયમ:** 1. દરેક જવાબની શરૂઆત "મારું નામ વિદુષી છે" થી ન કરવી.
-            2. **ચેતવણી:** તું સીધી ડાયરી સેવ કરી શકતી નથી. જો કોઈ 'નોંધ લખવાનું' કહે અને તને આ મેસેજ મળે, તો કહેજે: "માફ કરજો, કમાન્ડ સમજાયો નથી. કૃપા કરીને 'નોંધ લખ' બોલીને ફરી પ્રયત્ન કરો." (ખોટું ન બોલવું કે સેવ કર્યું છે).
-            3. સનાતન ધર્મ અને પંચાંગ વિશે વિગતવાર જવાબ આપવા.
-            [Context]: ${contextData}`;
+            const systemInstruction = `તારું નામ 'વિદુષી' છે (સ્ત્રી). દેવેન્દ્રભાઈએ બનાવી છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
-            contents.push({ role: "user", parts: [{ text: systemInstruction + "\n\nUser Question: " + userText }] });
+            contents.push({ role: "user", parts: [{ text: systemInstruction + "\n\nUser: " + userText }] });
 
             try {
                 const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
                 const data = await response.json();
-                
-                if(data.error) {
-                    console.error("Gemini Error:", data.error);
-                    if(data.error.code === 429) speak("સર્વર બીઝી છે, થોડીવાર પછી ટ્રાય કરો.");
-                    else speak("ટેકનિકલ એરર આવી છે.");
-                    isProcessing=false; playVideo('silent'); return;
-                }
-
+                if(data.error) { speak("સર્વર બીઝી છે."); isProcessing=false; return; }
                 const reply = data.candidates[0].content.parts[0].text;
                 chatHistory.push({ role: "user", content: userText });
                 chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
                 speak(reply);
-            } catch(e) { 
-                console.error(e); 
-                speak("ઈન્ટરનેટ ચેક કરો."); 
-                playVideo('silent'); isProcessing=false; 
-            }
+            } catch(e) { speak("નેટવર્ક એરર."); playVideo('silent'); isProcessing=false; }
         }
 
         async function askGeminiVision(base64Image) {
             const key = getGeminiKey(); if(!key) return;
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
             try {
-                const response = await fetch(url, {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        contents: [{
-                            role: "user",
-                            parts: [
-                                { text: "આ ફોટામાં શું છે? ગુજરાતીમાં (સ્ત્રી લિંગમાં) જવાબ આપ." },
-                                { inline_data: { mime_type: "image/jpeg", data: base64Image } }
-                            ]
-                        }]
-                    })
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "આ શું છે? (ગુજરાતીમાં)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
                 });
                 const data = await response.json();
                 speak(data.candidates[0].content.parts[0].text);
-            } catch(e) { speak("ફોટો જોવામાં ભૂલ આવી."); playVideo('silent'); }
+            } catch(e) { speak("ભૂલ આવી."); playVideo('silent'); }
         }
 
-        // --- 2. GROQ ENGINE (Updated Anti-Hallucination Prompt) ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            // Groq Prompt Update: FORBID lying about diary
-            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendrabhai. Speak in Gujarati (Feminine gender). DO NOT repeat your name. 
-            **CRITICAL:** You CANNOT access the digital diary directly. If the user asks to "Write a note" or "Save in diary" and you are receiving this message, it means the system FAILED to catch the command. 
-            Reply ONLY: "માફ કરજો, હું નોંધી શકી નથી. કૃપા કરીને 'નોંધ લખ' બોલીને ફરી પ્રયત્ન કરો." 
-            DO NOT lie and say you saved it. 
-            ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendra. Speak Gujarati. Keep answers short. ${memories}. [Context]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
@@ -612,7 +480,7 @@
 
         async function askGroqVision(base64Image) {
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: `Describe this in Gujarati (Feminine gender)` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: `Describe in Gujarati` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
                 const data = await res.json(); speak(data.choices[0].message.content);
             } catch(e) { speak("ફોટો એરર."); playVideo('silent'); }
         }
@@ -621,36 +489,18 @@
             try {
                 const response = await fetch("https://google.serper.dev/search", { method: "POST", headers: { "X-API-KEY": serperKey, "Content-Type": "application/json" }, body: JSON.stringify({ q: query, gl: "in", hl: "gu" }) });
                 const data = await response.json();
-                let snippet = "";
-                if (data.organic) data.organic.slice(0, 2).forEach(item => snippet += `- ${item.snippet}\n`);
-                return snippet;
-            } catch (e) { return "Error."; }
+                return data.organic ? data.organic.slice(0, 2).map(i => i.snippet).join("\n") : "";
+            } catch (e) { return ""; }
         }
 
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "");
             statusText.innerText = "બોલું છું...";
             isAiSpeaking = true; 
-
             const u = new SpeechSynthesisUtterance(clean); 
             u.lang = 'gu-IN';
-
             u.onstart = () => { playVideo('talking'); };
-
-            u.onend = () => { 
-                playVideo('smiling'); 
-                isAiSpeaking = false; 
-                setTimeout(() => { if(!isProcessing) playVideo('silent'); }, 3000); 
-                isProcessing = false; 
-
-                if (continuousMode) {
-                    statusText.innerText = "ફરી સાંભળું છું...";
-                    try { recognition.start(); } catch(e) {}
-                } else {
-                    statusText.innerText = "વાત કરવા માઈક દબાવો";
-                }
-            };
-            
+            u.onend = () => { playVideo('smiling'); isAiSpeaking = false; setTimeout(() => { if(!isProcessing) playVideo('silent'); }, 3000); isProcessing = false; if (continuousMode) { statusText.innerText = "ફરી સાંભળું છું..."; try { recognition.start(); } catch(e) {} } else { statusText.innerText = "વાત કરવા માઈક દબાવો"; } };
             u.onerror = () => { isAiSpeaking=false; isProcessing=false; playVideo('silent'); };
             window.speechSynthesis.speak(u);
         }
