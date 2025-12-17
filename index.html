@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Auto Diary</title>
+    <title>Vidushi AI - Diary Guaranteed</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -284,7 +284,7 @@
             if(type === 'expense') renderExpenses();
         }
         
-        // **UPDATED ADD NOTE: Auto Open Modal**
+        // **UPDATED ADD NOTE**
         function addNote(text) { 
             notes.push({ text, time: new Date().toLocaleDateString() }); 
             localStorage.setItem('vidushi_notes', JSON.stringify(notes)); 
@@ -478,16 +478,19 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // *** STRICTER DIARY LOGIC + AUTO OPEN ***
-            if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) ) { 
+            // *** FIXED: BROAD DIARY COMMANDS ***
+            // Now detects ANY mention of "Note" or "Diary" + "Write/Add"
+            // Also handles "Dairy" typo just in case
+            if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ") || cmd.includes("dairy") || cmd.includes("note")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર") || cmd.includes("write")) ) { 
                 let noteText = text;
-                ["નોંધ લખ", "ડાયરીમાં લખ", "ડાયરીમાં", "નોંધ કર", "નોંધ"].forEach(phrase => {
+                // Remove command words
+                ["નોંધ લખ", "ડાયરીમાં લખ", "ડાયરીમાં", "નોંધ કર", "નોંધ", "ડાયરી", "dairy", "note"].forEach(phrase => {
                     noteText = noteText.replace(phrase, "");
                 });
                 noteText = noteText.replace("કે", "").replace("એવી", "").trim();
 
                 if(noteText.length > 0) {
-                    addNote(noteText); // This now opens the modal too
+                    addNote(noteText); // Save and Open Modal
                 } else {
                     speak("શું લખું?");
                 }
@@ -534,8 +537,8 @@
             તારું નામ 'વિદુષી' છે. તું એક સ્ત્રી (Female AI) છે.
             તને 'દેવેન્દ્રભાઈ રામાનુજે' બનાવી છે.
             
-            **ખાસ નિયમ:** 1. દરેક જવાબની શરૂઆત "મારું નામ વિદુષી છે" થી ન કરવી. સીધો જવાબ આપવો.
-            2. જો કોઈ 'ડાયરી' વિશે પૂછે, તો એમ ન કહેતી કે "મારી પાસે ડાયરી નથી". (કોડમાં ડિજિટલ ડાયરી છે).
+            **ખાસ નિયમ:** 1. દરેક જવાબની શરૂઆત "મારું નામ વિદુષી છે" થી ન કરવી.
+            2. **ચેતવણી:** તું સીધી ડાયરી સેવ કરી શકતી નથી. જો કોઈ 'નોંધ લખવાનું' કહે અને તને આ મેસેજ મળે, તો કહેજે: "માફ કરજો, કમાન્ડ સમજાયો નથી. કૃપા કરીને 'નોંધ લખ' બોલીને ફરી પ્રયત્ન કરો." (ખોટું ન બોલવું કે સેવ કર્યું છે).
             3. સનાતન ધર્મ અને પંચાંગ વિશે વિગતવાર જવાબ આપવા.
             [Context]: ${contextData}`;
             
@@ -587,11 +590,16 @@
             } catch(e) { speak("ફોટો જોવામાં ભૂલ આવી."); playVideo('silent'); }
         }
 
-        // --- 2. GROQ ENGINE ---
+        // --- 2. GROQ ENGINE (Updated Anti-Hallucination Prompt) ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendrabhai. Speak in Gujarati (Feminine gender). DO NOT repeat your name. If asked about diary, do not say you dont have one. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            // Groq Prompt Update: FORBID lying about diary
+            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendrabhai. Speak in Gujarati (Feminine gender). DO NOT repeat your name. 
+            **CRITICAL:** You CANNOT access the digital diary directly. If the user asks to "Write a note" or "Save in diary" and you are receiving this message, it means the system FAILED to catch the command. 
+            Reply ONLY: "માફ કરજો, હું નોંધી શકી નથી. કૃપા કરીને 'નોંધ લખ' બોલીને ફરી પ્રયત્ન કરો." 
+            DO NOT lie and say you saved it. 
+            ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
