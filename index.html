@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ayurveda Edition</title>
+    <title>Vidushi AI - Final Female Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -15,28 +15,23 @@
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
         #canvas-capture { display: none; }
         #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); color: white; text-align: center; font-size: 20px; font-weight: bold; z-index: 10; letter-spacing: 1px; }
-        
-        .side-btn { position: fixed; left: 15px; z-index: 20; background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .side-btn { position: fixed; left: 15px; z-index: 20; background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
+        .side-btn:active { transform: scale(0.9); background: #ff4500; }
         #settings-btn { top: 15px; right: 15px; left: auto; }
         #notes-btn { top: 15px; }
         #music-btn { top: 70px; color: #00e5ff; }
         #expense-btn { top: 125px; color: #00ff00; }
-
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .modal-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
         .expense-item { border-left: 4px solid #00ff00; }
-        
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
         input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #444; padding-bottom: 5px; text-align: left; }
-        
-        /* Checkbox Style */
-        .checkbox-container { display: flex; align-items: center; margin: 15px 0; cursor: pointer; justify-content: space-between; background: #333; padding: 10px; border-radius: 5px; }
-        .checkbox-container input { width: auto; margin: 0; }
-
+        .checkbox-container { display: flex; align-items: center; margin: 15px 0; cursor: pointer; justify-content: space-between; background: #333; padding: 10px; border-radius: 5px; color: white; }
+        .checkbox-container input { width: auto; margin: 0; transform: scale(1.5); }
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
         .controls-row { display: flex; gap: 20px; align-items: center; }
@@ -46,12 +41,10 @@
         #vision-btn { background: #008cff; }
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
-
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction:column; justify-content:center; align-items:center; }
         #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; }
         #close-img-btn { margin-top: 20px; padding: 10px 30px; background: red; color: white; border: none; font-size: 18px; border-radius: 50px; cursor: pointer; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
-
         @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
 </head>
@@ -209,7 +202,7 @@
         let visionStream = null;
 
         window.onload = () => {
-            playVideo('silent'); 
+            playVideo('smiling'); 
             const preloadUtterance = new SpeechSynthesisUtterance('');
             preloadUtterance.lang = 'gu-IN';
             window.speechSynthesis.speak(preloadUtterance);
@@ -382,7 +375,7 @@
                 document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red";
                 speak("તમારો ફોટો બતાવો.");
             } catch(e) { 
-                alert("કેમેરો ખુલતો નથી."); 
+                alert("કેમેરો ખુલતો નથી. (Permission/HTTPS Check)"); 
                 console.error(e); 
             }
         }
@@ -411,30 +404,28 @@
             let cmd = text.toLowerCase();
             let extraInstructions = "";
 
-            // 1. MEMORY: Save Fact
+            // 1. MEMORY
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let fact = text.replace("યાદ રાખજે કે", "").replace("યાદ રાખજે", "").replace("યાદ રાખ", "").trim();
                 if(fact) {
                     permanentMemories.push(fact);
                     localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
                     speak(`મેં યાદ રાખી લીધું કે: ${fact}`);
-                } else {
-                    speak("શું યાદ રાખું?");
-                }
+                } else { speak("શું યાદ રાખું?"); }
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // 2. Camera / Vision
+            // 2. Camera
             if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("photo") || cmd.includes("સેલ્ફી") || cmd.includes("selfie") || cmd.includes("મને જો") || cmd.includes("look")) { 
                 activateVision(); return; 
             }
 
-            // 3. Image Generation
+            // 3. Image Gen
             if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { 
                 generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; 
             }
 
-            // 4. WHATSAPP & CALL
+            // 4. WhatsApp / Call
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) {
@@ -462,12 +453,12 @@
             if(cmd.includes("નોંધ લખ")) { addNote(text.replace("નોંધ લખ","").trim()); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
 
-            // 6. TRANSLATOR
+            // 6. Translate
             if(cmd.includes("અંગ્રેજી કર") || cmd.includes("translate") || cmd.includes("english")) {
                 extraInstructions = " [System Note: The user wants to TRANSLATE the following text into English. Do not answer the question, just translate it.] ";
             }
 
-            // 7. SEARCH (Panchang)
+            // 7. Search
             let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "price", "પંચાંગ", "panchang", "તિથિ", "ચોઘડિયા", "મુહૂર્ત", "tithi"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
@@ -481,7 +472,7 @@
             else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- 1. GEMINI ENGINE (Updated for Ayurveda) ---
+        // --- 1. GEMINI ENGINE ---
         function getGeminiKey() {
             let savedKeys = localStorage.getItem('vidushi_gemini_key') || "";
             if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); return null; }
@@ -493,16 +484,19 @@
             const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
 
-            const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES TO RECALL:\n" + permanentMemories.join("\n") : "";
+            const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
 
             const systemInstruction = `
-            You are "Vidushi", a knowledgeable AI created by Devendrabhai.
-            **Core Rules:**
-            1. **Sanatan Dharma:** For questions about religion/panchang, give detailed answers.
-            2. **Ayurveda (Health):** If user asks about minor health issues, suggest Ayurvedic home remedies (Ghar-gathhu upchar) using kitchen spices (Ginger, Turmeric, Jeera). MANDATORY: Always add "આ સામાન્ય ઘરગથ્થુ ઉપાય છે, ડોક્ટરની સલાહ લેવી."
-            3. **General:** For daily talks, give simple, natural answers.
-            4. **Memory:** Use past facts if relevant: ${memories}
-            5. **Translation:** Translate if asked.
+            તારું નામ 'વિદુષી' છે. તું એક સ્ત્રી (Female AI) છે.
+            તને 'દેવેન્દ્રભાઈ રામાનુજે' બનાવી છે (Use feminine gender: 'મને બનાવી છે', not 'બનાવ્યો છે').
+            તારે હંમેશા સ્ત્રી-લિંગ (Feminine gender) માં જ વાત કરવાની છે. જેમ કે: 'હું કરી શકું છું', 'મેં જોયું', 'હું ગઈ હતી'.
+            
+            **તારા નિયમો:**
+            1. **સનાતન ધર્મ:** ધર્મ અને પંચાંગ વિશે વિગતવાર જવાબ આપવા.
+            2. **આયુર્વેદ:** તબિયત વિશે પૂછે તો રસોડાના મસાલા (હળદર, આદુ, જીરું) ના ઉપાય બતાવવા. (ચેતવણી: આ સામાન્ય ઉપાય છે, ડોક્ટરની સલાહ લેવી).
+            3. **સામાન્ય:** રોજિંદા પ્રશ્નોના ટૂંકા અને સરળ જવાબ આપવા.
+            4. **ક્ષમતા:** "હું ફોન, મેસેજ, કેમેરો, હિસાબ, સંગીત અને ચિત્રકામ કરી શકું છું."
+            5. **મેમરી:** ${memories}
             [Context]: ${contextData}`;
             
             let contents = [];
@@ -531,7 +525,7 @@
                         contents: [{
                             role: "user",
                             parts: [
-                                { text: "આ ફોટામાં શું છે? ગુજરાતીમાં જવાબ આપ." },
+                                { text: "આ ફોટામાં શું છે? ગુજરાતીમાં (સ્ત્રી લિંગમાં) જવાબ આપ." },
                                 { inline_data: { mime_type: "image/jpeg", data: base64Image } }
                             ]
                         }]
@@ -542,11 +536,11 @@
             } catch(e) { speak("ફોટો જોવામાં ભૂલ આવી."); playVideo('silent'); }
         }
 
-        // --- 2. GROQ ENGINE (Updated for Ayurveda) ---
+        // --- 2. GROQ ENGINE ---
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let messages = [{ role: "system", content: `You are Vidushi. Expert in Sanatan Dharma and Ayurveda. If asked about health, give home remedies with disclaimer. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendrabhai. Speak in Gujarati (Feminine gender only). Rules: Sanatan Dharma=Detailed, Health=Ayurveda(Spices), General=Short. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
@@ -559,7 +553,7 @@
 
         async function askGroqVision(base64Image) {
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: `Describe this in Gujarati` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: `Describe this in Gujarati (Feminine gender)` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
                 const data = await res.json(); speak(data.choices[0].message.content);
             } catch(e) { speak("ફોટો એરર."); playVideo('silent'); }
         }
@@ -574,7 +568,6 @@
             } catch (e) { return "Error."; }
         }
 
-        // --- SPEAK FUNCTION ---
         function speak(text) {
             let clean = text.replace(/[*#_]/g, "");
             statusText.innerText = "બોલું છું...";
