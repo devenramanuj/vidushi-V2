@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Error Free</title>
+    <title>Vidushi AI - Diary Final</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -32,7 +32,6 @@
         .modal-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
-        .expense-item { border-left: 4px solid #00ff00; }
         
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
         input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
@@ -279,7 +278,15 @@
             if(type === 'notes') renderNotes();
             if(type === 'expense') renderExpenses();
         }
-        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); speak("ડાયરીમાં લખી લીધું છે."); }
+        
+        // **UPDATED ADD NOTE: Refresh UI Immediately**
+        function addNote(text) { 
+            notes.push({ text, time: new Date().toLocaleDateString() }); 
+            localStorage.setItem('vidushi_notes', JSON.stringify(notes)); 
+            renderNotes(); // <--- This line updates the list even if modal is open
+            speak("ડાયરીમાં લખી લીધું છે."); 
+        }
+
         function renderNotes() { document.getElementById('notes-list').innerHTML = notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red;" onclick="deleteNote(${i})">x</span></div>`).join(''); }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
         function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
@@ -455,11 +462,21 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // STRICTER DIARY LOGIC
+            // *** FIX: ROBUST DIARY COMMANDS ***
+            // Removed duplicate logic. Consolidated here.
             if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) ) { 
-                let noteText = text.replace("નોંધ લખ","").replace("ડાયરીમાં લખ","").replace("ડાયરી","").replace("લખજે","").replace("નોંધ","").trim();
-                if(noteText) addNote(noteText);
-                else speak("શું લખું?");
+                let noteText = text;
+                // Smart clean-up: Remove command words to get only the note content
+                ["નોંધ લખ", "ડાયરીમાં લખ", "ડાયરીમાં", "નોંધ કર", "નોંધ"].forEach(phrase => {
+                    noteText = noteText.replace(phrase, "");
+                });
+                noteText = noteText.replace("કે", "").replace("એવી", "").trim(); // Clean connecting words like 'ke', 'evi'
+
+                if(noteText.length > 0) {
+                    addNote(noteText);
+                } else {
+                    speak("શું લખું?");
+                }
                 isProcessing=false; playVideo('silent'); return; 
             }
             if(cmd.includes("ડાયરી ખોલ") || cmd.includes("નોંધ બતાવ")) { toggleModal('notes'); speak("આ રહી તમારી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
@@ -485,11 +502,10 @@
             else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- 1. GEMINI ENGINE (Updated Key Logic & Error Handling) ---
+        // --- 1. GEMINI ENGINE ---
         function getGeminiKey() {
             let savedKeys = localStorage.getItem('vidushi_gemini_key') || "";
             if(!savedKeys) { alert("Settings માં Gemini Key નાખો!"); openSettings(); return null; }
-            // FIX: Split by comma OR newline to handle user formatting errors
             const allKeys = savedKeys.split(/[\n,]+/).map(k => k.trim()).filter(k => k !== "");
             return allKeys[Math.floor(Math.random() * allKeys.length)];
         }
@@ -517,7 +533,6 @@
                 const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
                 const data = await response.json();
                 
-                // *** IMPROVED ERROR HANDLING ***
                 if(data.error) {
                     console.error("Gemini Error:", data.error);
                     if(data.error.code === 429) speak("સર્વર બીઝી છે, થોડીવાર પછી ટ્રાય કરો.");
@@ -532,7 +547,7 @@
                 speak(reply);
             } catch(e) { 
                 console.error(e); 
-                speak("ઈન્ટરનેટ ચેક કરો."); // Friendly network error
+                speak("ઈન્ટરનેટ ચેક કરો."); 
                 playVideo('silent'); isProcessing=false; 
             }
         }
