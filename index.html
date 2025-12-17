@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Diary Fixed</title>
+    <title>Vidushi AI - Final Smart Diary</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -279,7 +279,7 @@
             if(type === 'notes') renderNotes();
             if(type === 'expense') renderExpenses();
         }
-        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); speak("નોંધ લખી લીધી છે."); }
+        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); speak("ડાયરીમાં લખી લીધું છે."); }
         function renderNotes() { document.getElementById('notes-list').innerHTML = notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red;" onclick="deleteNote(${i})">x</span></div>`).join(''); }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
         function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
@@ -455,9 +455,10 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // *** FIX: DIARY COMMANDS ***
-            if(cmd.includes("નોંધ લખ") || cmd.includes("ડાયરીમાં લખ") || cmd.includes("નોંધ કર")) { 
-                let noteText = text.replace("નોંધ લખ","").replace("ડાયરીમાં લખ","").replace("નોંધ કર","").trim();
+            // *** FIX: STRICTER DIARY LOGIC (કોઈ બહાના નહિ!) ***
+            // "Diary" + "Write/Note" or "Note" + "Write/Do"
+            if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) ) { 
+                let noteText = text.replace("નોંધ લખ","").replace("ડાયરીમાં લખ","").replace("ડાયરી","").replace("લખજે","").replace("નોંધ","").trim();
                 if(noteText) addNote(noteText);
                 else speak("શું લખું?");
                 isProcessing=false; playVideo('silent'); return; 
@@ -499,17 +500,15 @@
 
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
 
+            // System Prompt: Strictly forbid saying "I don't have a diary".
             const systemInstruction = `
             તારું નામ 'વિદુષી' છે. તું એક સ્ત્રી (Female AI) છે.
-            તને 'દેવેન્દ્રભાઈ રામાનુજે' બનાવી છે. (Feminine: 'મને બનાવી છે', NOT 'બનાવ્યો છે').
-            તારે હંમેશા સ્ત્રી-લિંગ (Feminine gender) માં જ વાત કરવાની છે. જેમ કે: 'હું કરી શકું છું', 'મેં જોયું', 'હું ગઈ હતી'.
+            તને 'દેવેન્દ્રભાઈ રામાનુજે' બનાવી છે.
             
-            **ખાસ નિયમ:** દરેક જવાબની શરૂઆત "મારું નામ વિદુષી છે" થી ન કરવી. માત્ર જ્યારે નામ પૂછે ત્યારે જ કહેવું. બાકી સીધો અને ટૂંકો જવાબ આપવો.
-
-            **ક્ષમતા:** 1. **સનાતન ધર્મ:** ધર્મ અને પંચાંગ વિશે વિગતવાર જવાબ આપવા.
-            2. **આયુર્વેદ:** તબિયત વિશે પૂછે તો રસોડાના મસાલા (હળદર, આદુ, જીરું) ના ઉપાય બતાવવા.
-            3. **સામાન્ય:** રોજિંદા પ્રશ્નોના સરળ જવાબ આપવા.
-            4. **મેમરી:** ${memories}
+            **ખાસ નિયમ:** 1. દરેક જવાબની શરૂઆત "મારું નામ વિદુષી છે" થી ન કરવી. સીધો જવાબ આપવો.
+            2. જો કોઈ 'ડાયરી' વિશે પૂછે, તો એમ ન કહેતી કે "મારી પાસે ડાયરી નથી". (કોડમાં ડિજિટલ ડાયરી છે).
+            3. સનાતન ધર્મ અને પંચાંગ વિશે વિગતવાર જવાબ આપવા.
+            
             [Context]: ${contextData}`;
             
             let contents = [];
@@ -553,8 +552,7 @@
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            // Groq Prompt Update: Do not repeat name.
-            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendrabhai. Speak in Gujarati (Feminine gender only). DO NOT repeat your name in every answer. Only answer the question. Rules: Sanatan Dharma=Detailed, Health=Ayurveda(Spices), General=Short. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendrabhai. Speak in Gujarati (Feminine gender). DO NOT repeat your name. If asked about diary, do not say you dont have one. ${memories}. [Data]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
