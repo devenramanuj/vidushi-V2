@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Diary Final</title>
+    <title>Vidushi AI - Auto Diary</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -28,10 +28,15 @@
         #music-btn { top: 70px; color: #00e5ff; }
         #expense-btn { top: 125px; color: #00ff00; }
 
+        /* MODALS */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
-        .modal-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
-        .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
+        
+        /* NOTE ITEM STYLE */
+        .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; font-size: 16px; }
+        .expense-item { border-left: 4px solid #00ff00; }
         
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
         input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
@@ -279,15 +284,26 @@
             if(type === 'expense') renderExpenses();
         }
         
-        // **UPDATED ADD NOTE: Refresh UI Immediately**
+        // **UPDATED ADD NOTE: Auto Open Modal**
         function addNote(text) { 
             notes.push({ text, time: new Date().toLocaleDateString() }); 
             localStorage.setItem('vidushi_notes', JSON.stringify(notes)); 
-            renderNotes(); // <--- This line updates the list even if modal is open
+            
+            // Force Open Modal so user sees it
+            document.getElementById('notes-modal').style.display = 'flex';
+            renderNotes(); 
+            
             speak("ડાયરીમાં લખી લીધું છે."); 
         }
 
-        function renderNotes() { document.getElementById('notes-list').innerHTML = notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red;" onclick="deleteNote(${i})">x</span></div>`).join(''); }
+        function renderNotes() { 
+            const list = document.getElementById('notes-list');
+            if(notes.length === 0) {
+                list.innerHTML = "<div style='color:#777;'>કોઈ નોંધ નથી</div>";
+            } else {
+                list.innerHTML = notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red; cursor:pointer;" onclick="deleteNote(${i})">✖</span></div>`).join(''); 
+            }
+        }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
         function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
         
@@ -462,18 +478,16 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // *** FIX: ROBUST DIARY COMMANDS ***
-            // Removed duplicate logic. Consolidated here.
+            // *** STRICTER DIARY LOGIC + AUTO OPEN ***
             if( (cmd.includes("ડાયરી") || cmd.includes("નોંધ")) && (cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) ) { 
                 let noteText = text;
-                // Smart clean-up: Remove command words to get only the note content
                 ["નોંધ લખ", "ડાયરીમાં લખ", "ડાયરીમાં", "નોંધ કર", "નોંધ"].forEach(phrase => {
                     noteText = noteText.replace(phrase, "");
                 });
-                noteText = noteText.replace("કે", "").replace("એવી", "").trim(); // Clean connecting words like 'ke', 'evi'
+                noteText = noteText.replace("કે", "").replace("એવી", "").trim();
 
                 if(noteText.length > 0) {
-                    addNote(noteText);
+                    addNote(noteText); // This now opens the modal too
                 } else {
                     speak("શું લખું?");
                 }
