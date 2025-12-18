@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Clean Interface</title>
+    <title>Vidushi AI - Pro Version</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -18,8 +18,7 @@
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
         #canvas-capture { display: none; }
 
-        /* --- UI LAYER (Minimalist) --- */
-        /* Only Settings Button is visible on main screen */
+        /* --- UI LAYER (Clean) --- */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
 
@@ -29,7 +28,6 @@
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
         .expense-item { border-left: 4px solid #00ff00; }
         
-        /* Styled Settings Box with Menu Buttons */
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
         input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
@@ -185,6 +183,9 @@
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
         
+        // --- NEW: Global Variable for Vision Prompt ---
+        let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
+
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
@@ -212,7 +213,7 @@
         let visionMode = false;
         let visionStream = null;
 
-        // --- WAKE LOCK LOGIC (સ્ક્રીન ચાલુ રાખવા) ---
+        // --- WAKE LOCK LOGIC ---
         let wakeLock = null;
         async function requestWakeLock() {
             try { wakeLock = await navigator.wakeLock.request('screen'); console.log('Screen Wake Lock Active'); } 
@@ -225,7 +226,7 @@
             preloadUtterance.lang = 'gu-IN';
             window.speechSynthesis.speak(preloadUtterance);
             setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
-            requestWakeLock(); // Start Screen Lock
+            requestWakeLock();
             document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); } });
         };
 
@@ -432,13 +433,28 @@
                 return;
             }
 
+            // --- DOCUMENT READER LOGIC (New) ---
+            if(cmd.includes("બિલ") || cmd.includes("દવા") || cmd.includes("વાંચ") || cmd.includes("read") || cmd.includes("bill")) {
+                 if(cmd.includes("કેમેરો") || cmd.includes("ફોટો") || cmd.includes("વાંચ")) {
+                    currentVisionPrompt = "આ ફોટામાં શું લખ્યું છે? બિલ હોય તો રકમ અને તારીખ કહે. દવા હોય તો ઉપયોગ કહે. બધું ગુજરાતીમાં સમજાવ.";
+                    activateVision();
+                    return;
+                 }
+            }
+            // Generic Camera
+            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("selfie") || cmd.includes("મને જો")) { 
+                currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
+                activateVision(); 
+                return; 
+            }
+
+            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; }
+            
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let fact = text.replace("યાદ રાખજે કે", "").replace("યાદ રાખજે", "").replace("યાદ રાખ", "").trim();
                 if(fact) { permanentMemories.push(fact); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak(`મેં યાદ રાખી લીધું કે: ${fact}`); } 
                 isProcessing = false; playVideo('silent'); return;
             }
-            if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("selfie") || cmd.includes("મને જો")) { activateVision(); return; }
-            if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; }
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak(`${found.gu_name} ને મેસેજ કરું છું.`); } 
@@ -471,12 +487,19 @@
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("અંગ્રેજી કર")) { extraInstructions = " [Translate to English] "; }
 
+            // --- CALCULATOR & NEWS LOGIC ---
+            // Simply passing math queries or search queries to AI with context
             let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "price", "પંચાંગ", "panchang", "તિથિ", "મુહૂર્ત"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
                 statusText.innerText = "ઈન્ટરનેટ...";
                 let res = await performGoogleSearch(text);
                 extraContext = `[Internet Info]: ${res}`;
+            }
+            
+            // Check for Math keywords
+            if (["વત્તા", "ઓછા", "ગુણ્યા", "ભાગ્યા", "ટકા", "plus", "minus", "%"].some(k => cmd.includes(k))) {
+                extraInstructions += " [Perform this calculation accurately] ";
             }
 
             if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
@@ -498,7 +521,7 @@
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની પર્સનલ આસિસ્ટન્ટ છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. અત્યારનો સમય અને તારીખ: ${timeString}. [Memory]: ${memories} [Context]: ${contextData}`;
+            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની પર્સનલ આસિસ્ટન્ટ છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. જો ગણિત કે હિસાબ પૂછે તો ચોક્કસ ગણતરી કરીને આપજે. અત્યારનો સમય અને તારીખ: ${timeString}. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -521,7 +544,7 @@
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: "આ શું છે? (ગુજરાતીમાં)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
                 });
                 const data = await response.json();
                 speak(data.candidates[0].content.parts[0].text);
@@ -536,7 +559,7 @@
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            let systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની મદદગાર AI છે. તારે માત્ર શુદ્ધ ગુજરાતી ભાષામાં જ જવાબ આપવાનો છે. તારા જવાબો ટૂંકા અને મુદ્દાસર હોવા જોઈએ. હિન્દી કે અંગ્રેજી શબ્દો વાપરવા નહીં. આજનો સમય: ${timeString}. ${memories}. [Context]: ${contextData}`;
+            let systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની મદદગાર AI છે. તારે માત્ર શુદ્ધ ગુજરાતી ભાષામાં જ જવાબ આપવાનો છે. જો કોઈ હિસાબ પૂછે તો ગણતરી કરીને આપજે. આજનો સમય: ${timeString}. ${memories}. [Context]: ${contextData}`;
             
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
@@ -552,7 +575,7 @@
 
         async function askGroqVision(base64Image) {
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: `Describe in Gujarati` }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: currentVisionPrompt }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
                 const data = await res.json(); speak(data.choices[0].message.content);
             } catch(e) { speak("ફોટો એરર."); playVideo('silent'); }
         }
