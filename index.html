@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate Stable</title>
+    <title>Vidushi AI - Next Gen (Gemini 3.0)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -104,9 +104,10 @@
             <div id="gemini-settings">
                 <div class="section-title">Step 2: Select Gemini Model</div>
                 <select id="geminiModelSelect">
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash ⚡ (Stable & Free)</option>
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀 (New)</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥 (Smartest)</option>
+                    <option value="gemini-3.0-flash">Gemini 3.0 Flash 🌟 (New & Best)</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash ⚡ (Stable)</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
                 </select>
                 <div class="section-title">Step 3: API Keys (Comma separated)</div>
                 <textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2, Key3..."></textarea>
@@ -175,8 +176,10 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        // DEFAULT MODEL SET TO 1.5 FLASH
-        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-1.5-flash"; 
+        
+        // DEFAULT TO GEMINI 3.0 or 1.5 if 3.0 not saved
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-3.0-flash"; 
+        
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
@@ -536,7 +539,6 @@
             if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- SMART RETRY LOGIC (KEY ROTATION) ---
         async function askGeminiText(userText, contextData = "") {
             let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
             if(keys.length === 0) { alert("Gemini Key નથી!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
