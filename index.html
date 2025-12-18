@@ -399,14 +399,31 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // --- SIMPLE ROBUST LOGIC FOR NOTES ---
-            if(cmd.includes("નોંધ") || cmd.includes("ડાયરી")) { 
-                 if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) {
-                    let noteText = text.replace("નોંધ લખ","").replace("ડાયરીમાં લખ","").replace("ડાયરી","").replace("નોંધ","").replace("લખજે","").trim();
-                    if(noteText) addNote(noteText); else speak("શું લખું?");
+            // --- UPDATED DIARY LOGIC ---
+            if(cmd.includes("નોંધ") || cmd.includes("ડાયરી") || cmd.includes("note") || cmd.includes("diary")) { 
+                 if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર") || cmd.includes("save") || cmd.includes("add")) {
+                    
+                    let removeWords = ["ડાયરીમાં", "ડાયરી", "નોંધ", "લખજે", "લખ", "ઉમેર", "સેવ", "કર", "diary", "note", "add", "save", "write", "માં", "ke", "કે", "vidushi", "વિદુષી"];
+                    let noteText = text;
+                    removeWords.forEach(word => {
+                        let re = new RegExp(word, "gi"); 
+                        noteText = noteText.replace(re, "");
+                    });
+                    noteText = noteText.trim(); 
+
+                    if(noteText.length > 0) { 
+                        addNote(noteText); 
+                    } else { 
+                        speak("તમે શું નોંધાવવા માંગો છો?"); 
+                    }
                     isProcessing=false; playVideo('silent'); return; 
                  }
-                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ")) { toggleModal('notes'); speak("આ રહી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
+                 
+                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ") || cmd.includes("open") || cmd.includes("show")) { 
+                     toggleModal('notes'); 
+                     speak("આ રહી તમારી ડાયરી."); 
+                     isProcessing=false; playVideo('silent'); return; 
+                 }
             }
 
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
@@ -433,14 +450,13 @@
         async function askGeminiText(userText, contextData = "") {
             const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
             
-            // --- TIME FIX IMPLEMENTED HERE ---
+            // --- TIME FIX IMPLEMENTED ---
             const now = new Date();
             const timeString = now.toLocaleString('gu-IN', { dateStyle: 'full', timeStyle: 'short' });
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            // Added timeString to systemInstruction
             const systemInstruction = `તારું નામ 'વિદુષી' છે (સ્ત્રી). દેવેન્દ્રભાઈએ બનાવી છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. અત્યારનો સમય અને તારીખ: ${timeString}. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
@@ -474,13 +490,12 @@
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             
-            // --- TIME FIX IMPLEMENTED HERE TOO ---
+            // --- TIME FIX IMPLEMENTED ---
             const now = new Date();
             const timeString = now.toLocaleString('gu-IN', { dateStyle: 'full', timeStyle: 'short' });
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            // Added timeString to system message
             let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendra. Speak Gujarati. Keep answers short. Current Date and Time is: ${timeString}. ${memories}. [Context]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
