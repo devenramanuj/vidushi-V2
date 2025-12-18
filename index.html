@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Pro Version</title>
+    <title>Vidushi AI - Ultimate Memory Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -183,7 +183,6 @@
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
         
-        // --- NEW: Global Variable for Vision Prompt ---
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
 
         const fixedContacts = [
@@ -427,34 +426,71 @@
             let cmd = text.toLowerCase();
             let extraInstructions = "";
             
-            // --- SOS FEATURE ---
-            if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) {
-                sendSOS();
+            // --- SOS ---
+            if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) { sendSOS(); return; }
+
+            // --- 1. VISUAL MEMORY (Store Item) ---
+            if(cmd.includes("યાદ રાખજે કે મેં") || cmd.includes("અહીં મૂકી છે") || cmd.includes("યાદ રાખજે આ")) {
+                let item = text.replace("યાદ રાખજે કે મેં", "").replace("અહીં મૂકી છે", "").replace("યાદ રાખજે આ", "").replace("યાદ રાખજે", "").trim();
+                if(!item) item = "વસ્તુ";
+                currentVisionPrompt = `આ ફોટામાં ${item} ક્યાં પડી છે? તેની આજુબાજુ શું છે? તે જગ્યાનું ગુજરાતીમાં ચોક્કસ વર્ણન કર જેથી હું પછી શોધી શકું. (ઉદાહરણ: ટેબલ પર લેપટોપની બાજુમાં).`;
+                localStorage.setItem('vidushi_remember_item_name', item);
+                activateVision();
                 return;
             }
 
-            // --- DOCUMENT READER LOGIC (New) ---
+            // --- 2. VISUAL MEMORY (Find Item) ---
+            if(cmd.includes("ક્યાં છે") || cmd.includes("ક્યાં મૂકી") || cmd.includes("ક્યાં પડી")) {
+                let item = text.replace("મારી", "").replace("મારા", "").replace("ક્યાં છે", "").replace("ક્યાં મૂકી", "").replace("ક્યાં પડી", "").replace("છે", "").trim();
+                let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
+                if(visualMemories[item]) {
+                    speak(`તમે ${item} અહીં મૂકી હતી: ${visualMemories[item]}`);
+                } else {
+                    let keys = Object.keys(visualMemories);
+                    if(keys.length > 0) { speak(`મને ${item} વિશે ખબર નથી, પણ મને આ યાદ છે: ${keys.join(", ")}.`); } 
+                    else { speak("મને યાદ નથી."); }
+                }
+                isProcessing = false; playVideo('silent'); return;
+            }
+
+            // --- AYURVEDA SCANNER ---
+            if(cmd.includes("ફાયદા") || cmd.includes("ગુણ") || cmd.includes("આયુર્વેદ") || cmd.includes("health") || cmd.includes("khava") || cmd.includes("ખાવા")) {
+                if(cmd.includes("ફોટો") || cmd.includes("કેમેરો") || cmd.includes("scan") || cmd.includes("જો")) {
+                    currentVisionPrompt = "આ ફોટામાં રહેલી વસ્તુને આયુર્વેદિક દ્રષ્ટિએ તપાસ. જો તે ખોરાક કે વનસ્પતિ હોય, તો તેના ઔષધીય ગુણો, તે વાત/પિત્ત/કફ માટે કેવું છે, અને તેના સ્વાસ્થ્ય ફાયદા ગુજરાતીમાં જણાવ.";
+                    activateVision(); return;
+                }
+            }
+
+            // --- DOCUMENT READER ---
             if(cmd.includes("બિલ") || cmd.includes("દવા") || cmd.includes("વાંચ") || cmd.includes("read") || cmd.includes("bill")) {
                  if(cmd.includes("કેમેરો") || cmd.includes("ફોટો") || cmd.includes("વાંચ")) {
                     currentVisionPrompt = "આ ફોટામાં શું લખ્યું છે? બિલ હોય તો રકમ અને તારીખ કહે. દવા હોય તો ઉપયોગ કહે. બધું ગુજરાતીમાં સમજાવ.";
-                    activateVision();
-                    return;
+                    activateVision(); return;
                  }
             }
-            // Generic Camera
+            // --- Generic Camera ---
             if(cmd.includes("કેમેરો") || cmd.includes("camera") || cmd.includes("ફોટો પાડ") || cmd.includes("selfie") || cmd.includes("મને જો")) { 
-                currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
-                activateVision(); 
-                return; 
+                currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)"; activateVision(); return; 
             }
 
+            // --- PROFESSIONAL DRAFTER ---
+            if(cmd.includes("અરજી") || cmd.includes("લેટર") || cmd.includes("application") || cmd.includes("email") || cmd.includes("letter") || cmd.includes("લખ")) {
+                 if(cmd.includes("બતાવ") || cmd.includes("આપ") || cmd.includes("write") || cmd.includes("draft")) {
+                    extraInstructions = " [Action: Draft a professional formal letter/message in Gujarati based on user request. Keep it polite and structured.] ";
+                 }
+            }
+
+            // --- Image Gen ---
             if(cmd.includes("ચિત્ર બનાવ") || cmd.includes("ફોટો બનાવ") || cmd.includes("image")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").replace("ફોટો બનાવ","").trim()); return; }
             
+            // --- Memory ---
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let fact = text.replace("યાદ રાખજે કે", "").replace("યાદ રાખજે", "").replace("યાદ રાખ", "").trim();
                 if(fact) { permanentMemories.push(fact); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak(`મેં યાદ રાખી લીધું કે: ${fact}`); } 
                 isProcessing = false; playVideo('silent'); return;
             }
+
+            // --- WhatsApp/Call ---
             if(cmd.includes("મેસેજ કર") || cmd.includes("whatsapp")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak(`${found.gu_name} ને મેસેજ કરું છું.`); } 
@@ -467,13 +503,27 @@
                 else { speak("નામ મળતું નથી."); }
                 isProcessing = false; playVideo('silent'); return;
             }
+
+            // --- Navigation / Maps ---
+            if(cmd.includes("જવું છે") || cmd.includes("રસ્તો બતાવ") || cmd.includes("map")) {
+                let destination = text.replace("જવું છે", "").replace("રસ્તો બતાવ", "").replace("map", "").trim();
+                if(destination) { speak(`${destination} નો રસ્તો ખોલું છું.`); window.open(`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(destination)}`, "_blank"); }
+                isProcessing = false; playVideo('silent'); return;
+            }
+
+            // --- Video ---
+            if(cmd.includes("વિડીયો") || cmd.includes("video")) {
+                let query = text.replace("વિડીયો બતાવ", "").replace("વિડીયો", "").trim();
+                if(query) { speak(`${query} નો વિડીયો શરૂ કરું છું.`); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, "_blank"); }
+                isProcessing = false; playVideo('silent'); return;
+            }
+            
+            // --- Location, Expense, Diary ---
             if(cmd.includes("લોકેશન મોકલ")) { let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name)); found ? sendLocation(found) : speak("કોને?"); return; }
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
-            
-            // --- DIARY LOGIC ---
             if(cmd.includes("નોંધ") || cmd.includes("ડાયરી") || cmd.includes("note") || cmd.includes("diary")) { 
-                 if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર") || cmd.includes("save") || cmd.includes("add")) {
+                 if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર")) {
                     let removeWords = ["ડાયરીમાં", "ડાયરી", "નોંધ", "લખજે", "લખ", "ઉમેર", "સેવ", "કર", "diary", "note", "add", "save", "write", "માં", "ke", "કે", "vidushi", "વિદુષી"];
                     let noteText = text;
                     removeWords.forEach(word => { let re = new RegExp(word, "gi"); noteText = noteText.replace(re, ""); });
@@ -481,14 +531,13 @@
                     if(noteText.length > 0) { addNote(noteText); } else { speak("તમે શું નોંધાવવા માંગો છો?"); }
                     isProcessing=false; playVideo('silent'); return; 
                  }
-                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ") || cmd.includes("open") || cmd.includes("show")) { toggleModal('notes'); speak("આ રહી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
+                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ")) { toggleModal('notes'); speak("આ રહી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
             }
 
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("અંગ્રેજી કર")) { extraInstructions = " [Translate to English] "; }
 
-            // --- CALCULATOR & NEWS LOGIC ---
-            // Simply passing math queries or search queries to AI with context
+            // --- Internet & Calculator ---
             let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "price", "પંચાંગ", "panchang", "તિથિ", "મુહૂર્ત"];
             let extraContext = "";
             if (searchKeywords.some(k => cmd.includes(k)) && serperKey) {
@@ -496,10 +545,8 @@
                 let res = await performGoogleSearch(text);
                 extraContext = `[Internet Info]: ${res}`;
             }
-            
-            // Check for Math keywords
             if (["વત્તા", "ઓછા", "ગુણ્યા", "ભાગ્યા", "ટકા", "plus", "minus", "%"].some(k => cmd.includes(k))) {
-                extraInstructions += " [Perform this calculation accurately] ";
+                extraInstructions += " [Perform calculation accurately] ";
             }
 
             if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
@@ -547,7 +594,20 @@
                     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
                 });
                 const data = await response.json();
-                speak(data.candidates[0].content.parts[0].text);
+                let reply = data.candidates[0].content.parts[0].text;
+                
+                // --- Save Visual Memory Logic ---
+                let rememberItem = localStorage.getItem('vidushi_remember_item_name');
+                if(rememberItem) {
+                    let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
+                    visualMemories[rememberItem] = reply; 
+                    localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
+                    localStorage.removeItem('vidushi_remember_item_name'); 
+                    speak(`મેં યાદ રાખી લીધું. ${rememberItem} ની જગ્યા: ${reply}`);
+                } else {
+                    speak(reply);
+                }
+                // --------------------------------
             } catch(e) { speak("ભૂલ આવી."); playVideo('silent'); }
         }
 
@@ -576,7 +636,21 @@
         async function askGroqVision(base64Image) {
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: currentVisionPrompt }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
-                const data = await res.json(); speak(data.choices[0].message.content);
+                const data = await res.json(); 
+                let reply = data.choices[0].message.content;
+
+                // --- Save Visual Memory Logic for Groq ---
+                let rememberItem = localStorage.getItem('vidushi_remember_item_name');
+                if(rememberItem) {
+                    let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
+                    visualMemories[rememberItem] = reply; 
+                    localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
+                    localStorage.removeItem('vidushi_remember_item_name'); 
+                    speak(`મેં યાદ રાખી લીધું. ${rememberItem} ની જગ્યા: ${reply}`);
+                } else {
+                    speak(reply);
+                }
+                // -----------------------------------------
             } catch(e) { speak("ફોટો એરર."); playVideo('silent'); }
         }
 
