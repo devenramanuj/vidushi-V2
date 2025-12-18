@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Best Stable Version</title>
+    <title>Vidushi AI - Final Gujarati Fixed</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -93,12 +93,11 @@
             <div id="gemini-settings">
                 <div class="section-title">Step 2: Select Gemini Model</div>
                 <select id="geminiModelSelect">
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀 (Best)</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥 (Smartest)</option>
                 </select>
-                <div class="section-title">Step 3: API Keys</div>
-                <textarea id="geminiKeyInput" rows="3" placeholder="Paste Keys here..."></textarea>
+                <div class="section-title">Step 3: API Keys (Comma separated)</div>
+                <textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2, Key3..."></textarea>
             </div>
             <div id="groq-settings" style="display:none;">
                 <div class="section-title">Step 2: Select Groq Model</div>
@@ -163,7 +162,8 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash";
+        // --- MODEL FIX: REMOVED 1.5, DEFAULT IS 2.5 FLASH ---
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
 
@@ -372,6 +372,12 @@
         }
 
         async function processCommand(text) {
+            // --- NOISE GUARD ---
+            if(text.trim().length < 3) { console.log("Ignored noise:", text); return; }
+            const ignoreWords = ["હં", "હા", "કે", "ok", "okay", "hmm", "ha", "achha", "video", "photo"];
+            if(ignoreWords.includes(text.trim().toLowerCase())) { return; }
+            // -------------------
+
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
             let extraInstructions = "";
@@ -399,7 +405,7 @@
             if(cmd.includes("રૂપિયા") && cmd.includes("લખ")) { addExpense(text); isProcessing=false; playVideo('silent'); return; }
             if(cmd.includes("હિસાબ બતાવ")) { toggleModal('expense'); speak("આ રહ્યો હિસાબ."); isProcessing=false; playVideo('silent'); return; }
             
-            // --- UPDATED DIARY LOGIC ---
+            // --- DIARY LOGIC ---
             if(cmd.includes("નોંધ") || cmd.includes("ડાયરી") || cmd.includes("note") || cmd.includes("diary")) { 
                  if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર") || cmd.includes("save") || cmd.includes("add")) {
                     
@@ -496,7 +502,10 @@
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendra. Speak Gujarati. Keep answers short. Current Date and Time is: ${timeString}. ${memories}. [Context]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            // --- GUJARATI LANGUAGE FIX (IMPORTANT) ---
+            let systemPrompt = `તારું નામ વિદુષી છે. તું એક મદદગાર AI છે. દેવેન્દ્રભાઈએ તને બનાવી છે. તારે માત્ર શુદ્ધ ગુજરાતી ભાષામાં જ જવાબ આપવાનો છે. તારા જવાબો ટૂંકા અને મુદ્દાસર હોવા જોઈએ. હિન્દી કે અંગ્રેજી શબ્દો વાપરવા નહીં. આજનો સમય: ${timeString}. ${memories}. [Context]: ${contextData}`;
+            
+            let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
