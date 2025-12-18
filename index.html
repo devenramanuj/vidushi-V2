@@ -432,9 +432,16 @@
 
         async function askGeminiText(userText, contextData = "") {
             const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
+            
+            // --- TIME FIX IMPLEMENTED HERE ---
+            const now = new Date();
+            const timeString = now.toLocaleString('gu-IN', { dateStyle: 'full', timeStyle: 'short' });
+            
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
-            const systemInstruction = `તારું નામ 'વિદુષી' છે (સ્ત્રી). દેવેન્દ્રભાઈએ બનાવી છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. [Memory]: ${memories} [Context]: ${contextData}`;
+            
+            // Added timeString to systemInstruction
+            const systemInstruction = `તારું નામ 'વિદુષી' છે (સ્ત્રી). દેવેન્દ્રભાઈએ બનાવી છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. અત્યારનો સમય અને તારીખ: ${timeString}. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -466,8 +473,16 @@
 
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
+            
+            // --- TIME FIX IMPLEMENTED HERE TOO ---
+            const now = new Date();
+            const timeString = now.toLocaleString('gu-IN', { dateStyle: 'full', timeStyle: 'short' });
+
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendra. Speak Gujarati. Keep answers short. ${memories}. [Context]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            
+            // Added timeString to system message
+            let messages = [{ role: "system", content: `You are Vidushi (Female). Created by Devendra. Speak Gujarati. Keep answers short. Current Date and Time is: ${timeString}. ${memories}. [Context]: ${contextData}` }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
