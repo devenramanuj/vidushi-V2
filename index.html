@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Gujarati Fixed</title>
+    <title>Vidushi AI - Clean Interface</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -18,15 +18,10 @@
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
         #canvas-capture { display: none; }
 
-        /* --- UI LAYER --- */
-        #top-bar { position: fixed; top: 0; left: 0; width: 100%; padding: 15px 0; background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent); color: white; text-align: center; font-size: 20px; font-weight: bold; z-index: 10; letter-spacing: 1px; }
-        
-        .side-btn { position: fixed; left: 15px; z-index: 20; background: rgba(0,0,0,0.5); color: white; border: 1px solid #555; width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
+        /* --- UI LAYER (Minimalist) --- */
+        /* Only Settings Button is visible on main screen */
+        .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
-        #settings-btn { top: 15px; right: 15px; left: auto; }
-        #notes-btn { top: 15px; }
-        #music-btn { top: 70px; color: #00e5ff; }
-        #expense-btn { top: 125px; color: #00ff00; }
 
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -34,11 +29,17 @@
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
         .expense-item { border-left: 4px solid #00ff00; }
         
-        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 80vh; overflow-y: auto; }
+        /* Styled Settings Box with Menu Buttons */
+        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
         input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #444; padding-bottom: 5px; text-align: left; }
         
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 15px 5px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; gap: 5px; }
+        .menu-btn i { font-size: 20px; margin-bottom: 5px; }
+        .menu-btn:active { background: #444; border-color: #ff4500; }
+
         .checkbox-container { display: flex; align-items: center; margin: 15px 0; cursor: pointer; justify-content: space-between; background: #333; padding: 10px; border-radius: 5px; color: white; }
         .checkbox-container input { width: auto; margin: 0; transform: scale(1.5); }
 
@@ -71,16 +72,28 @@
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
-    <div id="top-bar">Vidushi AI</div>
-    
     <button id="settings-btn" class="side-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
-    <button id="notes-btn" class="side-btn" onclick="toggleModal('notes')"><i class="fas fa-book"></i></button>
-    <button id="music-btn" class="side-btn" onclick="toggleModal('music')"><i class="fas fa-music"></i></button>
-    <button id="expense-btn" class="side-btn" onclick="toggleModal('expense')"><i class="fas fa-rupee-sign"></i></button>
 
     <div id="settings-modal" class="modal">
         <div class="settings-box">
-            <h3>સેટિંગ્સ</h3>
+            <h3>મેનૂ & સેટિંગ્સ</h3>
+            
+            <div class="menu-grid">
+                <div class="menu-btn" onclick="openFeature('notes')">
+                    <i class="fas fa-book" style="color:orange;"></i> ડાયરી
+                </div>
+                <div class="menu-btn" onclick="openFeature('music')">
+                    <i class="fas fa-music" style="color:#00e5ff;"></i> ભજન
+                </div>
+                <div class="menu-btn" onclick="openFeature('expense')">
+                    <i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ
+                </div>
+            </div>
+
+            <div class="section-title">Personal Info</div>
+            <label>તમારું નામ:</label>
+            <input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
+            
             <label class="checkbox-container">
                 <span>સતત વાતચીત (Hands-Free)</span>
                 <input type="checkbox" id="continuousModeCheck">
@@ -162,13 +175,12 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        // --- MODEL FIX: REMOVED 1.5, DEFAULT IS 2.5 FLASH ---
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
+        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
 
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
-        let userName = "સાહેબ";
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
@@ -200,12 +212,21 @@
         let visionMode = false;
         let visionStream = null;
 
+        // --- WAKE LOCK LOGIC (સ્ક્રીન ચાલુ રાખવા) ---
+        let wakeLock = null;
+        async function requestWakeLock() {
+            try { wakeLock = await navigator.wakeLock.request('screen'); console.log('Screen Wake Lock Active'); } 
+            catch (err) { console.log(err); }
+        }
+
         window.onload = () => {
             playVideo('smiling'); 
             const preloadUtterance = new SpeechSynthesisUtterance('');
             preloadUtterance.lang = 'gu-IN';
             window.speechSynthesis.speak(preloadUtterance);
             setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
+            requestWakeLock(); // Start Screen Lock
+            document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); } });
         };
 
         function playVideo(type) {
@@ -216,6 +237,7 @@
 
         function openSettings() { 
             document.getElementById('settings-modal').style.display = 'flex'; 
+            document.getElementById('userNameInput').value = userName;
             document.getElementById('providerSelect').value = aiProvider;
             document.getElementById('geminiKeyInput').value = geminiKeys; 
             document.getElementById('geminiModelSelect').value = geminiModel;
@@ -226,6 +248,11 @@
             toggleProviderSettings();
         }
 
+        function openFeature(type) {
+            document.getElementById('settings-modal').style.display = 'none';
+            toggleModal(type);
+        }
+
         function toggleProviderSettings() {
             const provider = document.getElementById('providerSelect').value;
             document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none';
@@ -233,6 +260,7 @@
         }
 
         function saveSettings() {
+            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ";
             aiProvider = document.getElementById('providerSelect').value;
             geminiKeys = document.getElementById('geminiKeyInput').value.trim();
             geminiModel = document.getElementById('geminiModelSelect').value;
@@ -241,6 +269,7 @@
             serperKey = document.getElementById('serperKeyInput').value.trim();
             continuousMode = document.getElementById('continuousModeCheck').checked;
             
+            localStorage.setItem('vidushi_username', userName);
             localStorage.setItem('vidushi_provider', aiProvider);
             localStorage.setItem('vidushi_gemini_key', geminiKeys);
             localStorage.setItem('vidushi_gemini_model', geminiModel);
@@ -250,7 +279,7 @@
             localStorage.setItem('vidushi_continuous', continuousMode);
             
             document.getElementById('settings-modal').style.display = 'none';
-            speak("સેટિંગ્સ સેવ થઈ ગયા.");
+            speak(`સેટિંગ્સ સેવ થઈ ગયા, ${userName}.`);
         }
 
         function clearMemories() {
@@ -321,6 +350,21 @@
                 }, () => { speak("GPS નથી."); isProcessing = false; playVideo('silent'); });
             } else { speak("GPS નથી."); }
         }
+        
+        function sendSOS() {
+            statusText.innerText = "SOS મોકલું છું...";
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition((position) => {
+                    let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; 
+                    fixedContacts.forEach(contact => {
+                         let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
+                         window.open(`https://wa.me/${num}?text=${encodeURIComponent("SOS! મદદ કરો! મારું લોકેશન: " + mapLink)}`, "_blank");
+                    });
+                    speak("બધાને SOS મોકલી દીધો!");
+                    isProcessing = false; playVideo('silent');
+                }, () => { speak("GPS નથી."); isProcessing = false; playVideo('silent'); });
+            }
+        }
 
         function generateMagicImage(prompt) {
             playVideo('thinking'); statusText.innerText = "ચિત્ર બનાવું છું...";
@@ -381,6 +425,12 @@
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
             let extraInstructions = "";
+            
+            // --- SOS FEATURE ---
+            if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) {
+                sendSOS();
+                return;
+            }
 
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let fact = text.replace("યાદ રાખજે કે", "").replace("યાદ રાખજે", "").replace("યાદ રાખ", "").trim();
@@ -408,28 +458,14 @@
             // --- DIARY LOGIC ---
             if(cmd.includes("નોંધ") || cmd.includes("ડાયરી") || cmd.includes("note") || cmd.includes("diary")) { 
                  if(cmd.includes("લખ") || cmd.includes("ઉમેર") || cmd.includes("સેવ") || cmd.includes("કર") || cmd.includes("save") || cmd.includes("add")) {
-                    
                     let removeWords = ["ડાયરીમાં", "ડાયરી", "નોંધ", "લખજે", "લખ", "ઉમેર", "સેવ", "કર", "diary", "note", "add", "save", "write", "માં", "ke", "કે", "vidushi", "વિદુષી"];
                     let noteText = text;
-                    removeWords.forEach(word => {
-                        let re = new RegExp(word, "gi"); 
-                        noteText = noteText.replace(re, "");
-                    });
+                    removeWords.forEach(word => { let re = new RegExp(word, "gi"); noteText = noteText.replace(re, ""); });
                     noteText = noteText.trim(); 
-
-                    if(noteText.length > 0) { 
-                        addNote(noteText); 
-                    } else { 
-                        speak("તમે શું નોંધાવવા માંગો છો?"); 
-                    }
+                    if(noteText.length > 0) { addNote(noteText); } else { speak("તમે શું નોંધાવવા માંગો છો?"); }
                     isProcessing=false; playVideo('silent'); return; 
                  }
-                 
-                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ") || cmd.includes("open") || cmd.includes("show")) { 
-                     toggleModal('notes'); 
-                     speak("આ રહી તમારી ડાયરી."); 
-                     isProcessing=false; playVideo('silent'); return; 
-                 }
+                 if(cmd.includes("ખોલ") || cmd.includes("બતાવ") || cmd.includes("open") || cmd.includes("show")) { toggleModal('notes'); speak("આ રહી ડાયરી."); isProcessing=false; playVideo('silent'); return; }
             }
 
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
@@ -456,14 +492,13 @@
         async function askGeminiText(userText, contextData = "") {
             const key = getGeminiKey(); if(!key) { isProcessing=false; playVideo('silent'); return; }
             
-            // --- TIME FIX IMPLEMENTED ---
             const now = new Date();
             const timeString = now.toLocaleString('gu-IN', { dateStyle: 'full', timeStyle: 'short' });
             
             const url = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`;
             const memories = permanentMemories.length > 0 ? "IMPORTANT MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            const systemInstruction = `તારું નામ 'વિદુષી' છે (સ્ત્રી). દેવેન્દ્રભાઈએ બનાવી છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. અત્યારનો સમય અને તારીખ: ${timeString}. [Memory]: ${memories} [Context]: ${contextData}`;
+            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની પર્સનલ આસિસ્ટન્ટ છે. સનાતન ધર્મ, આયુર્વેદ, પંચાંગ વિશે જવાબ આપવા. ટૂંકમાં જવાબ આપવા. અત્યારનો સમય અને તારીખ: ${timeString}. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -496,14 +531,12 @@
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             
-            // --- TIME FIX IMPLEMENTED ---
             const now = new Date();
             const timeString = now.toLocaleString('gu-IN', { dateStyle: 'full', timeStyle: 'short' });
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
             
-            // --- GUJARATI LANGUAGE FIX (IMPORTANT) ---
-            let systemPrompt = `તારું નામ વિદુષી છે. તું એક મદદગાર AI છે. દેવેન્દ્રભાઈએ તને બનાવી છે. તારે માત્ર શુદ્ધ ગુજરાતી ભાષામાં જ જવાબ આપવાનો છે. તારા જવાબો ટૂંકા અને મુદ્દાસર હોવા જોઈએ. હિન્દી કે અંગ્રેજી શબ્દો વાપરવા નહીં. આજનો સમય: ${timeString}. ${memories}. [Context]: ${contextData}`;
+            let systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની મદદગાર AI છે. તારે માત્ર શુદ્ધ ગુજરાતી ભાષામાં જ જવાબ આપવાનો છે. તારા જવાબો ટૂંકા અને મુદ્દાસર હોવા જોઈએ. હિન્દી કે અંગ્રેજી શબ્દો વાપરવા નહીં. આજનો સમય: ${timeString}. ${memories}. [Context]: ${contextData}`;
             
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
