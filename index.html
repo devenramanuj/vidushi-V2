@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate Memory Edition</title>
+    <title>Vidushi AI - The Ultimate Assistant</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -184,6 +184,10 @@
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
         
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
+        
+        // --- NEW: Listening Mode Variables ---
+        let isSilentListening = false;
+        let conversationBuffer = "";
 
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
@@ -283,10 +287,11 @@
         }
 
         function clearMemories() {
-            if(confirm("બધી યાદશક્તિ ભૂંસી નાખવી છે?")) {
+            if(confirm("શું તમે બધી યાદશક્તિ (વાતો અને વસ્તુઓના લોકેશન) ભૂંસી નાખવા માંગો છો?")) {
                 permanentMemories = [];
                 localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
-                speak("બધી જૂની વાતો ભૂલી ગઈ છું.");
+                localStorage.removeItem('vidushi_visual_memories');
+                speak("હું બધું ભૂલી ગઈ છું.");
             }
         }
 
@@ -417,15 +422,46 @@
 
         async function processCommand(text) {
             // --- NOISE GUARD ---
-            if(text.trim().length < 3) { console.log("Ignored noise:", text); return; }
-            const ignoreWords = ["હં", "હા", "કે", "ok", "okay", "hmm", "ha", "achha", "video", "photo"];
+            if(text.trim().length < 3) { return; }
+            const ignoreWords = ["હં", "હા", "કે", "ok", "okay", "hmm", "ha", "achha"];
             if(ignoreWords.includes(text.trim().toLowerCase())) { return; }
-            // -------------------
 
-            isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             let cmd = text.toLowerCase();
             let extraInstructions = "";
-            
+
+            // --- 1. SILENT LISTENING MODE (NEW) ---
+            if(isSilentListening) {
+                if(cmd.includes("વાત પૂરી") || cmd.includes("stop listening") || cmd.includes("સાંભળવાનું બંધ")) {
+                    isSilentListening = false;
+                    statusText.innerText = "વાત સેવ કરું છું...";
+                    playVideo('thinking');
+                    
+                    let summary = `[વાતચીત રેકોર્ડિંગ ${new Date().toLocaleDateString()}]: ${conversationBuffer}`;
+                    permanentMemories.push(summary);
+                    localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
+                    
+                    conversationBuffer = "";
+                    speak("મેં તમારી વાતચીત યાદ રાખી લીધી છે.");
+                    return;
+                } else {
+                    conversationBuffer += text + ". ";
+                    statusText.innerText = "સાંભળું છું... (બોલતા રહો)";
+                    console.log("Recorded:", text);
+                    return; // Don't process command, just record
+                }
+            }
+
+            // Start Listening
+            if(cmd.includes("અમારી વાત સાંભળ") || cmd.includes("listen to us") || cmd.includes("નોંધ લે")) {
+                isSilentListening = true;
+                conversationBuffer = "";
+                speak("ઠીક છે, હું શાંતિથી તમારી વાતો સાંભળું છું. પૂરું થાય એટલે 'વાત પૂરી' કહેજો.");
+                return;
+            }
+
+            // --- Normal Commands ---
+            isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
+
             // --- SOS ---
             if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) { sendSOS(); return; }
 
