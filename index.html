@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vidushi AI - Final Pro</title>
-    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -18,7 +17,7 @@
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
         #canvas-capture { display: none; }
 
-        /* --- UI LAYER (Clean) --- */
+        /* --- UI LAYER --- */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
 
@@ -55,6 +54,8 @@
         #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; }
         #close-img-btn { margin-top: 20px; padding: 10px 30px; background: red; color: white; border: none; font-size: 18px; border-radius: 50px; cursor: pointer; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
+        
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
 </head>
 <body>
@@ -104,10 +105,9 @@
             <div id="gemini-settings">
                 <div class="section-title">Step 2: Select Gemini Model</div>
                 <select id="geminiModelSelect">
-                    <option value="gemini-2.0-flash-lite">gemini 2.0-flash-lite ⚡ (Stable)</option>
+                    <option value="gemini-2.0-flash-lite">gemini 2.0-flash-lite ⚡ (Recommended)</option>
                     <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
-                    <option value="gemini-3.0-flash">Gemini 3.0 Flash 🌟 (New)</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                 </select>
                 <div class="section-title">Step 3: API Keys (Comma separated)</div>
                 <textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2, Key3..."></textarea>
@@ -177,10 +177,8 @@
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
         
-        // DEFAULT GEMINI MODEL (Setting 1.5 as safe default, user can change)
-        let geminiModel = "gemini-flash-lite-latest";
-        
-        
+        // --- FIXED MODEL (Lite for better limits) ---
+        let geminiModel = "gemini-2.0-flash-lite"; 
         
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
@@ -195,6 +193,7 @@
         let isSilentListening = false;
         let conversationBuffer = "";
 
+        // --- CONTACT LIST (Phone Call Feature) ---
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
@@ -349,7 +348,7 @@
             if (navigator.geolocation) {
                 statusText.innerText = "લોકેશન...";
                 navigator.geolocation.getCurrentPosition((position) => {
-                    let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; 
+                    let mapLink = `http://googleusercontent.com/maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`; 
                     let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
                     window.open(`https://wa.me/${num}?text=${encodeURIComponent("મારું લોકેશન: " + mapLink)}`, "_blank");
                     speak("લોકેશન મોકલ્યું.");
@@ -362,7 +361,7 @@
             statusText.innerText = "SOS...";
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
-                    let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; 
+                    let mapLink = `http://googleusercontent.com/maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`; 
                     fixedContacts.forEach(contact => {
                          let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
                          window.open(`https://wa.me/${num}?text=${encodeURIComponent("SOS! મદદ કરો! મારું લોકેશન: " + mapLink)}`, "_blank");
@@ -480,23 +479,17 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // Ayurveda
-            if(cmd.includes("ફાયદા") || cmd.includes("ગુણ") || cmd.includes("આયુર્વેદ")) {
+            // --- SELFIE & CAMERA COMMANDS ---
+            if(cmd.includes("સેલ્ફી") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ ફોટામાં હું કેવો દેખાઉં છું?"; activateVision(); return; }
+            if(cmd.includes("કેમેરો") || cmd.includes("જો")) { currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)"; activateVision(); return; }
+
+            // Ayurveda / Reader
+            if(cmd.includes("ફાયદા") || cmd.includes("ગુણ") || cmd.includes("આયુર્વેદ") || cmd.includes("બિલ") || cmd.includes("વાંચ")) {
                 if(cmd.includes("ફોટો") || cmd.includes("કેમેરો")) {
-                    currentVisionPrompt = "આ વસ્તુના આયુર્વેદિક ગુણો અને ફાયદા જણાવ.";
+                    currentVisionPrompt = "આ ફોટામાં શું છે તેની વિગતવાર માહિતી આપ.";
                     activateVision(); return;
                 }
             }
-
-            // Reader
-            if(cmd.includes("બિલ") || cmd.includes("દવા") || cmd.includes("વાંચ")) {
-                 if(cmd.includes("કેમેરો") || cmd.includes("ફોટો")) {
-                    currentVisionPrompt = "આમાં શું લખ્યું છે? ગુજરાતીમાં જણાવ.";
-                    activateVision(); return;
-                 }
-            }
-
-            if(cmd.includes("કેમેરો") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ શું છે?"; activateVision(); return; }
 
             if(cmd.includes("અરજી") || cmd.includes("લેટર")) { extraInstructions = " [Draft a formal letter in Gujarati] "; }
 
@@ -508,16 +501,19 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
+            // --- PHONE CALL COMMAND ---
             if(cmd.includes("મેસેજ કર")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak("મેસેજ કરું છું."); } 
                 isProcessing = false; playVideo('silent'); return;
             }
-            if(cmd.includes("ફોન કર")) {
+            if(cmd.includes("ફોન કર") || cmd.includes("કોલ")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`tel:+91${found.number}`, "_self"); speak("ફોન જોડું છું."); } 
+                else { speak("કોને ફોન કરું? નામ તો બોલો."); }
                 isProcessing = false; playVideo('silent'); return;
             }
+
             if(cmd.includes("જવું છે") || cmd.includes("રસ્તો")) {
                 let dest = text.replace("જવું છે", "").replace("રસ્તો", "").trim();
                 speak("મેપ ખોલું છું."); window.open(`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(dest)}`, "_blank");
@@ -553,7 +549,12 @@
             keys.sort(() => Math.random() - 0.5);
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. ગુજરાતીમાં જ જવાબ આપજે. [Memory]: ${memories} [Context]: ${contextData}`;
+            
+            // --- UPDATED SYSTEM INSTRUCTION FOR SELFIE & CALL ---
+            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. 
+            તારી પાસે આંખો (કેમેરો) છે એટલે તું સેલ્ફી લઈ શકે છે અને જોઈ શકે છે. 
+            તું ફોન પણ લગાવી શકે છે. હંમેશા ગુજરાતીમાં જ જવાબ આપજે.
+            [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -625,7 +626,10 @@
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let systemPrompt = `તારું નામ વિદુષી છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
+            
+            // --- UPDATED SYSTEM INSTRUCTION FOR GROQ ---
+            let systemPrompt = `તારું નામ વિદુષી છે. તારી પાસે કેમેરો અને ફોન કરવાની શક્તિ છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
+            
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
