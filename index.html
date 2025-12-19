@@ -177,7 +177,8 @@
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
         
-        // --- FIXED MODEL (Lite for better limits) ---
+        // --- FIXED MODEL (Using Lite to fix Limits) ---
+        // જો 2.0 Lite ન ચાલે તો અહીં "gemini-2.5-flash" કરી દેજો.
         let geminiModel = "gemini-2.0-flash-lite"; 
         
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
@@ -198,6 +199,7 @@
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
             { name: "Shyam", gu_name: "શ્યામ", number: "8200026682" }
+            // તમે અહીં બીજા નામ ઉમેરી શકો છો
         ];
 
         const statusText = document.getElementById('status-text');
@@ -501,16 +503,28 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // --- PHONE CALL COMMAND ---
+            // --- PHONE CALL COMMAND (IMPROVED) ---
+            if(cmd.includes("ફોન કર") || cmd.includes("કોલ")) {
+                let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
+                
+                if(found) { 
+                    speak(found.gu_name + "ને ફોન જોડું છું.");
+                    // 2 સેકન્ડ પછી કોલ લાગશે
+                    setTimeout(() => {
+                        window.location.href = `tel:+91${found.number}`;
+                    }, 2000); 
+                } 
+                else { 
+                    // જો નામ ન સમજાય તો લિસ્ટ બતાવો
+                    let names = fixedContacts.map(c => c.gu_name).join(", ");
+                    speak("કોને ફોન કરું? મારા લિસ્ટમાં આ નામ છે: " + names); 
+                }
+                isProcessing = false; playVideo('silent'); return;
+            }
+            
             if(cmd.includes("મેસેજ કર")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak("મેસેજ કરું છું."); } 
-                isProcessing = false; playVideo('silent'); return;
-            }
-            if(cmd.includes("ફોન કર") || cmd.includes("કોલ")) {
-                let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
-                if(found) { window.open(`tel:+91${found.number}`, "_self"); speak("ફોન જોડું છું."); } 
-                else { speak("કોને ફોન કરું? નામ તો બોલો."); }
                 isProcessing = false; playVideo('silent'); return;
             }
 
