@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate OpenRouter</title>
+    <title>Vidushi AI - Final Fixed</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
@@ -17,7 +17,7 @@
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; border-radius: 5px; }
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; }
-        .round-btn { width: 65px; height: 65px; border-radius: 50%; border: none; color: white; font-size: 28px; cursor: pointer; margin: 0 10px; box-shadow: 0 4px 15px rgba(255,69,0,0.3); }
+        .round-btn { width: 65px; height: 65px; border-radius: 50%; border: none; color: white; font-size: 28px; cursor: pointer; margin: 0 10px; }
         #mic-btn { background: #ff4500; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -41,33 +41,30 @@
             <label>AI Provider:</label>
             <select id="providerSelect" onchange="toggleProviderSettings()">
                 <option value="gemini">Google Gemini (Direct)</option>
-                <option value="openrouter">OpenRouter (Multiple Models)</option>
+                <option value="openrouter">OpenRouter (Free Mode)</option>
             </select>
 
             <div id="gemini-settings">
                 <label>Direct Gemini Model:</label>
                 <select id="geminiModelSelect">
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash ⚡</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
                 </select>
                 <label>Gemini API Keys:</label>
-                <textarea id="geminiKeyInput" rows="2" placeholder="Key1, Key2..."></textarea>
+                <textarea id="geminiKeyInput" rows="2"></textarea>
             </div>
 
             <div id="openrouter-settings" style="display:none;">
                 <label>OpenRouter Model:</label>
                 <select id="openRouterModelSelect">
-                    <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Free) ✨</option>
-                    <option value="google/gemini-2.5-flash">Gemini 2.5 Flash (Paid) 🚀</option>
-                    <option value="google/gemini-2.5-pro">Gemini 2.5 Pro (Paid) 🔥</option>
-                    <option value="meta-llama/llama-3.2-11b-vision-instruct:free">Llama 3.2 Vision (Free) 👁️</option>
-                    <option value="google/gemini-flash-1.5-8b">Gemini 1.5 Flash 8B</option>
+                    <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Free)</option>
+                    <option value="meta-llama/llama-3.2-11b-vision-instruct:free">Llama 3.2 Vision (Free)</option>
                 </select>
                 <label>OpenRouter API Key:</label>
                 <input type="password" id="openRouterKeyInput" placeholder="sk-or-v1-...">
             </div>
 
-            <button class="save-btn" onclick="saveSettings()">સેવ અને ક્લોઝ</button>
+            <button class="save-btn" onclick="saveSettings()">SAVE</button>
         </div>
     </div>
 
@@ -85,7 +82,7 @@
         let openRouterKey = localStorage.getItem('vidushi_openrouter_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash";
         let openRouterModel = localStorage.getItem('vidushi_openrouter_model') || "google/gemini-2.0-flash-exp:free";
-        let userName = localStorage.getItem('vidushi_username') || "દેવેન્દ્રભાઈ";
+        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
 
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
@@ -156,16 +153,15 @@
         }
 
         async function askOpenRouter(userText) {
-            if(!openRouterKey) { speak("ઓપન રાઉટર કી બાકી છે"); return; }
+            if(!openRouterKey) { speak("કી બાકી છે"); return; }
             
             try {
                 const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${openRouterKey}`,
+                        "Authorization": `Bearer ${openRouterKey.trim()}`,
                         "Content-Type": "application/json",
-                        "HTTP-Referer": "http://localhost", 
-                        "X-Title": "Vidushi AI"
+                        "HTTP-Referer": "http://localhost"
                     },
                     body: JSON.stringify({
                         model: openRouterModel,
@@ -176,12 +172,11 @@
                 const data = await response.json();
                 if(data.choices && data.choices[0]) {
                     speak(data.choices[0].message.content);
-                } else if(data.error) {
-                    throw new Error(data.error.message);
+                } else {
+                    throw new Error("API Error");
                 }
             } catch(e) {
-                console.error(e);
-                speak("ઓપન રાઉટરમાં કંઈક ભૂલ છે ફરી પ્રયત્ન કરો");
+                speak("ઓપન રાઉટરમાં ભૂલ છે ફ્રી મોડલ ચેક કરો");
                 playVideo('silent');
                 isProcessing = false;
             }
@@ -198,9 +193,7 @@
                     body: JSON.stringify({ contents: [{ parts: [{ text: userText + " (જવાબ ગુજરાતીમાં આપો)" }] }] })
                 });
                 const data = await response.json();
-                if(data.candidates) {
-                    speak(data.candidates[0].content.parts[0].text);
-                } else { throw new Error("Limit"); }
+                speak(data.candidates[0].content.parts[0].text);
             } catch(e) {
                 speak("ગૂગલની લિમિટ પૂરી થઈ ગઈ છે");
                 playVideo('silent');
