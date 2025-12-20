@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Fixed</title>
+    <title>Vidushi AI - Ultimate Original</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
+        #canvas-capture { display: none; }
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
@@ -17,10 +19,12 @@
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; border-radius: 5px; }
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; }
-        .round-btn { width: 65px; height: 65px; border-radius: 50%; border: none; color: white; font-size: 28px; cursor: pointer; margin: 0 10px; }
-        #mic-btn { background: #ff4500; }
+        .round-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; margin: 0 10px; display: flex; align-items: center; justify-content: center; }
+        #mic-btn { width: 75px; height: 75px; background: #ff4500; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 10px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 12px; gap: 5px; }
     </style>
 </head>
 <body>
@@ -31,46 +35,60 @@
         <video id="thinking-video" muted loop playsinline><source src="thinking.mp4" type="video/mp4"></video>
         <video id="smiling-video" muted loop playsinline><source src="smiling.mp4" type="video/mp4"></video>
     </div>
+    
+    <video id="selfie-video" autoplay playsinline></video>
+    <canvas id="canvas-capture"></canvas>
 
     <button class="side-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="settings-modal" class="modal">
         <div class="settings-box">
-            <h3>વિદુષી સેટિંગ્સ</h3>
+            <h3>મેનૂ & સેટિંગ્સ</h3>
+            
+            <div class="menu-grid">
+                <div class="menu-btn" onclick="speak('ડાયરી ખોલું છું')"><i class="fas fa-book"></i> ડાયરી</div>
+                <div class="menu-btn" onclick="speak('ભજન પ્લેયર તૈયાર છે')"><i class="fas fa-music"></i> પ્લેયર</div>
+                <div class="menu-btn" onclick="speak('હિસાબ કિતાબ')"><i class="fas fa-rupee-sign"></i> હિસાબ</div>
+            </div>
+
+            <label>તમારું નામ:</label>
+            <input type="text" id="userNameInput">
             
             <label>AI Provider:</label>
-            <select id="providerSelect" onchange="toggleProviderSettings()">
-                <option value="gemini">Google Gemini (Direct)</option>
-                <option value="openrouter">OpenRouter (Free Mode)</option>
+            <select id="providerSelect" onchange="toggleProvider()">
+                <option value="gemini">Google Gemini</option>
+                <option value="groq">Groq AI</option>
             </select>
 
-            <div id="gemini-settings">
-                <label>Direct Gemini Model:</label>
+            <div id="gemini-opts">
+                <label>Gemini Model:</label>
                 <select id="geminiModelSelect">
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash ⚡</option>
                 </select>
                 <label>Gemini API Keys:</label>
                 <textarea id="geminiKeyInput" rows="2"></textarea>
             </div>
 
-            <div id="openrouter-settings" style="display:none;">
-                <label>OpenRouter Model:</label>
-                <select id="openRouterModelSelect">
-                    <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Free)</option>
-                    <option value="meta-llama/llama-3.2-11b-vision-instruct:free">Llama 3.2 Vision (Free)</option>
+            <div id="groq-opts" style="display:none;">
+                <label>Groq Model:</label>
+                <select id="groqModelSelect">
+                    <option value="llama-3.1-8b-instant">Llama 8B (Fast)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 70B (Smart)</option>
                 </select>
-                <label>OpenRouter API Key:</label>
-                <input type="password" id="openRouterKeyInput" placeholder="sk-or-v1-...">
+                <label>Groq API Key:</label>
+                <input type="password" id="groqKeyInput">
             </div>
 
-            <button class="save-btn" onclick="saveSettings()">SAVE</button>
+            <button class="save-btn" onclick="saveSettings()">સેવ કરો</button>
         </div>
     </div>
 
     <div id="mic-container">
         <div id="status-text">જય શ્રી કૃષ્ણ</div>
-        <div style="display:flex;">
+        <div style="display:flex; align-items:center;">
+            <button id="vision-btn" class="round-btn" style="background:#008cff;" onclick="activateVision()"><i class="fas fa-eye"></i></button>
             <button id="mic-btn" class="round-btn" onclick="startConversation()"><i class="fas fa-microphone"></i></button>
             <button id="stop-btn" class="round-btn" style="background:#444;" onclick="stopConversation()"><i class="fas fa-stop"></i></button>
         </div>
@@ -79,17 +97,20 @@
     <script>
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
-        let openRouterKey = localStorage.getItem('vidushi_openrouter_key') || '';
+        let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash";
-        let openRouterModel = localStorage.getItem('vidushi_openrouter_model') || "google/gemini-2.0-flash-exp:free";
-        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
+        let userName = localStorage.getItem('vidushi_username') || "દેવેન્દ્રભાઈ";
 
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
+        const selfieVideo = document.getElementById('selfie-video');
+        const canvas = document.getElementById('canvas-capture');
         const videos = { silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'), thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video') };
 
         let recognition;
         let isProcessing = false;
+        let visionStream = null;
 
         window.onload = () => { playVideo('silent'); speak(`જય શ્રી કૃષ્ણ ${userName}`); };
 
@@ -98,37 +119,40 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
+        function toggleProvider() {
+            const p = document.getElementById('providerSelect').value;
+            document.getElementById('gemini-opts').style.display = p === 'gemini' ? 'block' : 'none';
+            document.getElementById('groq-opts').style.display = p === 'groq' ? 'block' : 'none';
+        }
+
         function openSettings() {
             document.getElementById('settings-modal').style.display = 'flex';
+            document.getElementById('userNameInput').value = userName;
             document.getElementById('providerSelect').value = aiProvider;
             document.getElementById('geminiKeyInput').value = geminiKeys;
             document.getElementById('geminiModelSelect').value = geminiModel;
-            document.getElementById('openRouterKeyInput').value = openRouterKey;
-            document.getElementById('openRouterModelSelect').value = openRouterModel;
-            toggleProviderSettings();
-        }
-
-        function toggleProviderSettings() {
-            const provider = document.getElementById('providerSelect').value;
-            document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none';
-            document.getElementById('openrouter-settings').style.display = provider === 'openrouter' ? 'block' : 'none';
+            document.getElementById('groqKeyInput').value = groqKey;
+            document.getElementById('groqModelSelect').value = groqModel;
+            toggleProvider();
         }
 
         function saveSettings() {
             aiProvider = document.getElementById('providerSelect').value;
             geminiKeys = document.getElementById('geminiKeyInput').value;
             geminiModel = document.getElementById('geminiModelSelect').value;
-            openRouterKey = document.getElementById('openRouterKeyInput').value;
-            openRouterModel = document.getElementById('openRouterModelSelect').value;
+            groqKey = document.getElementById('groqKeyInput').value;
+            groqModel = document.getElementById('groqModelSelect').value;
+            userName = document.getElementById('userNameInput').value;
 
             localStorage.setItem('vidushi_provider', aiProvider);
             localStorage.setItem('vidushi_gemini_key', geminiKeys);
             localStorage.setItem('vidushi_gemini_model', geminiModel);
-            localStorage.setItem('vidushi_openrouter_key', openRouterKey);
-            localStorage.setItem('vidushi_openrouter_model', openRouterModel);
+            localStorage.setItem('vidushi_groq_key', groqKey);
+            localStorage.setItem('vidushi_groq_model', groqModel);
+            localStorage.setItem('vidushi_username', userName);
 
             document.getElementById('settings-modal').style.display = 'none';
-            speak("સેટિંગ્સ સેવ થયા");
+            speak("તમામ સેટિંગ્સ સેવ થઈ ગયા");
         }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -144,61 +168,35 @@
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); isProcessing = false; }
 
         async function processCommand(text) {
-            isProcessing = true;
-            statusText.innerText = "વિચારું છું...";
-            playVideo('thinking');
-
-            if(aiProvider === 'gemini') await askGemini(text);
-            else await askOpenRouter(text);
-        }
-
-        async function askOpenRouter(userText) {
-            if(!openRouterKey) { speak("કી બાકી છે"); return; }
-            
-            try {
-                const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-                    method: "POST",
-                    headers: {
-                        "Authorization": `Bearer ${openRouterKey.trim()}`,
-                        "Content-Type": "application/json",
-                        "HTTP-Referer": "http://localhost"
-                    },
-                    body: JSON.stringify({
-                        model: openRouterModel,
-                        messages: [{ role: "user", content: userText + " (જવાબ ગુજરાતીમાં આપો)" }]
-                    })
-                });
-
-                const data = await response.json();
-                if(data.choices && data.choices[0]) {
-                    speak(data.choices[0].message.content);
-                } else {
-                    throw new Error("API Error");
-                }
-            } catch(e) {
-                speak("ઓપન રાઉટરમાં ભૂલ છે ફ્રી મોડલ ચેક કરો");
-                playVideo('silent');
-                isProcessing = false;
-            }
+            isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
+            if(aiProvider === 'gemini') await askGemini(text); else await askGroq(text);
         }
 
         async function askGemini(userText) {
             let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
             let key = keys[Math.floor(Math.random() * keys.length)];
-            
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: userText + " (જવાબ ગુજરાતીમાં આપો)" }] }] })
+                    body: JSON.stringify({ contents: [{ parts: [{ text: userText + " (જવાબ ગુજરાતીમાં આપો અને વિરામચિહ્નો બોલશો નહીં)" }] }] })
                 });
                 const data = await response.json();
                 speak(data.candidates[0].content.parts[0].text);
-            } catch(e) {
-                speak("ગૂગલની લિમિટ પૂરી થઈ ગઈ છે");
-                playVideo('silent');
-                isProcessing = false;
-            }
+            } catch(e) { speak("ગૂગલ કીની લિમિટ પૂરી થઈ ગઈ છે"); playVideo('silent'); isProcessing = false; }
+        }
+
+        async function askGroq(userText) {
+            if(!groqKey) { speak("Groq કી નથી"); return; }
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                    method: "POST",
+                    headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: groqModel, messages: [{ role: "user", content: userText + " (જવાબ ગુજરાતીમાં આપો)" }] })
+                });
+                const data = await res.json();
+                speak(data.choices[0].message.content);
+            } catch(e) { speak("Groq એરર છે"); playVideo('silent'); isProcessing = false; }
         }
 
         function speak(text) {
@@ -208,6 +206,39 @@
             utterance.onstart = () => playVideo('talking');
             utterance.onend = () => { playVideo('smiling'); isProcessing = false; statusText.innerText = "માઈક દબાવો"; };
             window.speechSynthesis.speak(utterance);
+        }
+
+        async function activateVision() {
+            try {
+                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                selfieVideo.srcObject = visionStream;
+                selfieVideo.style.display = 'block';
+                speak("હું જોઈ રહી છું ૩ સેકન્ડમાં ફોટો લેવાશે");
+                setTimeout(captureImage, 3000);
+            } catch(e) { speak("કેમેરો ખુલતો નથી"); }
+        }
+
+        async function captureImage() {
+            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
+            canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            const base64Image = canvas.toDataURL('image/jpeg').split(',')[1];
+            if(visionStream) visionStream.getTracks().forEach(t => t.stop());
+            selfieVideo.style.display = 'none';
+            analyzeImage(base64Image);
+        }
+
+        async function analyzeImage(base64Data) {
+            let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
+            let key = keys[0];
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ contents: [{ parts: [ { text: "આ ફોટામાં શું છે?" }, { inline_data: { mime_type: "image/jpeg", data: base64Data } } ] }] })
+                });
+                const data = await response.json();
+                speak(data.candidates[0].content.parts[0].text);
+            } catch(e) { speak("ફોટો સમજવામાં ભૂલ થઈ"); }
         }
     </script>
 </body>
