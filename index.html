@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Pro</title>
+    <title>Vidushi AI - Ultimate OpenRouter</title>
+    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -54,8 +55,6 @@
         #generated-image { max-width: 95%; max-height: 70vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; }
         #close-img-btn { margin-top: 20px; padding: 10px 30px; background: red; color: white; border: none; font-size: 18px; border-radius: 50px; cursor: pointer; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
-        
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
     </style>
 </head>
 <body>
@@ -99,28 +98,53 @@
             </label>
             <div class="section-title">Step 1: AI Provider</div>
             <select id="providerSelect" onchange="toggleProviderSettings()">
-                <option value="gemini">Google Gemini</option>
+                <option value="gemini">Google Gemini (Direct)</option>
+                <option value="openrouter">OpenRouter (All-in-One)</option>
                 <option value="groq">Groq (Llama)</option>
             </select>
+
             <div id="gemini-settings">
-                <div class="section-title">Step 2: Select Gemini Model</div>
+                <div class="section-title">Gemini Config</div>
                 <select id="geminiModelSelect">
-                    <option value="gemini-2.0-flash-lite">gemini 2.0-flash-lite ⚡ (Recommended)</option>
+                    <option value="gemini-1.5-flash">Gemini 1.5 Flash ⚡ (Stable)</option>
                     <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+                    <option value="gemini-3.0-flash">Gemini 3.0 Flash 🌟 (New)</option>
                 </select>
-                <div class="section-title">Step 3: API Keys (Comma separated)</div>
-                <textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2, Key3..."></textarea>
+                <div class="section-title">API Keys (Comma separated)</div>
+                <textarea id="geminiKeyInput" rows="2" placeholder="Key1, Key2..."></textarea>
             </div>
+
+            <div id="openrouter-settings" style="display:none;">
+                <div class="section-title">OpenRouter Models</div>
+                <select id="openRouterModelSelect">
+                    <option value="google/gemini-2.0-flash-exp:free">Gemini 2.0 Flash (Free) 🌟</option>
+                    <option value="google/gemini-flash-1.5-8b">Gemini 1.5 Flash 8B (Super Fast)</option>
+                    
+                    <option value="meta-llama/llama-3.2-11b-vision-instruct:free">Llama 3.2 Vision (Free) 👁️</option>
+                    <option value="meta-llama/llama-3.1-70b-instruct:free">Llama 3.1 70B (Smart & Free)</option>
+                    
+                    <option value="deepseek/deepseek-r1-distill-llama-70b:free">DeepSeek R1 (Smartest Free) 🚀</option>
+                    <option value="deepseek/deepseek-chat:free">DeepSeek V3 (Chat)</option>
+            
+                    <option value="mistralai/mistral-7b-instruct:free">Mistral 7B (Lightweight)</option>
+                    <option value="microsoft/phi-3-medium-128k-instruct:free">Microsoft Phi-3 (Good Logic)</option>
+                    <option value="qwen/qwen-2-7b-instruct:free">Qwen 2 (Alibaba)</option>
+                </select>
+                <div class="section-title">OpenRouter API Key</div>
+                <input type="password" id="openRouterKeyInput" placeholder="sk-or-...">
+                <div style="font-size:10px; color:#aaa; margin-top:5px;">OpenRouter.ai પરથી કી મફત મળે છે.</div>
+            </div>
+
             <div id="groq-settings" style="display:none;">
-                <div class="section-title">Step 2: Select Groq Model</div>
+                <div class="section-title">Groq Config</div>
                 <select id="groqModelSelect">
                     <option value="llama-3.1-8b-instant">Llama 8B (Fast)</option>
                     <option value="llama-3.3-70b-versatile">Llama 70B (Smart)</option>
                 </select>
-                <div class="section-title">Step 3: Groq Key</div>
+                <div class="section-title">Groq API Key</div>
                 <input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
+
             <div class="section-title">Other Tools</div>
             <label>Serper Search Key (for Panchang/News):</label>
             <input type="password" id="serperKeyInput" placeholder="Search Key...">
@@ -175,13 +199,13 @@
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
+        let openRouterKey = localStorage.getItem('vidushi_openrouter_key') || ''; // NEW
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
         
-        // --- FIXED MODEL (Using Lite to fix Limits) ---
-        // જો 2.0 Lite ન ચાલે તો અહીં "gemini-2.5-flash" કરી દેજો.
-        let geminiModel = "gemini-2.0-flash-lite"; 
-        
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-1.5-flash"; 
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
+        let openRouterModel = localStorage.getItem('vidushi_openrouter_model') || "google/gemini-2.0-flash-exp:free"; // NEW
+        
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
 
@@ -194,12 +218,10 @@
         let isSilentListening = false;
         let conversationBuffer = "";
 
-        // --- CONTACT LIST (Phone Call Feature) ---
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
             { name: "Shyam", gu_name: "શ્યામ", number: "8200026682" }
-            // તમે અહીં બીજા નામ ઉમેરી શકો છો
         ];
 
         const statusText = document.getElementById('status-text');
@@ -249,10 +271,16 @@
             document.getElementById('settings-modal').style.display = 'flex'; 
             document.getElementById('userNameInput').value = userName;
             document.getElementById('providerSelect').value = aiProvider;
+            
             document.getElementById('geminiKeyInput').value = geminiKeys; 
             document.getElementById('geminiModelSelect').value = geminiModel;
+            
             document.getElementById('groqKeyInput').value = groqKey;
             document.getElementById('groqModelSelect').value = groqModel;
+            
+            document.getElementById('openRouterKeyInput').value = openRouterKey; // NEW
+            document.getElementById('openRouterModelSelect').value = openRouterModel; // NEW
+
             document.getElementById('serperKeyInput').value = serperKey; 
             document.getElementById('continuousModeCheck').checked = continuousMode;
             toggleProviderSettings();
@@ -266,16 +294,23 @@
         function toggleProviderSettings() {
             const provider = document.getElementById('providerSelect').value;
             document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none';
-            document.getElementById('groq-settings').style.display = provider === 'gemini' ? 'none' : 'block';
+            document.getElementById('groq-settings').style.display = provider === 'groq' ? 'block' : 'none';
+            document.getElementById('openrouter-settings').style.display = provider === 'openrouter' ? 'block' : 'none'; // NEW
         }
 
         function saveSettings() {
             userName = document.getElementById('userNameInput').value.trim() || "સાહેબ";
             aiProvider = document.getElementById('providerSelect').value;
+            
             geminiKeys = document.getElementById('geminiKeyInput').value.trim();
             geminiModel = document.getElementById('geminiModelSelect').value;
+            
             groqKey = document.getElementById('groqKeyInput').value.trim();
             groqModel = document.getElementById('groqModelSelect').value;
+
+            openRouterKey = document.getElementById('openRouterKeyInput').value.trim(); // NEW
+            openRouterModel = document.getElementById('openRouterModelSelect').value; // NEW
+
             serperKey = document.getElementById('serperKeyInput').value.trim();
             continuousMode = document.getElementById('continuousModeCheck').checked;
             
@@ -285,14 +320,13 @@
             localStorage.setItem('vidushi_gemini_model', geminiModel);
             localStorage.setItem('vidushi_groq_key', groqKey);
             localStorage.setItem('vidushi_groq_model', groqModel);
+            localStorage.setItem('vidushi_openrouter_key', openRouterKey); // NEW
+            localStorage.setItem('vidushi_openrouter_model', openRouterModel); // NEW
             localStorage.setItem('vidushi_serper_key', serperKey);
             localStorage.setItem('vidushi_continuous', continuousMode);
             
-            // Count keys
-            let keyCount = geminiKeys.split(',').filter(k => k.trim()).length;
-            
             document.getElementById('settings-modal').style.display = 'none';
-            speak(`સેટિંગ્સ સેવ થયા. ${keyCount} કી મળી.`);
+            speak(`સેટિંગ્સ સેવ થયા.`);
         }
 
         function clearMemories() {
@@ -350,7 +384,7 @@
             if (navigator.geolocation) {
                 statusText.innerText = "લોકેશન...";
                 navigator.geolocation.getCurrentPosition((position) => {
-                    let mapLink = `http://googleusercontent.com/maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`; 
+                    let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; 
                     let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
                     window.open(`https://wa.me/${num}?text=${encodeURIComponent("મારું લોકેશન: " + mapLink)}`, "_blank");
                     speak("લોકેશન મોકલ્યું.");
@@ -363,7 +397,7 @@
             statusText.innerText = "SOS...";
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((position) => {
-                    let mapLink = `http://googleusercontent.com/maps.google.com/?q=${position.coords.latitude},${position.coords.longitude}`; 
+                    let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; 
                     fixedContacts.forEach(contact => {
                          let num = "91" + contact.number.replace(/\D/g, '').slice(-10);
                          window.open(`https://wa.me/${num}?text=${encodeURIComponent("SOS! મદદ કરો! મારું લોકેશન: " + mapLink)}`, "_blank");
@@ -427,7 +461,11 @@
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             stopVisionCamera(); playVideo('thinking');
             const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1];
-            if(aiProvider === 'gemini') await askGeminiVision(base64Image); else await askGroqVision(base64Image);
+            
+            // ROUTING VISION REQUEST
+            if(aiProvider === 'gemini') await askGeminiVision(base64Image); 
+            else if(aiProvider === 'openrouter') await askOpenRouterVision(base64Image); // NEW
+            else await askGroqVision(base64Image);
         }
 
         async function processCommand(text) {
@@ -481,17 +519,23 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // --- SELFIE & CAMERA COMMANDS ---
-            if(cmd.includes("સેલ્ફી") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ ફોટામાં હું કેવો દેખાઉં છું?"; activateVision(); return; }
-            if(cmd.includes("કેમેરો") || cmd.includes("જો")) { currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)"; activateVision(); return; }
-
-            // Ayurveda / Reader
-            if(cmd.includes("ફાયદા") || cmd.includes("ગુણ") || cmd.includes("આયુર્વેદ") || cmd.includes("બિલ") || cmd.includes("વાંચ")) {
+            // Ayurveda
+            if(cmd.includes("ફાયદા") || cmd.includes("ગુણ") || cmd.includes("આયુર્વેદ")) {
                 if(cmd.includes("ફોટો") || cmd.includes("કેમેરો")) {
-                    currentVisionPrompt = "આ ફોટામાં શું છે તેની વિગતવાર માહિતી આપ.";
+                    currentVisionPrompt = "આ વસ્તુના આયુર્વેદિક ગુણો અને ફાયદા જણાવ.";
                     activateVision(); return;
                 }
             }
+
+            // Reader
+            if(cmd.includes("બિલ") || cmd.includes("દવા") || cmd.includes("વાંચ")) {
+                 if(cmd.includes("કેમેરો") || cmd.includes("ફોટો")) {
+                    currentVisionPrompt = "આમાં શું લખ્યું છે? ગુજરાતીમાં જણાવ.";
+                    activateVision(); return;
+                 }
+            }
+
+            if(cmd.includes("કેમેરો") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ શું છે?"; activateVision(); return; }
 
             if(cmd.includes("અરજી") || cmd.includes("લેટર")) { extraInstructions = " [Draft a formal letter in Gujarati] "; }
 
@@ -503,31 +547,16 @@
                 isProcessing = false; playVideo('silent'); return;
             }
 
-            // --- PHONE CALL COMMAND (IMPROVED) ---
-            if(cmd.includes("ફોન કર") || cmd.includes("કોલ")) {
-                let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
-                
-                if(found) { 
-                    speak(found.gu_name + "ને ફોન જોડું છું.");
-                    // 2 સેકન્ડ પછી કોલ લાગશે
-                    setTimeout(() => {
-                        window.location.href = `tel:+91${found.number}`;
-                    }, 2000); 
-                } 
-                else { 
-                    // જો નામ ન સમજાય તો લિસ્ટ બતાવો
-                    let names = fixedContacts.map(c => c.gu_name).join(", ");
-                    speak("કોને ફોન કરું? મારા લિસ્ટમાં આ નામ છે: " + names); 
-                }
-                isProcessing = false; playVideo('silent'); return;
-            }
-            
             if(cmd.includes("મેસેજ કર")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak("મેસેજ કરું છું."); } 
                 isProcessing = false; playVideo('silent'); return;
             }
-
+            if(cmd.includes("ફોન કર")) {
+                let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
+                if(found) { window.open(`tel:+91${found.number}`, "_self"); speak("ફોન જોડું છું."); } 
+                isProcessing = false; playVideo('silent'); return;
+            }
             if(cmd.includes("જવું છે") || cmd.includes("રસ્તો")) {
                 let dest = text.replace("જવું છે", "").replace("રસ્તો", "").trim();
                 speak("મેપ ખોલું છું."); window.open(`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(dest)}`, "_blank");
@@ -551,24 +580,90 @@
             }
             if (["વત્તા", "ઓછા", "ગુણ્યા", "ભાગ્યા", "ટકા"].some(k => cmd.includes(k))) { extraInstructions += " [Calculate accurately] "; }
 
-            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
+            // ROUTING
+            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); }
+            else if(aiProvider === 'openrouter') { await askOpenRouterText(text, extraContext + extraInstructions); } // NEW
+            else { await askGroqText(text, extraContext + extraInstructions); }
         }
 
-        // --- SMART SHUFFLE KEY ROTATION ---
+        // --- OPENROUTER FUNCTIONS (NEW) ---
+        async function askOpenRouterText(userText, contextData = "") {
+            if(!openRouterKey) { alert("OpenRouter Key નથી!"); openSettings(); return; }
+            
+            const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
+            let systemPrompt = `તારું નામ વિદુષી છે. તું ${userName} ની મદદગાર છે. શુદ્ધ ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
+            
+            let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            
+            try {
+                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", { 
+                    method: "POST", 
+                    headers: { 
+                        "Authorization": `Bearer ${openRouterKey}`, 
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "http://localhost", 
+                    }, 
+                    body: JSON.stringify({ model: openRouterModel, messages: messages }) 
+                });
+                const data = await res.json();
+                if(data.error) throw new Error(data.error.message);
+
+                const reply = data.choices[0].message.content;
+                chatHistory.push({ role: "user", content: userText }); 
+                chatHistory.push({ role: "assistant", content: reply });
+                localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
+                speak(reply);
+            } catch(e) { 
+                console.log(e);
+                speak("OpenRouter એરર: " + e.message); 
+                playVideo('silent'); isProcessing=false; 
+            }
+        }
+
+        async function askOpenRouterVision(base64Image) {
+            if(!openRouterKey) return;
+            try {
+                const res = await fetch("https://openrouter.ai/api/v1/chat/completions", { 
+                    method: "POST", 
+                    headers: { 
+                        "Authorization": `Bearer ${openRouterKey}`, 
+                        "Content-Type": "application/json",
+                        "HTTP-Referer": "http://localhost",
+                    }, 
+                    body: JSON.stringify({ 
+                        model: openRouterModel, 
+                        messages: [{ 
+                            role: "user", 
+                            content: [
+                                { type: "text", text: currentVisionPrompt }, 
+                                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }
+                            ] 
+                        }] 
+                    }) 
+                });
+                const data = await res.json(); 
+                let reply = data.choices[0].message.content;
+                
+                let rememberItem = localStorage.getItem('vidushi_remember_item_name');
+                if(rememberItem) {
+                    let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
+                    visualMemories[rememberItem] = reply; 
+                    localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
+                    localStorage.removeItem('vidushi_remember_item_name'); 
+                    speak(`યાદ રાખી લીધું: ${reply}`);
+                } else { speak(reply); }
+            } catch(e) { speak("ફોટો એરર."); playVideo('silent'); }
+        }
+
+
+        // --- GEMINI & GROQ (EXISTING) ---
         async function askGeminiText(userText, contextData = "") {
             let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
             if(keys.length === 0) { alert("Gemini Key નથી!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
-
-            // Shuffle Keys
             keys.sort(() => Math.random() - 0.5);
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            
-            // --- UPDATED SYSTEM INSTRUCTION FOR SELFIE & CALL ---
-            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. 
-            તારી પાસે આંખો (કેમેરો) છે એટલે તું સેલ્ફી લઈ શકે છે અને જોઈ શકે છે. 
-            તું ફોન પણ લગાવી શકે છે. હંમેશા ગુજરાતીમાં જ જવાબ આપજે.
-            [Memory]: ${memories} [Context]: ${contextData}`;
+            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. ગુજરાતીમાં જ જવાબ આપજે. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -579,12 +674,7 @@
                 try {
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${key}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
                     const data = await response.json();
-                    
-                    if(data.error) {
-                        console.log(`Key Failed:`, data.error.message);
-                        if (i === keys.length - 1) throw new Error("All keys failed");
-                        continue;
-                    }
+                    if(data.error) { if (i === keys.length - 1) throw new Error("All keys failed"); continue; }
 
                     const reply = data.candidates[0].content.parts[0].text;
                     chatHistory.push({ role: "user", content: userText });
@@ -593,20 +683,13 @@
                     speak(reply);
                     return;
 
-                } catch(e) {
-                    if (i === keys.length - 1) { 
-                        speak("માફ કરજો, આજે મારી બધી લિમિટ પૂરી થઈ ગઈ છે.");
-                        isProcessing=false; playVideo('silent');
-                    }
-                }
+                } catch(e) { if (i === keys.length - 1) { speak("માફ કરજો, આજે લિમિટ પૂરી થઈ ગઈ છે."); isProcessing=false; playVideo('silent'); } }
             }
         }
 
         async function askGeminiVision(base64Image) {
             let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
             if(keys.length === 0) return;
-
-            // Shuffle Keys
             keys.sort(() => Math.random() - 0.5);
 
             for (let i = 0; i < keys.length; i++) {
@@ -617,8 +700,7 @@
                         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
                     });
                     const data = await response.json();
-                    
-                    if(data.error) { console.log(`Vision Key Failed`); if(i === keys.length-1) throw new Error("Fail"); continue; }
+                    if(data.error) { if(i === keys.length-1) throw new Error("Fail"); continue; }
 
                     let reply = data.candidates[0].content.parts[0].text;
                     let rememberItem = localStorage.getItem('vidushi_remember_item_name');
@@ -630,22 +712,15 @@
                         speak(`યાદ રાખી લીધું: ${reply}`);
                     } else { speak(reply); }
                     return;
-
-                } catch(e) { 
-                    if(i === keys.length - 1) { speak("ફોટો જોવામાં તકલીફ છે."); playVideo('silent'); }
-                }
+                } catch(e) { if(i === keys.length - 1) { speak("ફોટો જોવામાં તકલીફ છે."); playVideo('silent'); } }
             }
         }
 
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            
-            // --- UPDATED SYSTEM INSTRUCTION FOR GROQ ---
-            let systemPrompt = `તારું નામ વિદુષી છે. તારી પાસે કેમેરો અને ફોન કરવાની શક્તિ છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
-            
+            let systemPrompt = `તારું નામ વિદુષી છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
-            
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
@@ -661,7 +736,6 @@
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: currentVisionPrompt }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
                 const data = await res.json(); 
                 let reply = data.choices[0].message.content;
-                
                 let rememberItem = localStorage.getItem('vidushi_remember_item_name');
                 if(rememberItem) {
                     let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
