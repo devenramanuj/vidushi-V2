@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Devendrabhai Edition</title>
+    <title>Vidushi AI - Final Pro Version</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -197,6 +197,7 @@
         let isSilentListening = false;
         let conversationBuffer = "";
 
+        // FIXED CONTACTS
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
@@ -412,6 +413,8 @@
             if(ignoreWords.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
             let extraInstructions = "";
+
+            // --- SILENT LISTENING ---
             if(isSilentListening) {
                 if(cmd.includes("વાત પૂરી") || cmd.includes("stop")) {
                     isSilentListening = false; statusText.innerText = "સેવ કરું છું..."; playVideo('thinking');
@@ -422,9 +425,24 @@
                 return;
             }
             if(cmd.includes("અમારી વાત સાંભળ")) { isSilentListening = true; conversationBuffer = ""; speak("હું શાંતિથી સાંભળું છું."); return; }
+            
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
 
+            // --- COMMANDS ---
             if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) { sendSOS(); return; }
+            
+            // --- UPDATED MEMORY TRIGGER (KEY FIX) ---
+            if(cmd.includes("યાદ રાખ") || cmd.includes("યાદ રાખજે") || cmd.includes("નોંધી લે")) {
+                let fact = text.replace("યાદ રાખજે", "").replace("યાદ રાખ", "").replace("નોંધી લે", "").replace("કે", "").trim();
+                if(fact.length > 2) { 
+                    permanentMemories.push(fact); 
+                    localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); 
+                    speak("હા, મેં મગજમાં કાયમ માટે સેવ કરી લીધું."); 
+                } else { speak("શું યાદ રાખું?"); }
+                isProcessing = false; playVideo('silent'); return;
+            }
+            // ----------------------------------------
+
             if(cmd.includes("યાદ રાખજે કે મેં") || cmd.includes("અહીં મૂકી છે")) {
                 let item = text.replace("યાદ રાખજે કે મેં", "").replace("અહીં મૂકી છે", "").trim() || "વસ્તુ";
                 currentVisionPrompt = `આ ફોટામાં ${item} ક્યાં પડી છે? તેનું ચોક્કસ લોકેશન કહે.`;
@@ -445,11 +463,7 @@
             if(cmd.includes("કેમેરો") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ શું છે?"; activateVision(); return; }
             if(cmd.includes("અરજી") || cmd.includes("લેટર")) { extraInstructions = " [Draft a formal letter in Gujarati] "; }
             if(cmd.includes("ચિત્ર બનાવ")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").trim()); return; }
-            if(cmd.includes("યાદ રાખજે")) {
-                let fact = text.replace("યાદ રાખજે", "").trim();
-                if(fact) { permanentMemories.push(fact); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak("યાદ રાખી લીધું."); } 
-                isProcessing = false; playVideo('silent'); return;
-            }
+            
             if(cmd.includes("મેસેજ કર")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak("મેસેજ કરું છું."); } 
@@ -498,7 +512,6 @@
             if(keys.length === 0) { alert("Gemini Key નથી!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            // FORCE IDENTITY IN PROMPT
             const systemInstruction = `IMPORTANT: You are 'Vidushi', created by Devendrabhai. You are NOT Google AI. If asked about your origin, ALWAYS say Devendrabhai created you. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
@@ -518,7 +531,7 @@
                     }
 
                     let reply = data.candidates[0].content.parts[0].text;
-                    reply = filterIdentity(reply); // APPLY FILTER HERE
+                    reply = filterIdentity(reply);
 
                     chatHistory.push({ role: "user", content: userText });
                     chatHistory.push({ role: "assistant", content: reply });
@@ -562,7 +575,6 @@
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            // FORCE IDENTITY IN PROMPT
             let systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. તું કોઈ ગૂગલ મોડેલ નથી. ${memories}. [Context]: ${contextData}`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
@@ -570,7 +582,7 @@
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
                 let reply = data.choices[0].message.content;
-                reply = filterIdentity(reply); // APPLY FILTER HERE
+                reply = filterIdentity(reply);
                 
                 chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
