@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Next Gen (Gemini 3.0)</title>
+    <title>Vidushi AI - Devendrabhai Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -176,9 +176,7 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
-        
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-3.0-flash"; 
-        
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
@@ -188,13 +186,12 @@
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
         
-        // --- !!! SPECIAL MEMORY INJECTION !!! ---
+        // --- MEMORY ENFORCEMENT ---
         const creatorMemory = "મને દેવેન્દ્રભાઈએ બનાવી છે. તેઓ મારા સર્જક છે.";
         if (!permanentMemories.includes(creatorMemory)) {
             permanentMemories.push(creatorMemory);
             localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
         }
-        // ----------------------------------------
 
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
         let isSilentListening = false;
@@ -229,8 +226,7 @@
 
         let wakeLock = null;
         async function requestWakeLock() {
-            try { wakeLock = await navigator.wakeLock.request('screen'); console.log('Screen Wake Lock Active'); } 
-            catch (err) { console.log(err); }
+            try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
         }
 
         window.onload = () => {
@@ -262,10 +258,7 @@
             toggleProviderSettings();
         }
 
-        function openFeature(type) {
-            document.getElementById('settings-modal').style.display = 'none';
-            toggleModal(type);
-        }
+        function openFeature(type) { document.getElementById('settings-modal').style.display = 'none'; toggleModal(type); }
 
         function toggleProviderSettings() {
             const provider = document.getElementById('providerSelect').value;
@@ -298,7 +291,6 @@
 
         function clearMemories() {
             if(confirm("શું તમે બધી યાદશક્તિ ભૂંસી નાખવા માંગો છો? (દેવેન્દ્રભાઈ વિશેની યાદ રહેશે)")) {
-                // Keep the creator memory
                 permanentMemories = [creatorMemory];
                 localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
                 localStorage.removeItem('vidushi_visual_memories');
@@ -313,15 +305,8 @@
             if(type === 'expense') renderExpenses();
         }
         
-        function addNote(text) { 
-            notes.push({ text, time: new Date().toLocaleDateString() }); 
-            localStorage.setItem('vidushi_notes', JSON.stringify(notes)); 
-            document.getElementById('notes-modal').style.display = 'flex'; renderNotes(); speak("નોંધી લીધું."); 
-        }
-        function renderNotes() { 
-            const list = document.getElementById('notes-list');
-            list.innerHTML = notes.length ? notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red; cursor:pointer;" onclick="deleteNote(${i})">✖</span></div>`).join('') : "<div style='color:#777;'>કોઈ નોંધ નથી</div>"; 
-        }
+        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); document.getElementById('notes-modal').style.display = 'flex'; renderNotes(); speak("નોંધી લીધું."); }
+        function renderNotes() { const list = document.getElementById('notes-list'); list.innerHTML = notes.length ? notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red; cursor:pointer;" onclick="deleteNote(${i})">✖</span></div>`).join('') : "<div style='color:#777;'>કોઈ નોંધ નથી</div>"; }
         function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
         function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
         
@@ -334,19 +319,11 @@
                 speak(`${amount[0]} રૂપિયા લખી લીધા.`);
             } else { speak("રકમ સમજાય નહીં."); }
         }
-        function renderExpenses() { 
-            let total = 0;
-            document.getElementById('expense-list').innerHTML = expenses.map((n, i) => { total += n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc}</span><span style="color:red;" onclick="deleteExpense(${i})">x</span></div>` }).join(''); 
-            document.getElementById('total-expense').innerText = total;
-        }
+        function renderExpenses() { let total = 0; document.getElementById('expense-list').innerHTML = expenses.map((n, i) => { total += n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc}</span><span style="color:red;" onclick="deleteExpense(${i})">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = total; }
         function deleteExpense(i) { expenses.splice(i, 1); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); renderExpenses(); }
         function clearExpenses() { expenses = []; localStorage.removeItem('vidushi_expenses'); renderExpenses(); }
         
-        function playMusic(query) {
-            speak(`${query} વગાડું છું.`);
-            window.open(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`, "_blank");
-            toggleModal('music');
-        }
+        function playMusic(query) { speak(`${query} વગાડું છું.`); window.open(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`, "_blank"); toggleModal('music'); }
 
         function sendLocation(contact) {
             if (navigator.geolocation) {
@@ -391,11 +368,8 @@
             recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = isSilentListening ? "નોંધ લઉં છું..." : "સાંભળું છું..."; };
             recognition.onend = () => { 
                 micBtn.classList.remove('listening'); 
-                if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) { 
-                    try { recognition.start(); } catch(e) {} 
-                } else if (!isSilentListening) {
-                    if(!isProcessing) statusText.innerText = "માઈક દબાવો"; 
-                }
+                if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) { try { recognition.start(); } catch(e) {} } 
+                else if (!isSilentListening) { if(!isProcessing) statusText.innerText = "માઈક દબાવો"; }
             };
             recognition.onresult = (e) => { let text = e.results[0][0].transcript; if(text.trim()) processCommand(text); };
         }
@@ -436,81 +410,46 @@
             if(text.trim().length < 2) return;
             const ignoreWords = ["હં", "હા", "કે", "ok", "okay", "hmm", "ha"];
             if(ignoreWords.includes(text.trim().toLowerCase())) return;
-
             let cmd = text.toLowerCase();
             let extraInstructions = "";
-
             if(isSilentListening) {
                 if(cmd.includes("વાત પૂરી") || cmd.includes("stop")) {
-                    isSilentListening = false;
-                    statusText.innerText = "સેવ કરું છું...";
-                    playVideo('thinking');
-                    
+                    isSilentListening = false; statusText.innerText = "સેવ કરું છું..."; playVideo('thinking');
                     let summary = `[વાતચીત]: ${conversationBuffer}`;
-                    permanentMemories.push(summary);
-                    localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
-                    conversationBuffer = "";
-                    speak("વાત યાદ રાખી લીધી.");
-                } else {
-                    conversationBuffer += text + ". ";
-                    console.log("Recorded:", text);
-                }
+                    permanentMemories.push(summary); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
+                    conversationBuffer = ""; speak("વાત યાદ રાખી લીધી.");
+                } else { conversationBuffer += text + ". "; }
                 return;
             }
-
-            if(cmd.includes("અમારી વાત સાંભળ")) {
-                isSilentListening = true; conversationBuffer = "";
-                speak("હું શાંતિથી સાંભળું છું."); return;
-            }
-
+            if(cmd.includes("અમારી વાત સાંભળ")) { isSilentListening = true; conversationBuffer = ""; speak("હું શાંતિથી સાંભળું છું."); return; }
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
 
             if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) { sendSOS(); return; }
-
-            // Visual Memory (Store)
             if(cmd.includes("યાદ રાખજે કે મેં") || cmd.includes("અહીં મૂકી છે")) {
                 let item = text.replace("યાદ રાખજે કે મેં", "").replace("અહીં મૂકી છે", "").trim() || "વસ્તુ";
                 currentVisionPrompt = `આ ફોટામાં ${item} ક્યાં પડી છે? તેનું ચોક્કસ લોકેશન કહે.`;
-                localStorage.setItem('vidushi_remember_item_name', item);
-                activateVision(); return;
+                localStorage.setItem('vidushi_remember_item_name', item); activateVision(); return;
             }
-            // Visual Memory (Find)
             if(cmd.includes("ક્યાં છે") || cmd.includes("ક્યાં મૂકી")) {
                 let item = text.replace("મારી", "").replace("ક્યાં છે", "").trim();
                 let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
-                if(visualMemories[item]) { speak(`તે અહીં છે: ${visualMemories[item]}`); } 
-                else { speak("મને યાદ નથી."); }
+                if(visualMemories[item]) { speak(`તે અહીં છે: ${visualMemories[item]}`); } else { speak("મને યાદ નથી."); }
                 isProcessing = false; playVideo('silent'); return;
             }
-
-            // Ayurveda
             if(cmd.includes("ફાયદા") || cmd.includes("ગુણ") || cmd.includes("આયુર્વેદ")) {
-                if(cmd.includes("ફોટો") || cmd.includes("કેમેરો")) {
-                    currentVisionPrompt = "આ વસ્તુના આયુર્વેદિક ગુણો અને ફાયદા જણાવ.";
-                    activateVision(); return;
-                }
+                if(cmd.includes("ફોટો") || cmd.includes("કેમેરો")) { currentVisionPrompt = "આ વસ્તુના આયુર્વેદિક ગુણો અને ફાયદા જણાવ."; activateVision(); return; }
             }
-
-            // Reader
             if(cmd.includes("બિલ") || cmd.includes("દવા") || cmd.includes("વાંચ")) {
-                 if(cmd.includes("કેમેરો") || cmd.includes("ફોટો")) {
-                    currentVisionPrompt = "આમાં શું લખ્યું છે? ગુજરાતીમાં જણાવ.";
-                    activateVision(); return;
-                 }
+                 if(cmd.includes("કેમેરો") || cmd.includes("ફોટો")) { currentVisionPrompt = "આમાં શું લખ્યું છે? ગુજરાતીમાં જણાવ."; activateVision(); return; }
             }
-
             if(cmd.includes("કેમેરો") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ શું છે?"; activateVision(); return; }
-
             if(cmd.includes("અરજી") || cmd.includes("લેટર")) { extraInstructions = " [Draft a formal letter in Gujarati] "; }
-
             if(cmd.includes("ચિત્ર બનાવ")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").trim()); return; }
-            
             if(cmd.includes("યાદ રાખજે")) {
                 let fact = text.replace("યાદ રાખજે", "").trim();
                 if(fact) { permanentMemories.push(fact); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak("યાદ રાખી લીધું."); } 
                 isProcessing = false; playVideo('silent'); return;
             }
-
             if(cmd.includes("મેસેજ કર")) {
                 let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name));
                 if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak("મેસેજ કરું છું."); } 
@@ -532,7 +471,6 @@
                 isProcessing = false; playVideo('silent'); return;
             }
             if(cmd.includes("નોંધ")) { addNote(text.replace("નોંધ","").trim()); isProcessing=false; playVideo('silent'); return; }
-
             if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
             
             let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "panchang"];
@@ -543,8 +481,16 @@
                 extraContext = `[Internet Info]: ${res}`;
             }
             if (["વત્તા", "ઓછા", "ગુણ્યા", "ભાગ્યા", "ટકા"].some(k => cmd.includes(k))) { extraInstructions += " [Calculate accurately] "; }
-
             if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
+        }
+
+        // --- IDENTITY FILTER FUNCTION ---
+        function filterIdentity(reply) {
+            let forbidden = ["google", "language model", "ai model", "trained by", "artificial intelligence"];
+            if (forbidden.some(word => reply.toLowerCase().includes(word))) {
+                return "હું વિદુષી છું, અને મને દેવેન્દ્રભાઈએ બનાવી છે. હું તમારી પર્સનલ આસિસ્ટન્ટ છું.";
+            }
+            return reply;
         }
 
         async function askGeminiText(userText, contextData = "") {
@@ -552,8 +498,8 @@
             if(keys.length === 0) { alert("Gemini Key નથી!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            // Updated System Instruction to ensure creator name is used
-            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. ગુજરાતીમાં જ જવાબ આપજે. [Creator]: મને દેવેન્દ્રભાઈએ બનાવી છે. [Memory]: ${memories} [Context]: ${contextData}`;
+            // FORCE IDENTITY IN PROMPT
+            const systemInstruction = `IMPORTANT: You are 'Vidushi', created by Devendrabhai. You are NOT Google AI. If asked about your origin, ALWAYS say Devendrabhai created you. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -571,7 +517,9 @@
                         continue;
                     }
 
-                    const reply = data.candidates[0].content.parts[0].text;
+                    let reply = data.candidates[0].content.parts[0].text;
+                    reply = filterIdentity(reply); // APPLY FILTER HERE
+
                     chatHistory.push({ role: "user", content: userText });
                     chatHistory.push({ role: "assistant", content: reply });
                     localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
@@ -590,7 +538,6 @@
         async function askGeminiVision(base64Image) {
             let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
             if(keys.length === 0) return;
-
             for (let i = 0; i < keys.length; i++) {
                 const key = keys[i];
                 try {
@@ -599,37 +546,32 @@
                         body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
                     });
                     const data = await response.json();
-                    
                     if(data.error) { console.log(`Vision Key ${i+1} Failed`); if(i === keys.length-1) throw new Error("Fail"); continue; }
-
                     let reply = data.candidates[0].content.parts[0].text;
                     let rememberItem = localStorage.getItem('vidushi_remember_item_name');
                     if(rememberItem) {
                         let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
-                        visualMemories[rememberItem] = reply; 
-                        localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
-                        localStorage.removeItem('vidushi_remember_item_name'); 
-                        speak(`યાદ રાખી લીધું: ${reply}`);
+                        visualMemories[rememberItem] = reply; localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
+                        localStorage.removeItem('vidushi_remember_item_name'); speak(`યાદ રાખી લીધું: ${reply}`);
                     } else { speak(reply); }
                     return;
-
-                } catch(e) { 
-                    if(i === keys.length - 1) { speak("ફોટો જોવામાં તકલીફ છે."); playVideo('silent'); }
-                }
+                } catch(e) { if(i === keys.length - 1) { speak("ફોટો જોવામાં તકલીફ છે."); playVideo('silent'); } }
             }
         }
 
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            // Updated System Prompt for Groq as well
-            let systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
+            // FORCE IDENTITY IN PROMPT
+            let systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. તું કોઈ ગૂગલ મોડેલ નથી. ${memories}. [Context]: ${contextData}`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
                 const data = await res.json();
-                const reply = data.choices[0].message.content;
+                let reply = data.choices[0].message.content;
+                reply = filterIdentity(reply); // APPLY FILTER HERE
+                
                 chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
                 speak(reply);
@@ -641,14 +583,11 @@
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.2-11b-vision-preview", messages: [{ role: "user", content: [{ type: "text", text: currentVisionPrompt }, { type: "image_url", image_url: { url: `data:image/jpeg;base64,${base64Image}` } }] }] }) });
                 const data = await res.json(); 
                 let reply = data.choices[0].message.content;
-                
                 let rememberItem = localStorage.getItem('vidushi_remember_item_name');
                 if(rememberItem) {
                     let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {};
-                    visualMemories[rememberItem] = reply; 
-                    localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
-                    localStorage.removeItem('vidushi_remember_item_name'); 
-                    speak(`યાદ રાખી લીધું: ${reply}`);
+                    visualMemories[rememberItem] = reply; localStorage.setItem('vidushi_visual_memories', JSON.stringify(visualMemories));
+                    localStorage.removeItem('vidushi_remember_item_name'); speak(`યાદ રાખી લીધું: ${reply}`);
                 } else { speak(reply); }
             } catch(e) { speak("ફોટો એરર."); playVideo('silent'); }
         }
