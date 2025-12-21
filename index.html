@@ -177,7 +177,6 @@
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let serperKey = localStorage.getItem('vidushi_serper_key') || '';
         
-        // DEFAULT TO GEMINI 3.0 or 1.5 if 3.0 not saved
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-3.0-flash"; 
         
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
@@ -189,6 +188,14 @@
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
         
+        // --- !!! SPECIAL MEMORY INJECTION !!! ---
+        const creatorMemory = "મને દેવેન્દ્રભાઈએ બનાવી છે. તેઓ મારા સર્જક છે.";
+        if (!permanentMemories.includes(creatorMemory)) {
+            permanentMemories.push(creatorMemory);
+            localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
+        }
+        // ----------------------------------------
+
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
         let isSilentListening = false;
         let conversationBuffer = "";
@@ -290,11 +297,12 @@
         }
 
         function clearMemories() {
-            if(confirm("શું તમે બધી યાદશક્તિ (વાતો અને વસ્તુઓના લોકેશન) ભૂંસી નાખવા માંગો છો?")) {
-                permanentMemories = [];
+            if(confirm("શું તમે બધી યાદશક્તિ ભૂંસી નાખવા માંગો છો? (દેવેન્દ્રભાઈ વિશેની યાદ રહેશે)")) {
+                // Keep the creator memory
+                permanentMemories = [creatorMemory];
                 localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
                 localStorage.removeItem('vidushi_visual_memories');
-                speak("હું બધું ભૂલી ગઈ છું.");
+                speak("હું બધું ભૂલી ગઈ છું, સિવાય કે મારા સર્જક કોણ છે.");
             }
         }
 
@@ -544,7 +552,8 @@
             if(keys.length === 0) { alert("Gemini Key નથી!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
 
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. ગુજરાતીમાં જ જવાબ આપજે. [Memory]: ${memories} [Context]: ${contextData}`;
+            // Updated System Instruction to ensure creator name is used
+            const systemInstruction = `તારું નામ 'વિદુષી' છે. તું ${userName} ની મદદગાર છે. ગુજરાતીમાં જ જવાબ આપજે. [Creator]: મને દેવેન્દ્રભાઈએ બનાવી છે. [Memory]: ${memories} [Context]: ${contextData}`;
             
             let contents = [];
             chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
@@ -613,7 +622,8 @@
         async function askGroqText(userText, contextData = "") {
             if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
             const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let systemPrompt = `તારું નામ વિદુષી છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
+            // Updated System Prompt for Groq as well
+            let systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. ગુજરાતીમાં જવાબ આપ. ${memories}. [Context]: ${contextData}`;
             let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             
             try {
