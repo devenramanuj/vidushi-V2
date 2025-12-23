@@ -344,8 +344,42 @@
         function renderExpenses() { let total = 0; document.getElementById('expense-list').innerHTML = expenses.map((n, i) => { total += n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc}</span><span style="color:red;" onclick="deleteExpense(${i})">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = total; }
         function deleteExpense(i) { expenses.splice(i, 1); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); renderExpenses(); }
         function clearExpenses() { expenses = []; localStorage.removeItem('vidushi_expenses'); renderExpenses(); }
-        
-        function playMusic(query) { speak(`${query} વગાડું છું.`); window.open(`https://music.youtube.com/search?q=${encodeURIComponent(query)}`, "_blank"); toggleModal('music'); }
+                // --- SMART DJ FUNCTION ---
+        function playMusic(query) {
+            // ૧. જો ખાલી "જૂનું ગીત" કે "ગીત" કહો, તો આ લિસ્ટમાંથી રેન્ડમ ઉપાડશે
+            const oldHits = [
+                "પલ પલ દિલ કે પાસ - કિશોર કુમાર",
+                "લગ જા ગલે - લતા મંગેશકર",
+                "મેરે સપનો કી રાની - કિશોર કુમાર",
+                "ગુલાબી આંખે - મોહમ્મદ રફી",
+                "ચૂરા લિયા હૈ તુમને જો દિલ કો",
+                "કભી કભી મેરે દિલ મેં",
+                "આપ કી આંખો મેં કુછ",
+                "નીલે નીલે અંબર પર"
+            ];
+
+            let songToPlay = query;
+            let speakMsg = "";
+
+            // જો યુઝર ખાલી "જૂનું ગીત" માંગે
+            if (query.includes("જૂનું ગીત") || query.trim() === "ગીત" || query.includes("old song")) {
+                const randomSong = oldHits[Math.floor(Math.random() * oldHits.length)];
+                songToPlay = randomSong;
+                speakMsg = `ઓકે! હું તમારા માટે "${randomSong}" વગાડું છું.`;
+            } else {
+                // જો યુઝર સ્પેસિફિક ગીત માંગે (દા.ત. હનુમાન ચાલીસા)
+                speakMsg = `${query} વગાડું છું.`;
+            }
+
+            speak(speakMsg);
+            
+            // થોડી રાહ જોઈને યુટ્યુબ ખોલશે જેથી પૂરું વાક્ય બોલી શકે
+            setTimeout(() => {
+                window.open(`https://music.youtube.com/search?q=${encodeURIComponent(songToPlay)}`, "_blank");
+                toggleModal('music');
+            }, 3000);
+        }
+
 
         function sendLocation(contact) {
             if (navigator.geolocation) {
