@@ -53,8 +53,8 @@
             <div id="gemini-settings">
                 <label>Gemini Model:</label>
                 <select id="geminiModelSelect">
-                    <option value="gemini-1.5-flash">Gemini 2.5 Flash 🚀</option>
-                    <option value="gemini-1.5-pro">Gemini Pro 🔥</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash 🚀</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro 🔥</option>
                 </select>
                 <label>Gemini Key:</label>
                 <input type="password" id="geminiKeyInput" placeholder="Paste Gemini Key...">
@@ -122,10 +122,10 @@
         let recognition;
         let isProcessing = false;
         
-        // Load Settings
+        // Load Settings (Default to 2.5 Flash if not set)
         let provider = localStorage.getItem('v_provider') || 'gemini';
         let geminiKey = localStorage.getItem('vidushi_gemini_key') || '';
-        let geminiModel = localStorage.getItem('v_gemini_model') || 'gemini-1.5-flash';
+        let geminiModel = localStorage.getItem('v_gemini_model') || 'gemini-2.5-flash';
         let groqKey = localStorage.getItem('v_groq_key') || '';
         let groqModel = localStorage.getItem('v_groq_model') || 'llama-3.3-70b-versatile';
 
