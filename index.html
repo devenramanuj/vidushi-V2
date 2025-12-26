@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Eternal Memory Edition</title>
+    <title>Vidushi AI - Final Database Version</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* --- BASIC SETUP --- */
@@ -13,24 +13,18 @@
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
-        #canvas-capture { display: none; }
-
+        
         /* --- UI LAYER --- */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
-        .side-btn:active { transform: scale(0.9); background: #ff4500; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
-        .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
-        .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
-        .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; }
         
-        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input[type="text"], input[type="password"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
+        
+        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; }
+        textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
         
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
+        #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
         .round-btn { width: 75px; height: 75px; background: #ff4500; font-size: 32px; border: 4px solid rgba(255,255,255,0.2); border-radius: 50%; color: white; display: flex; justify-content: center; align-items: center; cursor: pointer; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
         @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
@@ -44,9 +38,6 @@
         <video id="thinking-video" muted loop playsinline><source src="thinking.mp4" type="video/mp4"></video>
     </div>
     
-    <video id="selfie-video" autoplay playsinline></video>
-    <canvas id="canvas-capture"></canvas>
-
     <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="settings-modal" class="modal">
@@ -55,7 +46,7 @@
             <label>Gemini API Key:</label>
             <textarea id="geminiKeyInput" rows="3" placeholder="Paste Key Here..."></textarea>
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE</button>
-            <p style="font-size:10px; color:#aaa; margin-top:10px;">Memory Powered by Google Firebase</p>
+            <p style="font-size:10px; color:#aaa; margin-top:10px;">Memory: Firebase Cloud</p>
         </div>
     </div>
 
@@ -65,11 +56,11 @@
     </div>
 
     <script type="module">
-        // 1. IMPORT FIREBASE
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/12.7.0/firebase-firestore.js";
+        // 1. IMPORT FIREBASE (Stable Version 10.12.2)
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 2. YOUR CONFIGURATION
+        // 2. YOUR CONFIGURATION (Verified)
         const firebaseConfig = {
             apiKey: "AIzaSyCU_wqw_7PC0nBaLBgqDSmDgX1f95zaUlA",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -81,44 +72,63 @@
         };
 
         // 3. INITIALIZE DB
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const userDocRef = doc(db, "vidushi_db", "main_memory"); // Single user storage
+        let app, db, userDocRef;
+        const DB_COLLECTION = "vidushi_db";
+        const DB_DOC = "main_memory";
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            userDocRef = doc(db, DB_COLLECTION, DB_DOC);
+            console.log("Firebase Initialized");
+        } catch (err) {
+            alert("Firebase Init Error: " + err.message);
+        }
 
         // 4. GLOBAL STATE
         window.permanentMemories = [];
         window.chatHistory = [];
         
         // 5. LOAD MEMORIES (REAL-TIME)
-        onSnapshot(userDocRef, (docSnap) => {
-            const status = document.getElementById('status-text');
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                window.permanentMemories = data.memories || [];
-                status.innerText = "ડેટાબેઝ કનેક્ટેડ: તૈયાર!";
-                console.log("Memories Loaded:", window.permanentMemories);
-            } else {
-                // First time setup
-                setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે.", "હું દેવેન્દ્રભાઈની આસિસ્ટન્ટ છું."] });
-                status.innerText = "નવો ડેટાબેઝ બનાવ્યો.";
-            }
-        }, (error) => {
-            document.getElementById('status-text').innerText = "Database Error!";
-            console.error(error);
-        });
+        try {
+            onSnapshot(userDocRef, (docSnap) => {
+                const status = document.getElementById('status-text');
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.permanentMemories = data.memories || [];
+                    status.innerText = "ડેટાબેઝ કનેક્ટેડ: તૈયાર!";
+                } else {
+                    // First time setup: Create the document
+                    setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે.", "હું દેવેન્દ્રભાઈની આસિસ્ટન્ટ છું."] })
+                        .then(() => { status.innerText = "નવો ડેટાબેઝ બનાવ્યો."; })
+                        .catch((e) => { 
+                            status.innerText = "Create Error: " + e.code;
+                            if(e.code === 'permission-denied') alert("Error: ડેટાબેઝના 'Rules' Test Mode માં નથી.");
+                        });
+                }
+            }, (error) => {
+                document.getElementById('status-text').innerText = "DB Error: " + error.code;
+                if(error.code === 'permission-denied') {
+                    alert("Permission Denied! Firebase Console માં જઈને Rules બદલીને 'Test Mode' કરો.");
+                }
+            });
+        } catch(e) {
+            console.error("Snapshot Error", e);
+        }
 
-        // --- APP LOGIC ATTACHED TO WINDOW ---
+        // --- APP LOGIC ---
         
         let recognition;
         let isProcessing = false;
         let geminiKey = localStorage.getItem('vidushi_gemini_key') || '';
+        
         const videos = {
             silent: document.getElementById('silent-video'),
             talking: document.getElementById('talking-video'),
             thinking: document.getElementById('thinking-video')
         };
 
-        // Setup Speech Recognition
+        // Speech Recognition Setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) {
             recognition = new SpeechRecognition();
@@ -126,9 +136,10 @@
             recognition.onstart = () => { document.getElementById('mic-btn').classList.add('listening'); document.getElementById('status-text').innerText = "સાંભળું છું..."; };
             recognition.onend = () => { document.getElementById('mic-btn').classList.remove('listening'); if(!isProcessing) document.getElementById('status-text').innerText = "માઈક દબાવો"; };
             recognition.onresult = (e) => { const text = e.results[0][0].transcript; window.processCommand(text); };
+            recognition.onerror = (e) => { console.error(e); document.getElementById('status-text').innerText = "Error: " + e.error; };
         }
 
-        window.startConversation = () => { try { recognition.start(); } catch(e){} };
+        window.startConversation = () => { try { recognition.start(); } catch(e){ alert("Mic Error or Not Supported"); } };
         
         window.openSettings = () => { 
             document.getElementById('settings-modal').style.display = 'flex'; 
@@ -150,6 +161,12 @@
             const clean = text.replace(/[*#]/g, "");
             const u = new SpeechSynthesisUtterance(clean);
             u.lang = 'gu-IN';
+            
+            // Try to find a Gujarati voice or fallback
+            let voices = window.speechSynthesis.getVoices();
+            let gujVoice = voices.find(v => v.lang.includes('gu'));
+            if(gujVoice) u.voice = gujVoice;
+
             u.onstart = () => playVideo('talking');
             u.onend = () => playVideo('silent');
             window.speechSynthesis.speak(u);
@@ -162,15 +179,16 @@
             playVideo('thinking');
             document.getElementById('status-text').innerText = "વિચારું છું...";
 
-            // --- FIREBASE SAVE LOGIC ---
+            // 1. SAVE MEMORY LOGIC
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim();
                 if(memoryText) {
                     try {
                         await updateDoc(userDocRef, { memories: arrayUnion(memoryText) });
-                        window.speak("મેં ડેટાબેઝમાં સેવ કરી લીધું.");
+                        window.speak("મેં આ વાત કાયમ માટે ડેટાબેઝમાં નોંધી લીધી છે.");
                     } catch(e) {
-                        window.speak("સેવ કરવામાં તકલીફ છે.");
+                        window.speak("ડેટાબેઝમાં સેવ નથી થયું. ઈન્ટરનેટ ચેક કરો.");
+                        console.error(e);
                     }
                     isProcessing = false;
                     playVideo('silent');
@@ -178,24 +196,27 @@
                 }
             }
 
-            if(cmd.includes("ભૂલી જા")) {
-                 window.speak("મારે શું ભૂલવાનું છે?"); 
-                 // Complex delete logic omitted for simplicity
+            // 2. FORGET LOGIC (Optional Simple Version)
+            if(cmd.includes("બધું ભૂલી જા")) {
+                 window.speak("હું ડેટાબેઝમાંથી બધું ભૂંસી નાખીશ.");
+                 try {
+                     await setDoc(userDocRef, { memories: [] }); // Reset
+                 } catch(e) { console.error(e); }
                  isProcessing = false;
                  return;
             }
 
-            // --- GEMINI API CALL ---
-            if(!geminiKey) { window.speak("સેટિંગ્સમાં જઈને કી આપો."); isProcessing=false; return; }
+            // 3. AI RESPONSE LOGIC
+            if(!geminiKey) { window.speak("સેટિંગ્સમાં જઈને Gemini API Key આપો."); isProcessing=false; return; }
 
-            // Construct Prompt with Database Memories
             const systemPrompt = `તારું નામ વિદુષી છે.
-            તમારી પાસે આ કાયમી યાદો (Memories) છે:
+            [કાયમી યાદો / Memories]:
             ${window.permanentMemories.join("\n")}
             
-            User સાથે ગુજરાતીમાં વાત કરો. જવાબ ટૂંકા આપો.`;
+            Instruction: User સાથે સ્વાભાવિક ગુજરાતીમાં વાત કરો. જવાબ ટૂંકા રાખો.`;
 
-            let contents = window.chatHistory.slice(-10).map(m => ({ role: "user", parts: [{ text: m }] })); // Simplified history
+            // Simple history management (Last 6 turns)
+            let contents = window.chatHistory.slice(-6).map(m => ({ role: "user", parts: [{ text: m }] })); 
             contents.push({ role: "user", parts: [{ text: systemPrompt + "\nUser: " + text }] });
 
             try {
@@ -205,14 +226,22 @@
                     body: JSON.stringify({ contents: contents })
                 });
                 const data = await response.json();
+                
+                if (data.error) {
+                    window.speak("Error: " + data.error.message);
+                    isProcessing = false;
+                    return;
+                }
+
                 const reply = data.candidates[0].content.parts[0].text;
                 
+                // Update local history
                 window.chatHistory.push("User: " + text);
                 window.chatHistory.push("Vidushi: " + reply);
                 
                 window.speak(reply);
             } catch(e) {
-                window.speak("નેટવર્ક એરર.");
+                window.speak("નેટવર્ક પ્રોબ્લેમ છે.");
                 playVideo('silent');
             }
             isProcessing = false;
@@ -221,7 +250,10 @@
         // Initial Greeting
         window.onload = () => {
             playVideo('silent');
-            setTimeout(() => window.speak("જય શ્રી કૃષ્ણ! ડેટાબેઝ ઓનલાઇન છે."), 2000);
+            setTimeout(() => {
+                if(window.permanentMemories.length > 0) window.speak("જય શ્રી કૃષ્ણ! હું તૈયાર છું.");
+                else window.speak("જય શ્રી કૃષ્ણ! ડેટાબેઝ કનેક્ટ થઈ રહ્યો છે.");
+            }, 2000);
         };
     </script>
 </body>
