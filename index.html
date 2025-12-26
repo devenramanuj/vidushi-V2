@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Drama Queen Edition</title>
+    <title>Vidushi AI - Vanshavali Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -22,6 +22,13 @@
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
 
+        /* 🔴 PRANK CONTROLS 🔴 */
+        .prank-controls { position: fixed; bottom: 15px; right: 30px; z-index: 100; display: flex; flex-direction: row; gap: 60px; }
+        .secret-btn { width: 12px; height: 12px; border-radius: 50%; cursor: pointer; opacity: 0.3; transition: 0.2s; }
+        .secret-btn:active { transform: scale(1.5); opacity: 1; }
+        .btn-green { background-color: #00ff00; box-shadow: 0 0 5px #00ff00; } 
+        .btn-red { background-color: #ff0000; box-shadow: 0 0 5px #ff0000; }   
+
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
@@ -35,13 +42,12 @@
         
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 15px 5px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; gap: 5px; }
-        .menu-btn i { font-size: 20px; margin-bottom: 5px; }
         
         .checkbox-container { display: flex; align-items: center; margin: 15px 0; cursor: pointer; justify-content: space-between; background: #333; padding: 10px; border-radius: 5px; color: white; }
         .checkbox-container input { width: auto; margin: 0; transform: scale(1.5); }
 
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); }
+        #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
         .controls-row { display: flex; gap: 20px; align-items: center; }
         .round-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .round-btn:active { transform: scale(0.9); }
@@ -63,11 +69,17 @@
         <video id="talking-video" muted loop playsinline><source src="talking.mp4" type="video/mp4"></video>
         <video id="thinking-video" muted loop playsinline><source src="thinking.mp4" type="video/mp4"></video>
         <video id="smiling-video" muted loop playsinline><source src="smiling.mp4" type="video/mp4"></video>
+        <video id="angry-video" muted loop playsinline><source src="angry.mp4" type="video/mp4"></video>
     </div>
     
     <audio id="tts-preload-audio" src="" preload="auto"></audio>
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
+
+    <div class="prank-controls">
+        <div class="secret-btn btn-green" onclick="setSecretMood('normal')"></div>
+        <div class="secret-btn btn-red" onclick="setSecretMood('angry')"></div>
+    </div>
 
     <button id="settings-btn" class="side-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
 
@@ -90,10 +102,15 @@
                 <input type="checkbox" id="continuousModeCheck">
             </label>
 
-            <label class="checkbox-container" style="border: 1px solid #ff4444; background: #330000;">
-                <span>😡 ઝઘડાળુ સ્વભાવ (Angry Mode)</span>
-                <input type="checkbox" id="angryModeCheck">
-            </label>
+            <div class="section-title">સ્વભાવ (Personality)</div>
+            <select id="moodSelect" style="border: 2px solid #ff4500; padding: 10px; font-weight: bold; background: #222; color: #ff4500;">
+                <option value="normal">😇 ડાહી ડમરી (Normal)</option>
+                <option value="angry">😡 ઝઘડાળુ (Angry Mode)</option>
+                <option value="sadhu">🙏 સંતવાણી (Sadhu Mode)</option>
+                <option value="lazy">😴 આળસુ (Lazy Mode)</option>
+                <option value="poet">🌹 શાયર (Poet Mode)</option>
+            </select>
+            
             <div class="section-title">Step 1: AI Provider</div>
             <select id="providerSelect" onchange="toggleProviderSettings()">
                 <option value="gemini">Google Gemini</option>
@@ -141,6 +158,8 @@
         </div>
     </div>
 
+    <script src="vanshavali_data.js"></script>
+
     <script>
         // --- CONFIG ---
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
@@ -150,24 +169,16 @@
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-3.0-flash"; 
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
-        let angryMode = localStorage.getItem('vidushi_angry_mode') === 'true'; // 🔴 NEW STATE
+        let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
 
         let chatHistory = JSON.parse(localStorage.getItem('vidushi_memory')) || [];
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
-        
         let permanentMemories = JSON.parse(localStorage.getItem('vidushi_permanent_memories')) || [];
-        const familyFacts = [
-            "મને દેવેન્દ્રભાઈએ બનાવી છે.",
-            "નીતાબેન દેવેન્દ્રભાઈના પત્ની છે.",
-            "શ્યામ દેવેન્દ્રભાઈનો દીકરો છે.",
-            "શ્વેતા દેવેન્દ્રભાઈનો દીકરી છે.",
-            "અમે બધા ધંધુકા, ગુજરાતમાં રહીએ છીએ.",
-            "દેવેન્દ્રભાઈને ભજન સાંભળવા બહુ ગમે છે."
-        ];
+        
+        const familyFacts = ["મને દેવેન્દ્રભાઈએ બનાવી છે.", "નીતાબેન દેવેન્દ્રભાઈના પત્ની છે.", "શ્યામ દેવેન્દ્રભાઈનો દીકરો છે.", "શ્વેતા દેવેન્દ્રભાઈનો દીકરી છે."];
         familyFacts.forEach(fact => { if (!permanentMemories.includes(fact)) permanentMemories.push(fact); });
-        localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
 
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
         let isSilentListening = false;
@@ -191,7 +202,8 @@
             silent: document.getElementById('silent-video'),
             talking: document.getElementById('talking-video'),
             thinking: document.getElementById('thinking-video'),
-            smiling: document.getElementById('smiling-video')
+            smiling: document.getElementById('smiling-video'),
+            angry: document.getElementById('angry-video')
         };
 
         let recognition;
@@ -199,16 +211,15 @@
         let isAiSpeaking = false;
         let visionMode = false;
         let visionStream = null;
-
         let wakeLock = null;
+
         async function requestWakeLock() { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} }
 
         window.onload = () => {
             playVideo('smiling'); 
-            const preloadUtterance = new SpeechSynthesisUtterance(''); preloadUtterance.lang = 'gu-IN'; window.speechSynthesis.speak(preloadUtterance);
+            window.speechSynthesis.getVoices();
             setTimeout(() => { speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
             requestWakeLock();
-            document.addEventListener('visibilitychange', async () => { if (wakeLock !== null && document.visibilityState === 'visible') { await requestWakeLock(); } });
         };
 
         function playVideo(type) {
@@ -216,244 +227,168 @@
             Object.values(videos).forEach(v => { v.style.display = 'none'; v.pause(); });
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
-
-        function openSettings() { 
-            document.getElementById('settings-modal').style.display = 'flex'; 
-            document.getElementById('userNameInput').value = userName;
-            document.getElementById('providerSelect').value = aiProvider;
-            document.getElementById('geminiKeyInput').value = geminiKeys; 
-            document.getElementById('geminiModelSelect').value = geminiModel;
-            document.getElementById('groqKeyInput').value = groqKey;
-            document.getElementById('groqModelSelect').value = groqModel;
-            document.getElementById('serperKeyInput').value = serperKey; 
-            document.getElementById('continuousModeCheck').checked = continuousMode;
-            document.getElementById('angryModeCheck').checked = angryMode; // Load Mood State
-            toggleProviderSettings();
-        }
-
+        function openSettings() { document.getElementById('settings-modal').style.display = 'flex'; document.getElementById('userNameInput').value = userName; document.getElementById('providerSelect').value = aiProvider; document.getElementById('geminiKeyInput').value = geminiKeys; document.getElementById('geminiModelSelect').value = geminiModel; document.getElementById('groqKeyInput').value = groqKey; document.getElementById('groqModelSelect').value = groqModel; document.getElementById('serperKeyInput').value = serperKey; document.getElementById('continuousModeCheck').checked = continuousMode; document.getElementById('moodSelect').value = currentMood; toggleProviderSettings(); }
         function openFeature(type) { document.getElementById('settings-modal').style.display = 'none'; toggleModal(type); }
-
-        function toggleProviderSettings() {
-            const provider = document.getElementById('providerSelect').value;
-            document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none';
-            document.getElementById('groq-settings').style.display = provider === 'gemini' ? 'none' : 'block';
+        function toggleProviderSettings() { document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; }
+        function saveSettings() { 
+            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; aiProvider = document.getElementById('providerSelect').value; geminiKeys = document.getElementById('geminiKeyInput').value.trim(); geminiModel = document.getElementById('geminiModelSelect').value; groqKey = document.getElementById('groqKeyInput').value.trim(); groqModel = document.getElementById('groqModelSelect').value; serperKey = document.getElementById('serperKeyInput').value.trim(); continuousMode = document.getElementById('continuousModeCheck').checked; currentMood = document.getElementById('moodSelect').value;
+            localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); localStorage.setItem('vidushi_serper_key', serperKey); localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_mood', currentMood);
+            document.getElementById('settings-modal').style.display = 'none'; speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         }
+        function setSecretMood(mood) { currentMood = mood; localStorage.setItem('vidushi_mood', mood); speak(mood === 'angry' ? "હવે જો તું..." : "શાંતિ..."); }
+        function clearMemories() { if(confirm("Sure?")) { permanentMemories = familyFacts; localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak("ભૂલી ગઈ."); } }
+        function toggleModal(type) { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') renderNotes(); if(type==='expense') renderExpenses(); }
+        
+        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); speak("લખ્યું."); }
+        function renderNotes() { document.getElementById('notes-list').innerHTML = notes.map((n,i) => `<div class="list-item"><span>${n.text}</span><span style="color:red;cursor:pointer" onclick="deleteNote(${i})">x</span></div>`).join(''); }
+        function deleteNote(i) { notes.splice(i,1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
+        function speakNotes() { speak(notes.map(n=>n.text).join(". ")); }
+        function addExpense(text) { let amt = text.match(/\d+/); if(amt) { let d = text.replace(amt[0],"").replace("રૂપિયા","").trim(); expenses.push({amount:parseInt(amt[0]), desc:d||"પરચુરણ"}); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); speak(`${amt[0]} લખ્યા.`); } }
+        function renderExpenses() { let t=0; document.getElementById('expense-list').innerHTML = expenses.map((n,i) => { t+=n.amount; return `<div class="list-item expense-item"><span>${n.amount}-${n.desc}</span><span style="color:red" onclick="deleteExpense(${i})">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = t; }
+        function deleteExpense(i) { expenses.splice(i,1); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); renderExpenses(); }
+        function clearExpenses() { expenses=[]; localStorage.removeItem('vidushi_expenses'); renderExpenses(); }
 
-        function saveSettings() {
-            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ";
-            aiProvider = document.getElementById('providerSelect').value;
-            geminiKeys = document.getElementById('geminiKeyInput').value.trim();
-            geminiModel = document.getElementById('geminiModelSelect').value;
-            groqKey = document.getElementById('groqKeyInput').value.trim();
-            groqModel = document.getElementById('groqModelSelect').value;
-            serperKey = document.getElementById('serperKeyInput').value.trim();
-            continuousMode = document.getElementById('continuousModeCheck').checked;
-            angryMode = document.getElementById('angryModeCheck').checked; // Save Mood
-            
-            localStorage.setItem('vidushi_username', userName);
-            localStorage.setItem('vidushi_provider', aiProvider);
-            localStorage.setItem('vidushi_gemini_key', geminiKeys);
-            localStorage.setItem('vidushi_gemini_model', geminiModel);
-            localStorage.setItem('vidushi_groq_key', groqKey);
-            localStorage.setItem('vidushi_groq_model', groqModel);
-            localStorage.setItem('vidushi_serper_key', serperKey);
-            localStorage.setItem('vidushi_continuous', continuousMode);
-            localStorage.setItem('vidushi_angry_mode', angryMode);
-            
-            document.getElementById('settings-modal').style.display = 'none';
-            if(angryMode) speak("હવે તો તમે જુઓ, હું કેવી રીતે તમારું માથું ખાવ છું!");
-            else speak(`સેટિંગ્સ સેવ થઈ ગયા.`);
-        }
+        function playMusic(q) { speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); }
+        function sendSOS() { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((p) => { let link = `http://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; fixedContacts.forEach(c => window.open(`https://wa.me/91${c.number}?text=${encodeURIComponent("SOS! " + link)}`, "_blank")); speak("SOS મોકલ્યો!"); }); } else speak("GPS નથી."); }
+        function generateMagicImage(p) { playVideo('thinking'); imageLoadingText.style.display = "block"; generatedImage.style.display="none"; imageOverlay.style.display='flex'; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display="none"; generatedImage.style.display="block"; speak("તૈયાર!"); }; }
+        function closeImage() { imageOverlay.style.display='none'; playVideo('silent'); isProcessing=false; }
 
-        function clearMemories() {
-            if(confirm("શું તમે બધી યાદશક્તિ ભૂંસી નાખવા માંગો છો?")) {
-                permanentMemories = familyFacts; // Keep family facts
-                localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
-                localStorage.removeItem('vidushi_visual_memories');
-                speak("હું બધું ભૂલી ગઈ છું, સિવાય કે પરિવારની વાતો.");
-            }
-        }
-
-        function toggleModal(type) { const modal = document.getElementById(type + '-modal'); modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex'; if(type === 'notes') renderNotes(); if(type === 'expense') renderExpenses(); }
-        function addNote(text) { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); document.getElementById('notes-modal').style.display = 'flex'; renderNotes(); speak("નોંધી લીધું."); }
-        function renderNotes() { const list = document.getElementById('notes-list'); list.innerHTML = notes.length ? notes.map((n, i) => `<div class="list-item"><span>${n.text}</span><span style="color:red; cursor:pointer;" onclick="deleteNote(${i})">✖</span></div>`).join('') : "<div style='color:#777;'>કોઈ નોંધ નથી</div>"; }
-        function deleteNote(i) { notes.splice(i, 1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); renderNotes(); }
-        function speakNotes() { speak(notes.length ? notes.map(n => n.text).join(". ") : "ડાયરી ખાલી છે."); }
-        function addExpense(text) { let amount = text.match(/\d+/); if(amount) { let desc = text.replace(amount[0], "").replace("રૂપિયા", "").replace("લખ", "").replace("જમા કર", "").trim(); expenses.push({ amount: parseInt(amount[0]), desc: desc || "પરચુરણ", time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); speak(`${amount[0]} રૂપિયા લખી લીધા.`); } else { speak("રકમ સમજાય નહીં."); } }
-        function renderExpenses() { let total = 0; document.getElementById('expense-list').innerHTML = expenses.map((n, i) => { total += n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc}</span><span style="color:red;" onclick="deleteExpense(${i})">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = total; }
-        function deleteExpense(i) { expenses.splice(i, 1); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); renderExpenses(); }
-        function clearExpenses() { expenses = []; localStorage.removeItem('vidushi_expenses'); renderExpenses(); }
-
-        // --- SMART DJ FUNCTION (MODIFIED FOR ANGRY MODE) ---
-        function playMusic(query) {
-            
-            // 🔴 Angry Logic for Music
-            if (angryMode && Math.random() > 0.5) { 
-                speak("જાતે વગાડી લો ને! હું શું અહીં નોકર છું? જાઓ..."); 
-                return; 
-            }
-
-            const oldHits = ["પલ પલ દિલ કે પાસ", "લગ જા ગલે", "મેરે સપનો કી રાની", "ગુલાબી આંખે", "ચૂરા લિયા હૈ તુમને", "કભી કભી મેરે દિલ મેં", "આપ કી આંખો મેં કુછ"];
-            let songToPlay = query;
-            let speakMsg = "";
-
-            if (query.includes("જૂનું ગીત") || query.trim() === "ગીત" || query.includes("old song")) {
-                songToPlay = oldHits[Math.floor(Math.random() * oldHits.length)];
-                speakMsg = angryMode ? `લો સાંભળો "${songToPlay}", અને માથું ન ખાતા.` : `ઓકે! હું તમારા માટે "${songToPlay}" વગાડું છું.`;
-            } else {
-                speakMsg = angryMode ? `હા હા વગાડું છું ${query}, શાંતિ રાખો.` : `${query} વગાડું છું.`;
-            }
-            speak(speakMsg);
-            setTimeout(() => { window.open(`https://music.youtube.com/search?q=${encodeURIComponent(songToPlay)}`, "_blank"); toggleModal('music'); }, 3000);
-        }
-
-        function sendLocation(contact) { /* ... (Same as original) ... */ if (navigator.geolocation) { statusText.innerText = "લોકેશન..."; navigator.geolocation.getCurrentPosition((position) => { let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; let num = "91" + contact.number.replace(/\D/g, '').slice(-10); window.open(`https://wa.me/${num}?text=${encodeURIComponent("મારું લોકેશન: " + mapLink)}`, "_blank"); speak("લોકેશન મોકલ્યું."); isProcessing = false; playVideo('silent'); }, () => { speak("GPS નથી."); isProcessing = false; playVideo('silent'); }); } else { speak("GPS નથી."); } }
-        function sendSOS() { /* ... (Same as original) ... */ statusText.innerText = "SOS..."; if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((position) => { let mapLink = `http://googleusercontent.com/maps.google.com/5{position.coords.latitude},${position.coords.longitude}`; fixedContacts.forEach(contact => { let num = "91" + contact.number.replace(/\D/g, '').slice(-10); window.open(`https://wa.me/${num}?text=${encodeURIComponent("SOS! મદદ કરો! મારું લોકેશન: " + mapLink)}`, "_blank"); }); speak("SOS મોકલ્યો!"); isProcessing = false; playVideo('silent'); }, () => { speak("GPS નથી."); isProcessing = false; playVideo('silent'); }); } }
-        function generateMagicImage(prompt) { playVideo('thinking'); statusText.innerText = "ચિત્ર..."; imageLoadingText.style.display = "block"; generatedImage.style.display = "none"; imageOverlay.style.display = 'flex'; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(prompt)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display = "none"; generatedImage.style.display = "block"; speak("તૈયાર!"); }; }
-        function closeImage() { imageOverlay.style.display = 'none'; playVideo('silent'); isProcessing = false; }
-
+        // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(SpeechRecognition) { recognition = new SpeechRecognition(); recognition.lang = 'gu-IN'; recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = isSilentListening ? "નોંધ લઉં છું..." : "સાંભળું છું..."; }; recognition.onend = () => { micBtn.classList.remove('listening'); if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) { try { recognition.start(); } catch(e) {} } else if (!isSilentListening) { if(!isProcessing) statusText.innerText = "માઈક દબાવો"; } }; recognition.onresult = (e) => { let text = e.results[0][0].transcript; if(text.trim()) processCommand(text); }; }
+        if(SpeechRecognition) { 
+            recognition = new SpeechRecognition(); 
+            recognition.lang = 'gu-IN'; 
+            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = isSilentListening ? "નોંધ લઉં છું..." : "સાંભળું છું..."; }; 
+            recognition.onend = () => { micBtn.classList.remove('listening'); if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) try{recognition.start();}catch(e){} else if(!isProcessing) statusText.innerText = "માઈક દબાવો"; }; 
+            recognition.onresult = (e) => { let text = e.results[0][0].transcript; if(text.trim()) processCommand(text); }; 
+        }
         function startConversation() { try{recognition.start();}catch(e){} }
         function stopConversation() { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; }
 
-        async function activateVision() {
-            if(visionMode) { captureAndAnalyze(); return; } 
-            try { statusText.innerText = "કેમેરો..."; visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; document.getElementById('video-container').style.display = 'none'; visionMode = true; document.getElementById('vision-btn').innerHTML = '<i class="fas fa-camera"></i>'; document.getElementById('vision-btn').style.background = "red"; speak(angryMode ? "શું બતાવવું છે હવે? જલ્દી કરો." : "ફોટો બતાવો."); } catch(e) { alert("કેમેરો ખુલતો નથી."); }
-        }
-        function stopVisionCamera() { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').innerHTML = '<i class="fas fa-eye"></i>'; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); }
+        async function activateVision() { try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; document.getElementById('video-container').style.display = 'none'; visionMode = true; document.getElementById('vision-btn').style.background = "red"; speak("ફોટો બતાવો."); } catch(e) { alert("Camera Error"); } }
+        function stopVisionCamera() { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); }
         async function captureAndAnalyze() { canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight; canvas.getContext('2d').drawImage(selfieVideo, 0, 0); stopVisionCamera(); playVideo('thinking'); const base64Image = canvas.toDataURL('image/jpeg', 0.5).split(',')[1]; if(aiProvider === 'gemini') await askGeminiVision(base64Image); else await askGroqVision(base64Image); }
 
         async function processCommand(text) {
             if(text.trim().length < 2) return;
-            const ignoreWords = ["હં", "હા", "કે", "ok", "okay", "hmm", "ha"];
-            if(ignoreWords.includes(text.trim().toLowerCase())) return;
+            const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
-            let extraInstructions = "";
 
-            if(isSilentListening) { if(cmd.includes("વાત પૂરી") || cmd.includes("stop")) { isSilentListening = false; statusText.innerText = "સેવ કરું છું..."; playVideo('thinking'); let summary = `[વાતચીત]: ${conversationBuffer}`; permanentMemories.push(summary); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); conversationBuffer = ""; speak("વાત યાદ રાખી લીધી."); } else { conversationBuffer += text + ". "; } return; }
-            if(cmd.includes("અમારી વાત સાંભળ")) { isSilentListening = true; conversationBuffer = ""; speak("હું શાંતિથી સાંભળું છું."); return; }
-            
+            if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; permanentMemories.push(conversationBuffer); conversationBuffer=""; speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
+            if(cmd.includes("અમારી વાત સાંભળ")) { isSilentListening = true; conversationBuffer=""; speak("સાંભળું છું."); return; }
+
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
 
-            if(cmd.includes("મદદ કર") || cmd.includes("help") || cmd.includes("બચાવો")) { sendSOS(); return; }
-            
-            if(cmd.includes("યાદ રાખ") || cmd.includes("નોંધી લે")) {
-                if(angryMode) { speak("હું કઈ નોંધવાની નથી! જાતે લખી લો."); isProcessing = false; playVideo('silent'); return; }
-                let fact = text.replace("યાદ રાખજે", "").replace("યાદ રાખ", "").replace("નોંધી લે", "").replace("કે", "").trim();
-                permanentMemories.push(fact); localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); speak("હા, મેં મગજમાં કાયમ માટે સેવ કરી લીધું."); isProcessing = false; playVideo('silent'); return;
-            }
+            if(cmd.includes("મદદ") || cmd.includes("help")) { sendSOS(); return; }
+            if(cmd.includes("ચિત્ર") && cmd.includes("બનાવ")) { generateMagicImage(text.replace("ચિત્ર બનાવ","")); return; }
+            if(cmd.includes("કેમેરો")) { currentVisionPrompt="આ શું છે?"; activateVision(); return; }
+            if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","")); isProcessing=false; return; }
+            if(cmd.includes("નોંધ")) { addNote(text.replace("નોંધ","")); isProcessing=false; return; }
+            if(cmd.includes("હિસાબ") || cmd.includes("રૂપિયા")) { addExpense(text); isProcessing=false; return; }
 
-            if(cmd.includes("યાદ રાખજે કે મેં") || cmd.includes("અહીં મૂકી છે")) { let item = text.replace("યાદ રાખજે કે મેં", "").replace("અહીં મૂકી છે", "").trim() || "વસ્તુ"; currentVisionPrompt = `આ ફોટામાં ${item} ક્યાં પડી છે? તેનું ચોક્કસ લોકેશન કહે.`; localStorage.setItem('vidushi_remember_item_name', item); activateVision(); return; }
-            if(cmd.includes("ક્યાં છે") || cmd.includes("ક્યાં મૂકી")) { let item = text.replace("મારી", "").replace("ક્યાં છે", "").trim(); let visualMemories = JSON.parse(localStorage.getItem('vidushi_visual_memories')) || {}; if(visualMemories[item]) { speak(`તે અહીં છે: ${visualMemories[item]}`); } else { speak("મને યાદ નથી."); } isProcessing = false; playVideo('silent'); return; }
-            
-            if(cmd.includes("કેમેરો") || cmd.includes("ફોટો પાડ")) { currentVisionPrompt = "આ શું છે?"; activateVision(); return; }
-            if(cmd.includes("ચિત્ર બનાવ")) { generateMagicImage(text.replace("ચિત્ર બનાવ","").trim()); return; }
-            if(cmd.includes("મેસેજ કર")) { let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name)); if(found) { window.open(`https://wa.me/91${found.number}?text=${encodeURIComponent(text.replace(found.gu_name,"").replace("મેસેજ કર","").trim())}`, "_blank"); speak("મેસેજ કરું છું."); } isProcessing = false; playVideo('silent'); return; }
-            if(cmd.includes("ફોન કર")) { let found = fixedContacts.find(c => cmd.includes(c.name.toLowerCase()) || cmd.includes(c.gu_name)); if(found) { window.open(`tel:+91${found.number}`, "_self"); speak("ફોન જોડું છું."); } isProcessing = false; playVideo('silent'); return; }
-            if(cmd.includes("જવું છે") || cmd.includes("રસ્તો")) { let dest = text.replace("જવું છે", "").replace("રસ્તો", "").trim(); speak("મેપ ખોલું છું."); window.open(`http://googleusercontent.com/maps.google.com/maps?q=${encodeURIComponent(dest)}`, "_blank"); isProcessing = false; playVideo('silent'); return; }
-            if(cmd.includes("વિડીયો")) { let query = text.replace("વિડીયો", "").trim(); speak("વિડીયો ખોલું છું."); window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, "_blank"); isProcessing = false; playVideo('silent'); return; }
-            if(cmd.includes("નોંધ")) { addNote(text.replace("નોંધ","").trim()); isProcessing=false; playVideo('silent'); return; }
-            if(cmd.includes("વગાડ")) { playMusic(text.replace("વગાડ","").trim()); isProcessing=false; playVideo('silent'); return; }
-            
-            let searchKeywords = ["ભાવ", "કિંમત", "સમાચાર", "સ્કોર", "news", "panchang"];
-            let extraContext = "";
-            if (searchKeywords.some(k => cmd.includes(k)) && serperKey) { statusText.innerText = "ઈન્ટરનેટ..."; let res = await performGoogleSearch(text); extraContext = `[Internet Info]: ${res}`; }
-            if (["વત્તા", "ઓછા", "ગુણ્યા", "ભાગ્યા", "ટકા"].some(k => cmd.includes(k))) { extraInstructions += " [Calculate accurately] "; }
-            
-            if(aiProvider === 'gemini') { await askGeminiText(text, extraContext + extraInstructions); } else { await askGroqText(text, extraContext + extraInstructions); }
+            if(aiProvider === 'gemini') { await askGeminiText(text); } else { await askGroqText(text); }
         }
 
-        function filterIdentity(reply) { let forbidden = ["google", "language model", "ai model", "trained by", "artificial intelligence"]; if (forbidden.some(word => reply.toLowerCase().includes(word))) { return "હું વિદુષી છું, અને મને દેવેન્દ્રભાઈએ બનાવી છે. હું તમારી પર્સનલ આસિસ્ટન્ટ છું."; } return reply; }
+        // 🔴 SYSTEM PROMPT WITH VANSHAVALI DATA & NATURAL VOICE RULES 🔴
+        function getSystemPrompt(memories, contextData) {
+            let moodPrompt = "You are a helpful assistant.";
+            if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic.";
+            else if (currentMood === 'sadhu') moodPrompt = "You are a spiritual Guru.";
 
-        async function askGeminiText(userText, contextData = "") {
-            let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
-            if(keys.length === 0) { alert("Gemini Key નથી!"); openSettings(); isProcessing=false; playVideo('silent'); return; }
+            // Load data from external file safely
+            let familyDataString = (typeof vanshavaliData !== 'undefined') ? JSON.stringify(vanshavaliData) : "No Family Data Found.";
 
-            const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
+            return `IMPORTANT: You are a FEMALE AI named Vidushi.
+            Speak in a very NATURAL, CONVERSATIONAL Gujarati (Deshi/Kathiyawadi style).
             
-            // 🔴 MOOD LOGIC (The Personality Switch)
-            let moodPrompt = "";
-            if (angryMode) {
-                moodPrompt = "You are currently in a very BAD MOOD. You are annoyed, rude, and sarcastic. Complain about the user's request. Be dramatic. Speak in Gujarati slang/casual tone. Give the answer ONLY AFTER complaining.";
-            } else {
-                moodPrompt = "You are a helpful, polite assistant named 'Vidushi'.";
-            }
+            [DATA SOURCE - KHOJI PARIVAR VANSHAVALI]:
+            ${familyDataString}
 
-            const systemInstruction = `IMPORTANT: ${moodPrompt} Created by Devendrabhai. You are NOT Google AI. [Memory]: ${memories} [Context]: ${contextData}`;
+            RULES:
+            1. DO NOT speak long paragraphs. Break sentences into small chunks.
+            2. Use "..." (dots) and "," (commas) frequently for pauses.
+            3. Use filler words like 'અરે', 'હેં', 'તો ખરા', 'સાંભળો'.
+            4. IF ASKED ABOUT FAMILY: Answer ONLY based on the Vanshavali Data above.
+            5. Understand relations: "children" = son/daughter.
             
-            let contents = [];
-            chatHistory.slice(-4).forEach(msg => contents.push({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
+            ${moodPrompt} Created by Devendrabhai. [Memory]: ${memories} [Context]: ${contextData}`;
+        }
+
+        async function askGeminiText(userText) {
+            let keys = geminiKeys.split(',').filter(k=>k); if(!keys.length) { alert("Key?"); isProcessing=false; return; }
+            const systemInstruction = getSystemPrompt(permanentMemories.join("\n"), "");
+            
+            let contents = chatHistory.slice(-4).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
             contents.push({ role: "user", parts: [{ text: systemInstruction + "\nUser: " + userText }] });
 
-            for (let i = 0; i < keys.length; i++) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[i]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
-                    const data = await response.json();
-                    if(data.error) continue;
-                    let reply = data.candidates[0].content.parts[0].text;
-                    reply = filterIdentity(reply);
-                    chatHistory.push({ role: "user", content: userText });
-                    chatHistory.push({ role: "assistant", content: reply });
-                    localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
-                    speak(reply); return;
-                } catch(e) {}
-            }
-            speak("સર્વર બીઝી છે."); isProcessing=false; playVideo('silent');
-        }
-
-        async function askGeminiVision(base64Image) {
-            let keys = geminiKeys.split(',').map(k => k.trim()).filter(k => k);
-            if(keys.length === 0) return;
-            
-            // 🔴 MOOD LOGIC FOR VISION
-            let finalPrompt = currentVisionPrompt;
-            if(angryMode) finalPrompt += " (Note: You are in a bad mood. Criticize the photo quality or the object. Be rude in Gujarati.)";
-
-            for (let i = 0; i < keys.length; i++) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[i]}`, {
-                        method: "POST", headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: finalPrompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] })
-                    });
-                    const data = await response.json();
-                    if(data.error) continue;
-                    let reply = data.candidates[0].content.parts[0].text;
-                    speak(reply); return;
-                } catch(e) {}
-            }
-            speak("તકલીફ છે."); playVideo('silent');
-        }
-
-        async function askGroqText(userText, contextData = "") {
-           // Groq doesn't support system prompt changes dynamically as easily here without full rewrite, 
-           // but keeping it functional for normal use.
-           // Focusing on Gemini for the angry mode as requested.
-           if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
-           // ... (Existing Groq Logic) ...
-           // For brevity in this fix, Groq remains standard helper.
-           /* ... Copy of existing Groq function ... */
-           speak("Groq માં ઝઘડો ઉપલબ્ધ નથી, Gemini વાપરો."); isProcessing=false; playVideo('silent');
-        }
-        
-        // Re-adding Groq Logic properly
-         async function askGroqText(userText, contextData = "") {
-            if(!groqKey) { alert("Key Missing!"); openSettings(); return; }
-            const memories = permanentMemories.length > 0 ? "MEMORIES:\n" + permanentMemories.join("\n") : "";
-            let systemPrompt = `તારું નામ વિદુષી છે. તને દેવેન્દ્રભાઈએ બનાવી છે. ${memories}. [Context]: ${contextData}`;
-            let messages = [{ role: "system", content: systemPrompt }, ...chatHistory.slice(-6), { role: "user", content: userText }];
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
-                const data = await res.json();
-                let reply = data.choices[0].message.content;
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) });
+                const data = await response.json();
+                let reply = data.candidates[0].content.parts[0].text;
                 chatHistory.push({ role: "user", content: userText }); chatHistory.push({ role: "assistant", content: reply });
                 localStorage.setItem('vidushi_memory', JSON.stringify(chatHistory));
                 speak(reply);
-            } catch(e) { speak("Groq એરર."); playVideo('silent'); isProcessing=false; }
+            } catch(e) { speak("ફરી પ્રયત્ન કરો."); isProcessing=false; }
         }
 
-        async function performGoogleSearch(query) { try { const response = await fetch("https://google.serper.dev/search", { method: "POST", headers: { "X-API-KEY": serperKey, "Content-Type": "application/json" }, body: JSON.stringify({ q: query, gl: "in", hl: "gu" }) }); const data = await response.json(); return data.organic ? data.organic.slice(0, 2).map(i => i.snippet).join("\n") : ""; } catch (e) { return ""; } }
-        function speak(text) { let clean = text.replace(/[*#_]/g, ""); statusText.innerText = "બોલું છું..."; isAiSpeaking = true; const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; u.onstart = () => { playVideo('talking'); }; u.onend = () => { playVideo('smiling'); isAiSpeaking = false; setTimeout(() => { if(!isProcessing) playVideo('silent'); }, 3000); isProcessing = false; if (continuousMode && !isSilentListening) { statusText.innerText = "સાંભળું છું..."; try { recognition.start(); } catch(e) {} } else { statusText.innerText = "માઈક દબાવો"; } }; u.onerror = () => { isAiSpeaking=false; isProcessing=false; playVideo('silent'); }; window.speechSynthesis.speak(u); }
+        async function askGeminiVision(base64Image) {
+            let keys = geminiKeys.split(',').filter(k=>k);
+            try {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) });
+                const data = await response.json(); speak(data.candidates[0].content.parts[0].text);
+            } catch(e) { speak("Error."); }
+        }
+
+        async function askGroqText(userText) {
+            if(!groqKey) return;
+            let messages = [{ role: "system", content: getSystemPrompt("", "") }, ...chatHistory.slice(-6), { role: "user", content: userText }];
+            try {
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
+                const data = await res.json();
+                speak(data.choices[0].message.content);
+            } catch(e) { speak("Groq Error."); isProcessing=false; }
+        }
+
+        // 🔴 SMART SPEAK FUNCTION (Voice + Angry Check + Pitch) 🔴
+        function speak(text) {
+            let clean = text.replace(/[*#_]/g, "");
+            statusText.innerText = "બોલું છું..."; 
+            isAiSpeaking = true; 
+            
+            const u = new SpeechSynthesisUtterance(clean); 
+            u.lang = 'gu-IN';
+
+            // 1. Voice Selection
+            let voices = window.speechSynthesis.getVoices();
+            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google'));
+            if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN');
+            if(bestVoice) u.voice = bestVoice;
+
+            // 2. Angry Detection
+            const angryWords = ["મૂર્ખ", "ડોબા", "શરમ", "ચૂપ", "nonsense", "stupid", "ગુસ્સો", "ભાન"];
+            let isTextAngry = angryWords.some(word => clean.toLowerCase().includes(word));
+
+            // 3. Pitch Variation
+            if (currentMood === 'normal' && !isTextAngry) {
+                u.pitch = 0.95 + (Math.random() * 0.1); 
+                u.rate = 0.95 + (Math.random() * 0.1);
+            } else if (currentMood === 'angry' || isTextAngry) {
+                u.pitch = 0.8; u.rate = 1.2; 
+            }
+
+            u.onstart = () => {
+                if (currentMood === 'angry' || isTextAngry) { playVideo('angry'); statusText.style.border = "2px solid red"; } 
+                else { playVideo('talking'); statusText.style.border = "1px solid rgba(255,255,255,0.2)"; }
+            };
+
+            u.onend = () => { 
+                if (currentMood === 'angry' || isTextAngry) playVideo('silent'); else playVideo('smiling');
+                isAiSpeaking = false; isProcessing = false;
+                if (continuousMode) try { recognition.start(); } catch(e) {}
+            };
+            
+            window.speechSynthesis.speak(u);
+        }
     </script>
 </body>
 </html>
