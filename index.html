@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Vanshavali Edition</title>
+    <title>Vidushi AI - Clean Speech Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -289,28 +289,25 @@
             if(aiProvider === 'gemini') { await askGeminiText(text); } else { await askGroqText(text); }
         }
 
-        // 🔴 SYSTEM PROMPT WITH VANSHAVALI DATA & NATURAL VOICE RULES 🔴
+        // 🔴 SYSTEM PROMPT WITH STRICT NO-FILLER RULE 🔴
         function getSystemPrompt(memories, contextData) {
             let moodPrompt = "You are a helpful assistant.";
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic.";
             else if (currentMood === 'sadhu') moodPrompt = "You are a spiritual Guru.";
 
-            // Load data from external file safely
             let familyDataString = (typeof vanshavaliData !== 'undefined') ? JSON.stringify(vanshavaliData) : "No Family Data Found.";
 
             return `IMPORTANT: You are a FEMALE AI named Vidushi.
-            Speak in a very NATURAL, CONVERSATIONAL Gujarati (Deshi/Kathiyawadi style).
+            Speak in a very NATURAL Gujarati.
             
-            [DATA SOURCE - KHOJI PARIVAR VANSHAVALI]:
-            ${familyDataString}
+            [DATA SOURCE]: ${familyDataString}
 
             RULES:
-            1. DO NOT speak long paragraphs. Break sentences into small chunks.
-            2. Use "..." (dots) and "," (commas) frequently for pauses.
+            1. Keep answers SHORT and DIRECT.
+            2. STRICTLY FORBIDDEN: Do NOT start sentences with "અરે", "હા", "સાંભળો", "જી", "ઓહ".
+            3. Do NOT use "Deshi" or "Kathiyawadi" slang if it adds unnecessary filler words.
+            4. Start the answer DIRECTLY with the main point.
         
-            4. IF ASKED ABOUT FAMILY: Answer ONLY based on the Vanshavali Data above.
-            5. Understand relations: "children" = son/daughter.
-            
             ${moodPrompt} Created by Devendrabhai. [Memory]: ${memories} [Context]: ${contextData}`;
         }
 
