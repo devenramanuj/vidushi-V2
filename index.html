@@ -274,8 +274,31 @@
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
 
-            if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; permanentMemories.push(conversationBuffer); conversationBuffer=""; speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
+            // --- OLD SILENT LISTENING LOGIC + FIX FOR SAVING ---
+            if(isSilentListening) { 
+                if(cmd.includes("પૂરી") || cmd.includes("stop")) { 
+                    isSilentListening = false; 
+                    permanentMemories.push(conversationBuffer); 
+                    localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories)); // FIX: Save to Storage
+                    conversationBuffer=""; 
+                    speak("યાદ રાખી લીધું."); 
+                } else { 
+                    conversationBuffer += text + ". "; 
+                } 
+                return; 
+            }
             if(cmd.includes("અમારી વાત સાંભળ")) { isSilentListening = true; conversationBuffer=""; speak("સાંભળું છું."); return; }
+
+            // --- NEW: DIRECT REMEMBER COMMAND ---
+            if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
+                let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim();
+                if(memoryText) {
+                    permanentMemories.push(memoryText);
+                    localStorage.setItem('vidushi_permanent_memories', JSON.stringify(permanentMemories));
+                    speak("મેં આ વાત કાયમ માટે નોંધી લીધી છે.");
+                    return;
+                }
+            }
 
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
 
@@ -315,7 +338,8 @@
             let keys = geminiKeys.split(',').filter(k=>k); if(!keys.length) { alert("Key?"); isProcessing=false; return; }
             const systemInstruction = getSystemPrompt(permanentMemories.join("\n"), "");
             
-            let contents = chatHistory.slice(-4).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
+            // --- FIX: Increased context history from 4 to 20 ---
+            let contents = chatHistory.slice(-20).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] }));
             contents.push({ role: "user", parts: [{ text: systemInstruction + "\nUser: " + userText }] });
 
             try {
