@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Magic Contact Edition</title>
+    <title>Vidushi AI - Spy Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -16,6 +16,10 @@
         
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; transform: scaleX(-1); border: 4px solid #ff4500; }
         #canvas-capture { display: none; }
+
+        /* SPY MODE OVERLAY */
+        #spy-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 999; cursor: pointer; }
+        #spy-status { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: #111; font-size: 10px; }
 
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
@@ -70,6 +74,10 @@
         <video id="angry-video" muted loop playsinline><source src="angry.mp4" type="video/mp4"></video>
     </div>
     
+    <div id="spy-overlay" onclick="window.stopSpyMode()">
+        <div id="spy-status">System Active</div>
+    </div>
+
     <audio id="tts-preload-audio" src="" preload="auto"></audio>
     <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
@@ -90,6 +98,7 @@
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
+                <div class="menu-btn" onclick="window.startSpyMode()" style="grid-column: span 4; background: #222; border-color: red; color: red;"><i class="fas fa-user-secret"></i> જાસૂસ (Spy Mode)</div>
             </div>
 
             <div class="section-title">Personal Info</div>
@@ -174,7 +183,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- FIREBASE CONFIG ---
+        // FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyCU_wqw_7PC0nBaLBgqDSmDgX1f95zaUlA",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -185,7 +194,6 @@
             measurementId: "G-ZM9RS2J6SR"
         };
 
-        // --- INIT DB ---
         let app, db, userDocRef;
         try {
             app = initializeApp(firebaseConfig);
@@ -221,14 +229,12 @@
 
         let notes = JSON.parse(localStorage.getItem('vidushi_notes')) || [];
         let expenses = JSON.parse(localStorage.getItem('vidushi_expenses')) || [];
-        // NEW CONTACTS LIST
         let contacts = JSON.parse(localStorage.getItem('vidushi_contacts')) || [];
 
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
         let isSilentListening = false;
         let conversationBuffer = "";
 
-        // Default SOS contacts (Built-in)
         const fixedContacts = [
             { name: "Devendra", gu_name: "દેવેન્દ્ર", number: "9276505035" },
             { name: "Nita", gu_name: "નીતા", number: "9227804906" }, 
@@ -257,6 +263,11 @@
         let visionMode = false;
         let visionStream = null;
         let wakeLock = null;
+
+        // SPY MODE VARIABLES
+        let spyInterval = null;
+        let prevFrameData = null;
+        let spyCooldown = false;
 
         window.requestWakeLock = async () => { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
@@ -318,7 +329,6 @@
         window.setSecretMood = (mood) => { currentMood = mood; localStorage.setItem('vidushi_mood', mood); window.speak(mood === 'angry' ? "હવે જો તું..." : "શાંતિ..."); };
         window.clearMemories = async () => { if(confirm("Sure?")) { await setDoc(userDocRef, { memories: [] }); window.speak("ભૂલી ગઈ."); } };
         
-        // --- TOOLS UI ---
         window.toggleModal = (type) => { 
             const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; 
             if(type==='notes') window.renderNotes(); 
@@ -326,7 +336,6 @@
             if(type==='contacts') window.renderContacts(); 
         };
         
-        // Notes & Expense Logic
         window.addNote = (text) => { notes.push({ text, time: new Date().toLocaleDateString() }); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); window.renderNotes(); window.speak("લખ્યું."); };
         window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n,i) => `<div class="list-item"><span>${n.text}</span><span style="color:red;cursor:pointer" onclick="window.deleteNote(${i})">x</span></div>`).join(''); };
         window.deleteNote = (i) => { notes.splice(i,1); localStorage.setItem('vidushi_notes', JSON.stringify(notes)); window.renderNotes(); };
@@ -336,7 +345,7 @@
         window.deleteExpense = (i) => { expenses.splice(i,1); localStorage.setItem('vidushi_expenses', JSON.stringify(expenses)); window.renderExpenses(); };
         window.clearExpenses = () => { expenses=[]; localStorage.removeItem('vidushi_expenses'); window.renderExpenses(); };
 
-        // --- NEW: CONTACTS LOGIC ---
+        // CONTACTS
         window.addContactUI = () => {
             const name = document.getElementById('contactName').value.trim();
             const num = document.getElementById('contactNumber').value.trim();
@@ -357,39 +366,105 @@
             ).join('');
         };
         window.deleteContact = (i) => { contacts.splice(i, 1); localStorage.setItem('vidushi_contacts', JSON.stringify(contacts)); window.renderContacts(); };
-        
         window.findContact = (query) => {
-            // Normalize query
             let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim();
-            // Fuzzy search: Check if stored name contains query OR query contains stored name
             return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase()));
         };
-
         window.makeCall = (text) => {
             let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim();
             let c = window.findContact(name);
-            if(c) {
-                window.speak(`${c.name} ને કોલ જોડું છું.`);
-                setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500);
-            } else { window.speak("આ નામ સંપર્કમાં નથી."); }
+            if(c) { window.speak(`${c.name} ને કોલ જોડું છું.`); setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); } 
+            else { window.speak("આ નામ સંપર્કમાં નથી."); }
             isProcessing = false;
         };
-
         window.sendMessage = (text) => {
             let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim();
             let c = window.findContact(name);
-            if(c) {
-                window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`);
-                setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500);
-            } else { window.speak("આ નામ સંપર્કમાં નથી."); }
+            if(c) { window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`); setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); } 
+            else { window.speak("આ નામ સંપર્કમાં નથી."); }
             isProcessing = false;
         };
-        // ---------------------------
 
         window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         window.sendSOS = () => { if (navigator.geolocation) { navigator.geolocation.getCurrentPosition((p) => { let link = `http://maps.google.com/?q=${p.coords.latitude},${p.coords.longitude}`; fixedContacts.forEach(c => window.open(`https://wa.me/91${c.number}?text=${encodeURIComponent("SOS! " + link)}`, "_blank")); window.speak("SOS મોકલ્યો!"); }); } else window.speak("GPS નથી."); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageLoadingText.style.display = "block"; generatedImage.style.display="none"; imageOverlay.style.display='flex'; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display="none"; generatedImage.style.display="block"; window.speak("તૈયાર!"); }; };
         window.closeImage = () => { imageOverlay.style.display='none'; playVideo('silent'); isProcessing=false; };
+
+        // --- SPY MODE LOGIC ---
+        window.startSpyMode = async () => {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('spy-overlay').style.display = 'block';
+            try {
+                visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                selfieVideo.srcObject = visionStream;
+                // Don't show selfieVideo, keep it hidden but active
+                prevFrameData = null;
+                spyCooldown = false;
+                
+                // Start Loop
+                spyInterval = setInterval(window.detectMotion, 500); // Check every 500ms
+            } catch(e) {
+                alert("Camera Access Failed for Spy Mode");
+                document.getElementById('spy-overlay').style.display = 'none';
+            }
+        };
+
+        window.stopSpyMode = () => {
+            if(confirm("જાસૂસી બંધ કરવી છે?")) {
+                clearInterval(spyInterval);
+                if(visionStream) visionStream.getTracks().forEach(t => t.stop());
+                document.getElementById('spy-overlay').style.display = 'none';
+                playVideo('silent');
+            }
+        };
+
+        window.detectMotion = () => {
+            if(spyCooldown) return;
+
+            // Draw current frame to hidden canvas
+            canvas.width = 100; canvas.height = 100; // Low res for speed
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(selfieVideo, 0, 0, 100, 100);
+            
+            const currentFrame = ctx.getImageData(0, 0, 100, 100).data;
+
+            if (prevFrameData) {
+                let diff = 0;
+                // Simple pixel comparison
+                for (let i = 0; i < currentFrame.length; i += 4) {
+                    diff += Math.abs(currentFrame[i] - prevFrameData[i]); // Red channel diff
+                }
+
+                // Threshold for motion (Adjust 50000 based on sensitivity)
+                if (diff > 100000) {
+                    window.triggerSpyAlert();
+                }
+            }
+            prevFrameData = currentFrame;
+        };
+
+        window.triggerSpyAlert = () => {
+            spyCooldown = true;
+            
+            // 1. Capture Full Res Image
+            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
+            canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            const base64 = canvas.toDataURL('image/jpeg');
+            
+            // 2. Download Image (Local Evidence)
+            const link = document.createElement('a');
+            link.href = base64;
+            link.download = `Spy_Capture_${new Date().getTime()}.jpg`;
+            link.click();
+
+            // 3. Log to DB
+            updateDoc(userDocRef, { memories: arrayUnion(`Spy Alert: Motion Detected at ${new Date().toLocaleString()}`) });
+
+            // 4. ALARM
+            window.speak("ખબરદાર! કોણ છે ત્યાં? ફોટો લઈ લીધો છે!");
+            
+            setTimeout(() => { spyCooldown = false; }, 5000); // Wait 5s before next alert
+        };
 
         // --- SPEECH RECOGNITION ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -435,7 +510,6 @@
 
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
 
-            // COMMANDS
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { window.makeCall(text); return; }
             if(cmd.includes("મેસેજ કર")) { window.sendMessage(text); return; }
             if(cmd.includes("મદદ") || cmd.includes("help")) { window.sendSOS(); return; }
