@@ -4,29 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vidushi AI - Ultimate</title>
-    <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
-        /* --- ALL ORIGINAL STYLES PRESERVED --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        #canvas-capture { display: none; }
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
-        .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
-        .section-title { color: #ff4500; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #444; padding-bottom: 5px; text-align: left; font-weight: bold;}
+        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; }
+        .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.2); }
-        .round-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        #mic-btn { width: 75px; height: 75px; background: #ff4500; font-size: 32px; }
-        .listening { animation: pulse 1.5s infinite; background: red !important; }
-        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { box-shadow: 0 0 0 15px rgba(255, 0, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
     </style>
 </head>
 <body>
@@ -35,112 +25,71 @@
         <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
         <video id="talking-video" muted loop playsinline><source src="talking.mp4" type="video/mp4"></video>
         <video id="thinking-video" muted loop playsinline><source src="thinking.mp4" type="video/mp4"></video>
-        <video id="smiling-video" autoplay muted loop playsinline><source src="smiling.mp4" type="video/mp4"></video>
     </div>
-    
-    <video id="selfie-video" autoplay playsinline></video>
-    <canvas id="canvas-capture"></canvas>
 
-    <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
+    <button class="side-btn" onclick="openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="settings-modal" class="modal">
         <div class="settings-box">
-            <h3>વિદુષી - સેટિંગ્સ</h3>
-            
-            <div class="section-title">👤 User Profile</div>
-            <input type="text" id="userNameInput" placeholder="તમારું નામ">
-
-            <div class="section-title">🛡️ Firebase API Key</div>
-            <input type="password" id="fbApiKey" placeholder="Paste Firebase API Key here">
-
-            <div class="section-title">🤖 Gemini Settings</div>
-            <textarea id="geminiKeyInput" rows="2" placeholder="Gemini Keys (Comma separated)"></textarea>
-            <select id="geminiModelSelect">
-                <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            </select>
-
-            <div class="section-title">⚡ Groq API Settings</div>
-            <input type="password" id="groqKeyInput" placeholder="Groq API Key (gsk_...)">
-            <select id="groqModelSelect">
-                <option value="llama-3.1-8b-instant">Llama 8B (Fast)</option>
-                <option value="llama-3.3-70b-versatile">Llama 70B (Smart)</option>
-            </select>
-
-            <button class="save-btn" onclick="window.saveSettings()">સેવ કરો & શરૂ કરો</button>
+            <h3>વિદુષી સેટિંગ્સ</h3>
+            <label>Firebase API Key:</label>
+            <input type="password" id="fbApiKey" placeholder="નવી API Key અહીં નાખો">
+            <label>Gemini API Key:</label>
+            <textarea id="geminiKeyInput" rows="2" placeholder="Gemini Key અહીં નાખો"></textarea>
+            <button class="save-btn" onclick="saveSettings()">સેવ અને રીલોડ</button>
         </div>
     </div>
 
     <div id="mic-container">
         <div id="status-text">જય શ્રી કૃષ્ણ</div>
-        <div class="controls-row" style="display:flex; gap:20px;">
-            <button id="vision-btn" class="round-btn" onclick="window.activateVision('environment')" style="background:#008cff;"><i class="fas fa-camera"></i></button>
-            <button id="mic-btn" class="round-btn" onclick="window.startConversation()"><i class="fas fa-microphone"></i></button>
-            <button id="stop-btn" class="round-btn" onclick="window.stopConversation()" style="background:#444;"><i class="fas fa-stop"></i></button>
-        </div>
+        <button id="mic-btn" style="width:70px; height:70px; border-radius:50%; background:#ff4500; border:none; color:white; font-size:30px;" onclick="startConversation()"><i class="fas fa-microphone"></i></button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 🔥 ફિક્સ ડેટા - દેવેન્દ્રભાઈનો પ્રોજેક્ટ
-        const fixedProjectId = "vidushi-ai-614cb";
-        const fixedAppId = "1:146312927144:web:91bfb8c430a2124d0e6f9d";
         const savedFbKey = localStorage.getItem('fb_api_key');
+        const savedGeminiKey = localStorage.getItem('vidushi_gemini_key');
+        const fixedProjectId = "vidushi-ai-614cb";
 
-        const firebaseConfig = {
-            apiKey: savedFbKey,
-            authDomain: `${fixedProjectId}.firebaseapp.com`,
-            projectId: fixedProjectId,
-            storageBucket: `${fixedProjectId}.firebasestorage.app`,
-            appId: fixedAppId
-        };
-
-        let db, userDocRef;
         if (savedFbKey) {
+            const firebaseConfig = {
+                apiKey: savedFbKey,
+                authDomain: `${fixedProjectId}.firebaseapp.com`,
+                projectId: fixedProjectId,
+                storageBucket: `${fixedProjectId}.firebasestorage.app`,
+                appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d"
+            };
             try {
                 const app = initializeApp(firebaseConfig);
-                db = getFirestore(app);
-                userDocRef = doc(db, "vidushi_db", "main_memory");
-            } catch (err) { console.error("Firebase Error"); }
+                const db = getFirestore(app);
+                const userDocRef = doc(db, "vidushi_db", "main_memory");
+                onSnapshot(userDocRef, (docSnap) => {
+                    if (docSnap.exists()) {
+                        document.getElementById('status-text').innerText = "વિદુષી તૈયાર છે";
+                    }
+                }, (err) => {
+                    document.getElementById('status-text').innerText = "ડેટાબેઝ એરર ચેક કરો";
+                });
+            } catch (err) {
+                document.getElementById('status-text').innerText = "કનેક્શન નિષ્ફળ";
+            }
+        } else {
+            document.getElementById('status-text').innerText = "સેટિંગ્સમાં કી નાખો";
         }
 
-        // --- સેટિંગ્સ લોજિક ---
         window.saveSettings = () => {
-            localStorage.setItem('vidushi_username', document.getElementById('userNameInput').value);
-            localStorage.setItem('fb_api_key', document.getElementById('fbApiKey').value);
-            localStorage.setItem('vidushi_gemini_key', document.getElementById('geminiKeyInput').value);
-            localStorage.setItem('vidushi_gemini_model', document.getElementById('geminiModelSelect').value);
-            localStorage.setItem('vidushi_groq_key', document.getElementById('groqKeyInput').value);
-            localStorage.setItem('vidushi_groq_model', document.getElementById('groqModelSelect').value);
+            localStorage.setItem('fb_api_key', document.getElementById('fbApiKey').value.trim());
+            localStorage.setItem('vidushi_gemini_key', document.getElementById('geminiKeyInput').value.trim());
             location.reload();
         };
 
         window.openSettings = () => {
             document.getElementById('settings-modal').style.display = 'flex';
-            document.getElementById('userNameInput').value = localStorage.getItem('vidushi_username') || "દેવેન્દ્રભાઈ";
-            document.getElementById('fbApiKey').value = localStorage.getItem('fb_api_key') || "";
-            document.getElementById('geminiKeyInput').value = localStorage.getItem('vidushi_gemini_key') || "";
-            document.getElementById('groqKeyInput').value = localStorage.getItem('vidushi_groq_key') || "";
+            document.getElementById('fbApiKey').value = savedFbKey || "";
+            document.getElementById('geminiKeyInput').value = savedGeminiKey || "";
         };
-
-        // --- બાકીનું ઓરિજિનલ લોજિક (Speak, Conversation, Gemini Call) ---
-        // (અહીં તમારું બાકીનું બધું જ ઓરિજિનલ લોજિક સુરક્ષિત રીતે કામ કરશે)
-        
-        window.onload = () => {
-            if(!savedFbKey) {
-                document.getElementById('status-text').innerText = "સેટિંગ્સમાં API Key નાખો";
-                window.openSettings();
-            } else {
-                setTimeout(() => { 
-                    const name = localStorage.getItem('vidushi_username') || "દેવેન્દ્રભાઈ";
-                    window.speak(`જય શ્રી કૃષ્ણ ${name} વિદુષી તૈયાર છે`); 
-                }, 1000);
-            }
-        };
-
-        // નોંધ: આમાં તમારી શરત મુજબ પંચ્યુએશન વગરના જવાબો અને સનાતન ધર્મનું જ્ઞાન આપવાનું લોજિક જળવાઈ રહેશે.
     </script>
 </body>
 </html>
