@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Fixed</title>
+    <title>Vidushi AI - Working</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -172,7 +172,6 @@
                 if(document.getElementById('contacts-modal').style.display==='flex') window.renderContacts();
             });
         } else {
-             // Fallback if DB fails
              setTimeout(() => { document.getElementById('status-text').innerText = "માઈક દબાવો"; }, 2000);
         }
 
@@ -283,4 +282,59 @@
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
                     method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON
+                    body:JSON.stringify({ contents: history })
+                });
+                const d = await res.json();
+                const ans = d.candidates?.[0]?.content?.parts?.[0]?.text || "સમજાયું નહીં.";
+                window.chatHistory.push({role:'user', content:text}, {role:'assistant', content:ans});
+                window.speak(ans);
+            } catch(e) { window.speak("Net Error."); }
+        };
+
+        window.askGeminiVision = async (b64) => {
+            let k = geminiKeys.split(',')[0];
+            try {
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
+                    method:'POST', headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        contents: [{role:'user', parts:[{text:"What is this? Answer in Gujarati."}, {inline_data:{mime_type:"image/jpeg", data:b64}}]}]
+                    })
+                });
+                const d = await res.json();
+                window.speak(d.candidates?.[0]?.content?.parts?.[0]?.text || "ફોટો ક્લીયર નથી.");
+            } catch(e) { window.speak("Vision Error."); }
+        };
+
+        // --- SPEECH ---
+        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if(SR) {
+            recognition = new SR(); recognition.lang='gu-IN';
+            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText="સાંભળું છું..."; };
+            recognition.onend = () => { micBtn.classList.remove('listening'); statusText.innerText="માઈક દબાવો"; if(document.getElementById('continuousModeCheck').checked) try{recognition.start();}catch(e){} };
+            recognition.onresult = (e) => window.processCommand(e.results[0][0].transcript);
+        }
+        
+        // 🔥 THIS LINE WAS WRONG, NOW FIXED:
+        window.startConversation = () => { try{recognition.start();}catch(e){} };
+        
+        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); window.stopVisionCamera(); };
+
+        window.processCommand = (t) => {
+            if(t.length<2) return;
+            let c = t.toLowerCase();
+            if(c.includes("નોંધ")) window.addNote(t.replace("નોંધ",""));
+            else if(c.includes("હિસાબ")) window.addExpense(t);
+            else if(c.includes("સેલ્ફી")) window.captureAndAnalyze("user");
+            else if(c.includes("ફોટો") || c.includes("શું છે")) window.captureAndAnalyze("environment");
+            else window.askGeminiText(t);
+        };
+
+        window.speak = (t) => {
+            statusText.innerText = "બોલું છું...";
+            const u = new SpeechSynthesisUtterance(t); u.lang='gu-IN';
+            u.onend = () => statusText.innerText = "માઈક દબાવો";
+            window.speechSynthesis.speak(u);
+        };
+    </script>
+</body>
+</html>
