@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Cloud Edition</title>
+    <title>Vidushi AI - Final Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -159,7 +159,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 🔥 FIREBASE CONFIG
         const firebaseConfig = {
             apiKey: "AIzaSyCU_wqw_7PC0nBaLBgqDSmDgX1f95zaUlA",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -180,12 +179,12 @@
         window.permanentMemories = [];
         window.chatHistory = [];
         
-        // --- REALTIME CLOUD SYNC VARIABLES ---
+        // --- REALTIME VARIABLES ---
         let notes = [];
         let expenses = [];
         let contacts = [];
 
-        // 🛠️ HELPER: DATE FORMATTER FOR GUJARATI (DISPLAY)
+        // 🛠️ HELPER: DATE FORMATTER
         window.formatDate = (timestamp) => {
             if (!timestamp) return "";
             let date;
@@ -330,7 +329,7 @@
             if(type==='contacts') window.renderContacts(); 
         };
         
-        // --- FIRESTORE FUNCTIONS (WITH DATE FIX) ---
+        // --- FIRESTORE RENDER FUNCTIONS ---
         window.addNote = async (text) => { await addDoc(notesCol, { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         
         window.renderNotes = () => { 
@@ -455,7 +454,7 @@
             link.href = base64Image;
             link.download = `Vidushi_Selfie_${new Date().getTime()}.jpg`;
             link.click();
-            window.speak("સેલ્ફી ગેલેરીમાં સેવ કરી છે!");
+            window.speak("સેલ્ફી સેવ કરી છે!");
         };
 
         // --- PROCESS COMMAND ---
@@ -492,7 +491,7 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         }
 
-        // 🔥🔥🔥 FIXED: SYSTEM PROMPT WITH REAL-TIME CLOCK 🔥🔥🔥
+        // 🔥🔥🔥 FIXED SYSTEM PROMPT FOR TIME SPEAKING 🔥🔥🔥
         function getSystemPrompt(memories, contextData) {
             let moodPrompt = "You are a helpful assistant.";
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic.";
@@ -500,10 +499,20 @@
 
             let familyDataString = (typeof vanshavaliData !== 'undefined') ? JSON.stringify(vanshavaliData) : "No Family Data Found.";
             
-            // This line gives Vidushi the Real Time!
-            let now = new Date().toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'medium' });
+            let now = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
+            let dateStr = new Date().toLocaleDateString('gu-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
-            return `[Current Date & Time: ${now}]. IMPORTANT: You are a FEMALE AI named Vidushi. Speak in a very NATURAL Gujarati. Keep answers SHORT. ${moodPrompt} Created by Devendrabhai. [DATA SOURCE]: ${familyDataString} [Memory]: ${memories}`;
+            return `
+            [Current Data - Time: ${now}, Date: ${dateStr}]
+            IMPORTANT INSTRUCTIONS:
+            1. You are a FEMALE AI named Vidushi created by Devendrabhai.
+            2. Speak in very NATURAL Gujarati.
+            3. When asked for time, say it naturally like "સાડા પાંચ થયા છે" or "દસ ને વીસ થઈ છે". DO NOT say "Time is..." or "Time...".
+            4. Keep answers SHORT.
+            ${moodPrompt}
+            [DATA SOURCE]: ${familyDataString}
+            [Memory]: ${memories}
+            `;
         }
 
         // --- GEMINI & GROQ ---
