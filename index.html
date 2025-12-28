@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Pro</title>
+    <title>Vidushi AI - Ultimate</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -91,6 +91,9 @@
                 <span>સતત વાતચીત</span>
                 <input type="checkbox" id="continuousModeCheck" style="width:20px;">
             </div>
+
+            <div class="section-title">Internet Search (Serper)</div>
+            <input type="text" id="serperKeyInput" placeholder="Serper API Key">
             
             <div class="section-title">AI Provider (મગજ)</div>
             <select id="providerSelect" onchange="window.toggleProviderSettings()">
@@ -197,6 +200,7 @@
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash";
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
+        let serperKey = localStorage.getItem('vidushi_serper_key') || '';
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         window.chatHistory = [];
 
@@ -259,6 +263,7 @@
             document.getElementById('geminiModelSelect').value = geminiModel;
             document.getElementById('groqKeyInput').value = groqKey;
             document.getElementById('groqModelSelect').value = groqModel;
+            document.getElementById('serperKeyInput').value = serperKey;
             document.getElementById('providerSelect').value = aiProvider;
             window.toggleProviderSettings();
         };
@@ -269,6 +274,7 @@
             geminiModel = document.getElementById('geminiModelSelect').value;
             groqKey = document.getElementById('groqKeyInput').value;
             groqModel = document.getElementById('groqModelSelect').value;
+            serperKey = document.getElementById('serperKeyInput').value;
             aiProvider = document.getElementById('providerSelect').value;
 
             localStorage.setItem('vidushi_username', userName);
@@ -276,6 +282,7 @@
             localStorage.setItem('vidushi_gemini_model', geminiModel);
             localStorage.setItem('vidushi_groq_key', groqKey);
             localStorage.setItem('vidushi_groq_model', groqModel);
+            localStorage.setItem('vidushi_serper_key', serperKey);
             localStorage.setItem('vidushi_provider', aiProvider);
 
             document.getElementById('settings-modal').style.display = 'none';
@@ -358,7 +365,7 @@
         window.closeImage = () => { document.getElementById('image-overlay').style.display='none'; document.getElementById('silent-video').style.display='block'; };
         window.downloadSelfie = () => { const l=document.createElement('a'); l.href=generatedImage.src; l.download='Vidushi_Img.jpg'; l.click(); window.speak("સેવ થઈ ગયો."); window.closeImage(); };
 
-        // --- AI LOGIC (GEMINI & GROQ) ---
+        // --- AI LOGIC (GEMINI & GROQ & SERPER) ---
         window.processCommand = (t) => {
             if(t.length<2) return;
             let c = t.toLowerCase();
@@ -371,11 +378,38 @@
             else if(c.includes("ફોટો") || c.includes("શું છે") || c.includes("કેમેરો") || c.includes("જોઈને")) {
                 window.captureAndAnalyze("environment"); 
             }
+            // INTERNET SEARCH TRIGGER (Google / Search / Bhav / Cricket)
+            else if(c.includes("google") || c.includes("સર્ચ") || c.includes("ભાવ") || c.includes("સ્કોર") || c.includes("સમાચાર")) {
+                window.searchWithSerper(t);
+            }
             // GENERAL CONVERSATION
             else {
                 if(aiProvider === 'groq') window.askGroqText(t);
                 else window.askGeminiText(t);
             }
+        };
+
+        // --- SERPER SEARCH FUNCTION ---
+        window.searchWithSerper = async (query) => {
+            if(!serperKey) { window.speak("Serper Key નથી. Google નહિ ચાલે."); return; }
+            window.speak("શોધું છું...");
+            
+            try {
+                const res = await fetch("https://google.serper.dev/search", {
+                    method: "POST",
+                    headers: { "X-API-KEY": serperKey, "Content-Type": "application/json" },
+                    body: JSON.stringify({ q: query })
+                });
+                const data = await res.json();
+                let snippet = data.organic?.[0]?.snippet || data.answerBox?.snippet || "માહિતી મળી નથી.";
+                
+                // Send result to LLM to summarize in Gujarati
+                let prompt = `User searched for: ${query}. Google Result: ${snippet}. Explain this in Gujarati simply.`;
+                
+                if(aiProvider === 'groq') window.askGroqText(prompt);
+                else window.askGeminiText(prompt);
+                
+            } catch(e) { window.speak("Google માં એરર છે."); }
         };
 
         window.askGeminiText = async (text) => {
