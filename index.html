@@ -3,51 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate</title>
+    <title>Vidushi AI - Vision Master</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
+        // Error Handler to verify code runs
         window.onerror = function(msg, url, line) {
-            const status = document.getElementById('status-text');
-            if(status) status.innerText = "Error: " + line;
             console.error("Error: " + msg + " on line " + line);
         };
     </script>
 
     <style>
-        /* --- STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
-        
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
-        
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        
         #canvas-capture { display: none; }
-
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
-        .side-btn:active { transform: scale(0.9); background: #ff4500; }
-
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; align-items: center; }
         .expense-item { border-left: 4px solid #00ff00; }
         .contact-item { border-left: 4px solid #008cff; }
-        
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
         input[type="text"], input[type="password"], input[type="number"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
         .save-btn { width: 100%; padding: 10px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; margin-top: 10px; border-radius: 5px; }
         .section-title { color: #aaa; font-size: 12px; margin-top: 15px; text-transform: uppercase; letter-spacing: 1px; border-bottom: 1px solid #444; padding-bottom: 5px; text-align: left; }
-        
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 15px 5px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; gap: 5px; }
-        
         .checkbox-container { display: flex; align-items: center; margin: 15px 0; cursor: pointer; justify-content: space-between; background: #333; padding: 10px; border-radius: 5px; color: white; }
         .checkbox-container input { width: auto; margin: 0; transform: scale(1.5); }
-
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
         .controls-row { display: flex; gap: 20px; align-items: center; }
@@ -57,8 +45,6 @@
         #vision-btn { background: #008cff; }
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
-
-        /* IMAGE OVERLAY */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction:column; justify-content:center; align-items:center; }
         #generated-image { max-width: 95%; max-height: 60vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; display:none; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
@@ -188,10 +174,7 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
-        } catch (err) { 
-            console.error("Firebase Init Error:", err);
-            document.getElementById('status-text').innerText = "DB Error";
-        }
+        } catch (err) { console.error("Firebase Init Error:", err); }
 
         window.permanentMemories = [];
         window.chatHistory = [];
@@ -209,7 +192,6 @@
             return date.toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
         };
 
-        // 🛡️ SAFETY CHECK: Only run listeners if DB is connected
         if (userDocRef) {
             onSnapshot(userDocRef, (docSnap) => {
                 const status = document.getElementById('status-text');
@@ -219,7 +201,7 @@
                 } else {
                     setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] });
                 }
-            }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Net Fail)"; });
+            }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન"; });
         }
 
         if (db) {
@@ -344,7 +326,6 @@
             if(type==='contacts') window.renderContacts(); 
         };
         
-        // SAFE ADD FUNCTIONS
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         window.renderNotes = () => { 
             document.getElementById('notes-list').innerHTML = notes.map((n) => 
@@ -581,7 +562,15 @@
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
                     method: "POST", headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: contents })
+                    body: JSON.stringify({
+                        contents: contents,
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
+                    })
                 });
 
                 const data = await response.json();
@@ -595,12 +584,21 @@
             } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; }
         };
 
+        // 🔥 FIXED VISION with Safety Settings 🔥
         window.askGeminiVision = async (base64Image) => {
             let keys = geminiKeys.split(',').filter(k=>k);
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
                     method: "POST", headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
+                    body: JSON.stringify({ 
+                        contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }],
+                        safetySettings: [
+                            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+                            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+                        ]
+                    }) 
                 });
                 const data = await response.json(); 
                 if(data.candidates) window.speak(data.candidates[0].content.parts[0].text);
@@ -612,29 +610,4 @@
             if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; }
             let messages = [{ role: "system", content: getSystemPrompt(window.permanentMemories.join("\n"), "") }, ...window.chatHistory.slice(-6).map(m=>({role:m.role, content:m.content})), { role: "user", content: userText }];
             try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) });
-                const data = await res.json();
-                if(data.error) { window.speak("Groq Error."); return; }
-                window.speak(data.choices[0].message.content);
-            } catch(e) { window.speak("Groq Error."); isProcessing=false; }
-        };
-
-        window.speak = (text) => {
-            const clean = text.replace(/[*#_]/g, "");
-            statusText.innerText = "બોલું છું..."; isAiSpeaking = true; 
-            const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN';
-            let voices = window.speechSynthesis.getVoices();
-            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google'));
-            if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN');
-            if(bestVoice) u.voice = bestVoice;
-            const angryWords = ["મૂર્ખ", "ડોબા", "શરમ", "ચૂપ", "nonsense", "stupid", "ગુસ્સો", "ભાન"];
-            let isTextAngry = angryWords.some(word => clean.toLowerCase().includes(word));
-            if (currentMood === 'normal' && !isTextAngry) { u.pitch = 0.95 + (Math.random() * 0.1); u.rate = 0.95 + (Math.random() * 0.1); } 
-            else if (currentMood === 'angry' || isTextAngry) { u.pitch = 0.8; u.rate = 1.2; }
-            u.onstart = () => { if (currentMood === 'angry' || isTextAngry) { playVideo('angry'); statusText.style.border = "2px solid red"; } else { playVideo('talking'); statusText.style.border = "1px solid rgba(255,255,255,0.2)"; } };
-            u.onend = () => { if (currentMood === 'angry' || isTextAngry) playVideo('silent'); else playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) try { recognition.start(); } catch(e) {} };
-            window.speechSynthesis.speak(u);
-        };
-    </script>
-</body>
-</html>
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json
