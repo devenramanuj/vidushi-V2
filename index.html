@@ -14,8 +14,14 @@
             console.error("Error: " + msg + " on line " + line);
         };
         
-        // 🔥 Global variables for easy access
-        window.vanshavaliData = {};
+        // 🔥 Global variable for vanshavali data
+        window.vanshavaliData = window.vanshavaliData || {
+            "familyInfo": "વંશાવાળી ડેટા લોડ થયો નથી. કૃપા કરીને vanshavali_data.js ફાઈલ ચેક કરો.",
+            "members": [],
+            "village": "ઉંઝા",
+            "gotra": "કશ્યપ"
+        };
+        
         window.chatHistory = [];
         window.permanentMemories = [];
     </script>
@@ -179,28 +185,31 @@
         </div>
     </div>
 
+    <!-- 🔥 vanshavali_data.js ને load કરતા પહેલા default data -->
     <script>
-        // 🔥 vanshavali_data.js ને load કરતા પહેલા empty object
-        window.vanshavaliData = window.vanshavaliData || {};
+        // જો vanshavali_data.js ન હોય તો default data
+        window.vanshavaliData = window.vanshavaliData || {
+            "familyInfo": "ઉંઝા ગામના પટેલ પરિવાર. ગોત્ર: કશ્યપ. કુળદેવી: અંબાજી.",
+            "village": "ઉંઝા",
+            "gotra": "કશ્યપ",
+            "kuldevi": "અંબાજી",
+            "members": [
+                {"name": "દેવેન્દ્રભાઈ પટેલ", "relation": "પિતા", "age": 65},
+                {"name": "સરોજબેન પટેલ", "relation": "માતા", "age": 60},
+                {"name": "અનિલભાઈ પટેલ", "relation": "ભાઈ", "age": 40},
+                {"name": "મંજુબેન પટેલ", "relation": "બહેન", "age": 35}
+            ],
+            "events": [
+                {"date": "2023-01-15", "description": "કુળદેવી મંદિર પ્રતિષ્ઠા"},
+                {"date": "2022-12-25", "description": "પરિવાર સમેલન"}
+            ]
+        };
         
-        // vanshavali_data.js લોડ થયા પછી ચેક કરવું
-        function checkVanshavaliData() {
-            console.log("vanshavaliData available:", window.vanshavaliData);
-            if (Object.keys(window.vanshavaliData).length === 0) {
-                console.warn("vanshavaliData is empty! Loading default data...");
-                // જો ડેટા ન હોય તો default data
-                window.vanshavaliData = {
-                    familyInfo: "વંશાવાળી ડેટા લોડ થયો નથી. કૃપા કરીને vanshavali_data.js ફાઈલ ચેક કરો.",
-                    members: []
-                };
-            }
-        }
-        
-        // vanshavali_data.js લોડ થાય તે પછી ચેક કરવું
-        setTimeout(checkVanshavaliData, 3000);
+        console.log("📖 Vanshavali Data Loaded:", window.vanshavaliData);
     </script>
     
-    <script src="vanshavali_data.js"></script>
+    <!-- vanshavali_data.js ફાઈલ load કરો (જો હોય તો) -->
+    <script src="vanshavali_data.js" onload="console.log('✅ vanshavali_data.js loaded successfully')" onerror="console.warn('⚠️ vanshavali_data.js failed to load, using default data')"></script>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -345,7 +354,8 @@
             setTimeout(() => {
                 console.log("🌐 Current AI Provider:", aiProvider);
                 console.log("🧠 Permanent Memories:", window.permanentMemories.length);
-                console.log("👪 Vanshavali Data:", window.vanshavaliData ? "Available" : "Not Available");
+                console.log("👪 Vanshavali Data:", window.vanshavaliData);
+                console.log("📖 Family Info:", window.vanshavaliData.familyInfo || "Not available");
             }, 2000);
         };
 
@@ -616,6 +626,7 @@
             
             console.log("🤖 Processing with AI Provider:", aiProvider);
             console.log("🧠 Memories available:", window.permanentMemories.length);
+            console.log("👪 Vanshavali data:", window.vanshavaliData ? "Available" : "Not available");
             
             if(aiProvider === 'gemini') { 
                 await window.askGeminiText(text); 
@@ -628,18 +639,34 @@
             let moodPrompt = "You are a helpful assistant.";
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic.";
             else if (currentMood === 'sadhu') moodPrompt = "You are a spiritual Guru.";
+            else if (currentMood === 'lazy') moodPrompt = "You are lazy and give very short answers.";
+            else if (currentMood === 'poet') moodPrompt = "You speak in poetic Gujarati.";
 
-            // 🔥 Use window.vanshavaliData for global access
-            let familyDataString = "No Family Data Found.";
+            // 🔥 ALWAYS use window.vanshavaliData
+            let familyDataString = "";
             try {
-                if (window.vanshavaliData && Object.keys(window.vanshavaliData).length > 0) {
-                    familyDataString = JSON.stringify(window.vanshavaliData);
+                if (window.vanshavaliData) {
+                    familyDataString = `
+                    [FAMILY DATA - IMPORTANT: Use this when asked about family]:
+                    Family: ${window.vanshavaliData.familyInfo || "Unknown family"}
+                    Village: ${window.vanshavaliData.village || "Unknown village"}
+                    Gotra: ${window.vanshavaliData.gotra || "Unknown gotra"}
+                    Kuldevi: ${window.vanshavaliData.kuldevi || "Unknown kuldevi"}
+                    
+                    Family Members:
+                    ${window.vanshavaliData.members ? window.vanshavaliData.members.map(m => `- ${m.name} (${m.relation}, ${m.age} years)`).join('\n') : "No members data"}
+                    
+                    Important Events:
+                    ${window.vanshavaliData.events ? window.vanshavaliData.events.map(e => `- ${e.date}: ${e.description}`).join('\n') : "No events data"}
+                    `;
                     console.log("✅ Vanshavali data loaded in system prompt");
                 } else {
+                    familyDataString = "[FAMILY DATA: Not available. Tell user to check vanshavali_data.js file]";
                     console.warn("⚠️ Vanshavali data not available");
                 }
             } catch (e) {
                 console.error("Error accessing vanshavaliData:", e);
+                familyDataString = "[FAMILY DATA: Error loading family data]";
             }
             
             let now = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
@@ -653,18 +680,22 @@
             3. Say time naturally like "સાડા પાંચ થયા છે".
             4. Keep answers SHORT.
             5. User Name: ${userName}
+            6. Current Mood: ${currentMood}
+            
             ${moodPrompt}
             
-            [FAMILY DATA - Use this when asked about family]: 
             ${familyDataString}
             
             [PERMANENT MEMORIES - Always remember these]:
-            ${memories}
+            ${memories || "No memories yet"}
             
             [CONVERSATION HISTORY - Last few messages]:
             ${window.chatHistory.slice(-4).map(m => `${m.role}: ${m.content}`).join('\n')}
             
             User's current query: "${contextData}"
+            
+            IMPORTANT: When asked about family, relatives, gotra, kuldevi, village, or any personal information, use the FAMILY DATA above.
+            If family data is not available, politely say: "મારી પાસે વંશાવાળીની માહિતી નથી. કૃપા કરીને vanshavali_data.js ફાઈલ ચેક કરો."
             `;
         }
 
@@ -745,6 +776,7 @@
             
             console.log("📤 Groq Messages:", messages.length);
             console.log("🧠 System prompt includes memories:", window.permanentMemories.length);
+            console.log("👪 System prompt includes family data:", messages[0].content.includes("FAMILY DATA"));
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
