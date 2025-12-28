@@ -11,19 +11,21 @@ window.renderNotes = () => {
         </div>`
     ).join(''); 
 };
+window.renderExpenses = () => { 
+    let t=0; 
+    document.getElementById('expense-list').innerHTML = expenses.map((n) => { 
+        t+=n.amount; 
+        return `<div class="list-item expense-item">
+            <span>
+                ₹${n.amount} - ${n.desc} <br>
+                <small style="color:gray; font-size:10px;">🕒 ${new Date(n.timestamp).toLocaleString('gu-IN')}</small>
+            </span>
+            <span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span>
+        </div>` 
+    }).join(''); 
+    document.getElementById('total-expense').innerText = t; 
+};
 
-        window.deleteNote = async (id) => { await deleteDoc(doc(db, "vidushi_notes", id)); };
-        window.speakNotes = () => { window.speak(notes.map(n=>n.text).join(". ")); };
-        
-        window.addExpense = async (text) => { 
-            let amt = text.match(/\d+/); 
-            if(amt) { 
-                let d = text.replace(amt[0],"").replace("રૂપિયા","").trim(); 
-                await addDoc(expCol, {amount:parseInt(amt[0]), desc:d||"પરચુરણ", timestamp: Date.now()}); 
-                window.speak(`${amt[0]} લખ્યા.`); 
-            } 
-        };
-        window.renderExpenses = () => { let t=0; document.getElementById('expense-list').innerHTML = expenses.map((n) => { t+=n.amount; return `<div class="list-item expense-item"><span>${n.amount}-${n.desc}</span><span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = t; };
         window.deleteExpense = async (id) => { await deleteDoc(doc(db, "vidushi_expenses", id)); };
         window.clearExpenses = async () => { 
             if(confirm("બધો હિસાબ સાફ કરવો છે?")) {
