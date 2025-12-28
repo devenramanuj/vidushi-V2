@@ -48,7 +48,6 @@
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
 
-        /* IMAGE OVERLAY STYLES */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction:column; justify-content:center; align-items:center; }
         #generated-image { max-width: 95%; max-height: 60vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; display:none; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
@@ -170,6 +169,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // 🔥 FIREBASE CONFIG (Do NOT change this)
         const firebaseConfig = {
             apiKey: "AIzaSyCU_wqw_7PC0nBaLBgqDSmDgX1f95zaUlA",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -210,7 +210,7 @@
             } else {
                 setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] });
             }
-        }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન"; });
+        }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Check Rules)"; });
 
         const notesCol = collection(db, "vidushi_notes");
         onSnapshot(query(notesCol, orderBy("timestamp", "desc")), (snapshot) => {
@@ -273,9 +273,8 @@
             window.speechSynthesis.getVoices();
             setTimeout(() => { window.speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
             window.requestWakeLock();
-            
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js').then(reg => console.log('SW Registered')).catch(err => console.log('SW Fail', err));
+                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
             }
         };
 
@@ -415,12 +414,12 @@
 
         window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         
-        // --- IMAGE HANDLING ---
+        // --- IMAGE HANDLING & DOWNLOAD ---
         window.closeImage = () => { 
             imageOverlay.style.display='none'; 
             playVideo('silent'); 
             isProcessing=false; 
-            document.getElementById('download-btn').style.display = 'none'; // Reset
+            document.getElementById('download-btn').style.display = 'none';
         };
         
         window.downloadSelfie = () => {
@@ -435,37 +434,17 @@
             window.closeImage();
         };
 
-        // 🔥 SMART SELFIE FUNCTION (Auto Camera Start)
+        // 🔥 SMART CAMERA + OBJECT DETECTION 🔥
         window.captureAndAnalyze = async () => { 
-            // Step 1: જો કેમેરો બંધ હોય, તો પહેલા ચાલુ કરો
+            // 1. If Camera is OFF, start it and wait
             if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') {
-                window.speak("એક મિનિટ, કેમેરો ચાલુ કરું છું... સ્માઈલ કરો!");
+                window.speak("એક મિનિટ, કેમેરો ચાલુ કરું છું... તૈયાર રહેજો!");
                 await window.activateVision();
                 setTimeout(window.takeActualPhoto, 3000); // 3 sec delay
             } else {
-                        window.takeActualPhoto = () => {
-            canvas.width = selfieVideo.videoWidth; 
-            canvas.height = selfieVideo.videoHeight; 
-            canvas.getContext('2d').drawImage(selfieVideo, 0, 0); 
-            
-            window.stopVisionCamera(); 
-            playVideo('thinking'); 
-            
-            // 1. ફોટો બતાવો અને સેવ બટન લાવો
-            const base64Image = canvas.toDataURL('image/jpeg');
-            generatedImage.src = base64Image;
-            generatedImage.style.display = "block";
-            imageLoadingText.style.display = "none";
-            document.getElementById('download-btn').style.display = "block"; 
-            imageOverlay.style.display = 'flex';
-            
-            // 2. 🔥 આ લાઈન ઉમેરી એટલે AI ફોટો જોઈને જવાબ આપશે! 🔥
-            const base64ForAI = base64Image.split(',')[1]; // ડેટા ક્લીન કર્યો
-            window.askGeminiVision(base64ForAI); // Gemini ને મોકલ્યો
-            
-            // (નોંધ: હવે વિદુષી "સેવ કરવો છે?" એવું પૂછવાને બદલે, ફોટામાં શું છે તે બોલશે)
+                window.takeActualPhoto(); // Immediate if on
+            }
         };
-
 
         window.takeActualPhoto = () => {
             canvas.width = selfieVideo.videoWidth; 
@@ -482,7 +461,9 @@
             document.getElementById('download-btn').style.display = "block"; 
             imageOverlay.style.display = 'flex';
             
-            window.speak("કેવો આવ્યો ફોટો? સેવ કરવો છે?");
+            // 🧠 Send to Gemini to identify Object
+            const base64ForAI = base64Image.split(',')[1];
+            window.askGeminiVision(base64ForAI);
         };
 
         window.generateMagicImage = (p) => { 
@@ -545,7 +526,7 @@
             if(cmd.includes("વગાડ")) { window.playMusic(text.replace("વગાડ","")); return; }
             if(cmd.includes("નોંધ")) { window.addNote(text.replace("નોંધ","")); return; }
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
-            if(cmd.includes("ફોટો લે") || cmd.includes("સેલ્ફી")) { window.captureAndAnalyze(); return; }
+            if(cmd.includes("ફોટો લે") || cmd.includes("સેલ્ફી") || cmd.includes("આ શું છે")) { window.captureAndAnalyze(); return; }
 
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             
