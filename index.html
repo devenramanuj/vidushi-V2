@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Cloud Edition</title>
+    <title>Vidushi AI - Final Cloud Edition</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -185,7 +185,7 @@
         let expenses = [];
         let contacts = [];
 
-        // 🛠️ HELPER: DATE FORMATTER FOR GUJARATI (FIXED)
+        // 🛠️ HELPER: DATE FORMATTER FOR GUJARATI (DISPLAY)
         window.formatDate = (timestamp) => {
             if (!timestamp) return "";
             let date;
@@ -205,7 +205,7 @@
             }
         }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન"; });
 
-        // 2. Notes Listener (Sub Collection or Separate Collection)
+        // 2. Notes Listener
         const notesCol = collection(db, "vidushi_notes");
         onSnapshot(query(notesCol, orderBy("timestamp", "desc")), (snapshot) => {
             notes = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
@@ -330,7 +330,7 @@
             if(type==='contacts') window.renderContacts(); 
         };
         
-        // --- FIRESTORE FUNCTIONS (FIXED RENDER) ---
+        // --- FIRESTORE FUNCTIONS (WITH DATE FIX) ---
         window.addNote = async (text) => { await addDoc(notesCol, { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         
         window.renderNotes = () => { 
@@ -442,7 +442,6 @@
         window.activateVision = async () => { try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; document.getElementById('video-container').style.display = 'none'; visionMode = true; document.getElementById('vision-btn').style.background = "red"; window.speak("ફોટો બતાવો."); } catch(e) { alert("Camera Error"); } };
         window.stopVisionCamera = () => { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); };
         
-        // 🔥 FIXED: CAPTURE AND DOWNLOAD SELFIE
         window.captureAndAnalyze = async () => { 
             canvas.width = selfieVideo.videoWidth; 
             canvas.height = selfieVideo.videoHeight; 
@@ -450,7 +449,7 @@
             window.stopVisionCamera(); 
             playVideo('thinking'); 
             
-            // Download Logic Added
+            // Download Logic
             const base64Image = canvas.toDataURL('image/jpeg');
             const link = document.createElement('a');
             link.href = base64Image;
@@ -475,7 +474,6 @@
                 return; 
             }
             
-            // Commands
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim();
                 if(memoryText) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; }
@@ -489,21 +487,23 @@
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             if(cmd.includes("ફોટો લે") || cmd.includes("સેલ્ફી")) { window.captureAndAnalyze(); return; }
 
-            // AI Processing
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         }
 
-        // --- SYSTEM PROMPT ---
+        // 🔥🔥🔥 FIXED: SYSTEM PROMPT WITH REAL-TIME CLOCK 🔥🔥🔥
         function getSystemPrompt(memories, contextData) {
             let moodPrompt = "You are a helpful assistant.";
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic.";
             else if (currentMood === 'sadhu') moodPrompt = "You are a spiritual Guru.";
 
             let familyDataString = (typeof vanshavaliData !== 'undefined') ? JSON.stringify(vanshavaliData) : "No Family Data Found.";
+            
+            // This line gives Vidushi the Real Time!
+            let now = new Date().toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', dateStyle: 'full', timeStyle: 'medium' });
 
-            return `IMPORTANT: You are a FEMALE AI named Vidushi. Speak in a very NATURAL Gujarati. Keep answers SHORT. ${moodPrompt} Created by Devendrabhai. [DATA SOURCE]: ${familyDataString} [Memory]: ${memories}`;
+            return `[Current Date & Time: ${now}]. IMPORTANT: You are a FEMALE AI named Vidushi. Speak in a very NATURAL Gujarati. Keep answers SHORT. ${moodPrompt} Created by Devendrabhai. [DATA SOURCE]: ${familyDataString} [Memory]: ${memories}`;
         }
 
         // --- GEMINI & GROQ ---
