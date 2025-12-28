@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Camera Master</title>
+    <title>Vidushi AI - Ultimate</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script>
-        window.onerror = function(message, source, lineno, colno, error) {
+        window.onerror = function(msg, url, line) {
             const status = document.getElementById('status-text');
-            if(status) status.innerText = "Error: " + lineno;
-            // ભૂલ બોલવાનો પ્રયત્ન કરશે
-            const msg = new SpeechSynthesisUtterance("કોડમાં ભૂલ છે લાઈન નંબર " + lineno);
-            msg.lang = 'gu-IN';
-            window.speechSynthesis.speak(msg);
+            if(status) status.innerText = "Error: " + line;
+            console.error("Error: " + msg + " on line " + line);
         };
     </script>
 
     <style>
-        /* --- BASIC STYLES --- */
+        /* --- STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -61,10 +58,10 @@
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
 
+        /* IMAGE OVERLAY */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction:column; justify-content:center; align-items:center; }
         #generated-image { max-width: 95%; max-height: 60vh; border-radius: 10px; border: 3px solid #ff4500; box-shadow: 0 0 30px #ff4500; background: #111; display:none; }
         #image-loading-text { color: #ff4500; margin-top: 10px; font-weight: bold; display: none; }
-        
         .overlay-btns { display: flex; gap: 20px; margin-top: 20px; }
         #download-btn { padding: 10px 25px; background: #00ff00; color: black; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; display: none; }
         #close-img-btn { padding: 10px 25px; background: red; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; }
@@ -89,23 +86,19 @@
     <div id="settings-modal" class="modal">
         <div class="settings-box">
             <h3>મેનૂ & સેટિંગ્સ</h3>
-            
             <div class="menu-grid">
                 <div class="menu-btn" onclick="window.openFeature('notes')"><i class="fas fa-book" style="color:orange;"></i> ડાયરી</div>
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
             </div>
-
             <div class="section-title">Personal Info</div>
             <label>તમારું નામ:</label>
             <input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
-            
             <label class="checkbox-container">
                 <span>સતત વાતચીત (Hands-Free)</span>
                 <input type="checkbox" id="continuousModeCheck">
             </label>
-
             <div class="section-title">સ્વભાવ (Personality)</div>
             <select id="moodSelect" style="border: 2px solid #ff4500; padding: 10px; font-weight: bold; background: #222; color: #ff4500;">
                 <option value="normal">😇 ડાહી ડમરી (Normal)</option>
@@ -114,7 +107,6 @@
                 <option value="lazy">😴 આળસુ (Lazy Mode)</option>
                 <option value="poet">🌹 શાયર (Poet Mode)</option>
             </select>
-            
             <div class="section-title">Step 1: AI Provider</div>
             <select id="providerSelect" onchange="window.toggleProviderSettings()">
                 <option value="gemini">Google Gemini</option>
@@ -138,7 +130,6 @@
                 <div class="section-title">Step 3: Groq Key</div>
                 <input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
-            
             <button class="save-btn" onclick="window.clearMemories()" style="background:#555; margin-top:20px;">🧠 મેમરી સાફ કરો</button>
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE</button>
         </div>
@@ -147,7 +138,6 @@
     <div id="notes-modal" class="modal"><div class="notes-header"><span>મારી ડાયરી (Cloud)</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
     <div id="music-modal" class="modal"><div class="notes-header"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div><div class="list-item" onclick="window.playMusic('Mahadev Song')">🔱 મહાદેવ સોંગ</div></div></div>
     <div id="expense-modal" class="modal"><div class="notes-header"><span>હિસાબ (Cloud)</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
-    
     <div id="contacts-modal" class="modal">
         <div class="notes-header"><span>સંપર્કો (Cloud)</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div>
         <div style="display:flex; gap:5px; width:100%;">
@@ -198,16 +188,18 @@
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
-        } catch (err) { console.error(err); }
+        } catch (err) { 
+            console.error("Firebase Init Error:", err);
+            document.getElementById('status-text').innerText = "DB Error";
+        }
 
         window.permanentMemories = [];
         window.chatHistory = [];
         
-        // GLOBAL VARIABLES
         let notes = [];
         let expenses = [];
         let contacts = [];
-        let currentCameraMode = "user"; // To track Front/Back camera
+        let currentCameraMode = "user"; 
 
         window.formatDate = (timestamp) => {
             if (!timestamp) return "";
@@ -217,33 +209,38 @@
             return date.toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
         };
 
-        onSnapshot(userDocRef, (docSnap) => {
-            const status = document.getElementById('status-text');
-            if (docSnap.exists()) {
-                window.permanentMemories = docSnap.data().memories || [];
-                status.innerText = "માઈક દબાવો (Cloud OK)";
-            } else {
-                setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] });
-            }
-        }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Check Rules)"; });
+        // 🛡️ SAFETY CHECK: Only run listeners if DB is connected
+        if (userDocRef) {
+            onSnapshot(userDocRef, (docSnap) => {
+                const status = document.getElementById('status-text');
+                if (docSnap.exists()) {
+                    window.permanentMemories = docSnap.data().memories || [];
+                    status.innerText = "માઈક દબાવો (Ready)";
+                } else {
+                    setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] });
+                }
+            }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Net Fail)"; });
+        }
 
-        const notesCol = collection(db, "vidushi_notes");
-        onSnapshot(query(notesCol, orderBy("timestamp", "desc")), (snapshot) => {
-            notes = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-            if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes();
-        });
+        if (db) {
+            const notesCol = collection(db, "vidushi_notes");
+            onSnapshot(query(notesCol, orderBy("timestamp", "desc")), (snapshot) => {
+                notes = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes();
+            });
 
-        const expCol = collection(db, "vidushi_expenses");
-        onSnapshot(query(expCol, orderBy("timestamp", "desc")), (snapshot) => {
-            expenses = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-            if(document.getElementById('expense-modal').style.display === 'flex') window.renderExpenses();
-        });
+            const expCol = collection(db, "vidushi_expenses");
+            onSnapshot(query(expCol, orderBy("timestamp", "desc")), (snapshot) => {
+                expenses = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                if(document.getElementById('expense-modal').style.display === 'flex') window.renderExpenses();
+            });
 
-        const contactsCol = collection(db, "vidushi_contacts");
-        onSnapshot(query(contactsCol, orderBy("name")), (snapshot) => {
-            contacts = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-            if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts();
-        });
+            const contactsCol = collection(db, "vidushi_contacts");
+            onSnapshot(query(contactsCol, orderBy("name")), (snapshot) => {
+                contacts = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
+                if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts();
+            });
+        }
 
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
@@ -347,41 +344,32 @@
             if(type==='contacts') window.renderContacts(); 
         };
         
-        window.addNote = async (text) => { await addDoc(notesCol, { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
+        // SAFE ADD FUNCTIONS
+        window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         window.renderNotes = () => { 
             document.getElementById('notes-list').innerHTML = notes.map((n) => 
-                `<div class="list-item">
-                    <span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span>
-                    <span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span>
-                </div>`
-            ).join(''); 
+                `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); 
         };
-        window.deleteNote = async (id) => { await deleteDoc(doc(db, "vidushi_notes", id)); };
+        window.deleteNote = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_notes", id)); };
         window.speakNotes = () => { window.speak(notes.map(n=>n.text).join(". ")); };
         
         window.addExpense = async (text) => { 
             let amt = text.match(/\d+/); 
-            if(amt) { 
+            if(amt && db) { 
                 let d = text.replace(amt[0],"").replace("રૂપિયા","").trim(); 
-                await addDoc(expCol, {amount:parseInt(amt[0]), desc:d||"પરચુરણ", timestamp: Date.now()}); 
+                await addDoc(collection(db, "vidushi_expenses"), {amount:parseInt(amt[0]), desc:d||"પરચુરણ", timestamp: Date.now()}); 
                 window.speak(`${amt[0]} લખ્યા.`); 
             } 
         };
         window.renderExpenses = () => { 
             let t=0; 
-            document.getElementById('expense-list').innerHTML = expenses.map((n) => { 
-                t+=n.amount; 
-                return `<div class="list-item expense-item">
-                    <span>₹${n.amount} - ${n.desc} <br><small style="color:gray; font-size:10px;">🕒 ${window.formatDate(n.timestamp)}</small></span>
-                    <span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span>
-                </div>` 
-            }).join(''); 
+            document.getElementById('expense-list').innerHTML = expenses.map((n) => { t+=n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc} <br><small style="color:gray; font-size:10px;">🕒 ${window.formatDate(n.timestamp)}</small></span><span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span></div>` }).join(''); 
             document.getElementById('total-expense').innerText = t; 
         };
-        window.deleteExpense = async (id) => { await deleteDoc(doc(db, "vidushi_expenses", id)); };
+        window.deleteExpense = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_expenses", id)); };
         window.clearExpenses = async () => { 
-            if(confirm("બધો હિસાબ સાફ કરવો છે?")) {
-                const snapshot = await getDocs(expCol);
+            if(confirm("બધો હિસાબ સાફ કરવો છે?") && db) {
+                const snapshot = await getDocs(collection(db, "vidushi_expenses"));
                 const batch = writeBatch(db);
                 snapshot.forEach((doc) => batch.delete(doc.ref));
                 await batch.commit();
@@ -392,21 +380,17 @@
         window.addContactUI = async () => {
             const name = document.getElementById('contactName').value.trim();
             const num = document.getElementById('contactNumber').value.trim();
-            if(name && num) {
-                await addDoc(contactsCol, {name: name, number: num});
+            if(name && num && db) {
+                await addDoc(collection(db, "vidushi_contacts"), {name: name, number: num});
                 document.getElementById('contactName').value = "";
                 document.getElementById('contactNumber').value = "";
             }
         };
         window.renderContacts = () => {
             document.getElementById('contacts-list').innerHTML = contacts.map((c) => 
-                `<div class="list-item contact-item">
-                    <span><b>${c.name}</b><br><small>${c.number}</small></span>
-                    <span style="color:red;cursor:pointer" onclick="window.deleteContact('${c.id}')">x</span>
-                </div>`
-            ).join('');
+                `<div class="list-item contact-item"><span><b>${c.name}</b><br><small>${c.number}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteContact('${c.id}')">x</span></div>`).join('');
         };
-        window.deleteContact = async (id) => { await deleteDoc(doc(db, "vidushi_contacts", id)); };
+        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); };
         window.findContact = (query) => {
             let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim();
             return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase()));
@@ -429,7 +413,6 @@
 
         window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         
-        // --- IMAGE HANDLING & DOWNLOAD ---
         window.closeImage = () => { 
             imageOverlay.style.display='none'; 
             playVideo('silent'); 
@@ -449,17 +432,13 @@
             window.closeImage();
         };
 
-        // 🔥 SMART CAMERA LOGIC 🔥
+        // 🔥 SMART CAMERA + CAMERA SWITCHING 🔥
         window.captureAndAnalyze = async (mode = "user") => { 
-            // Check if we need to switch camera
-            if (visionStream && currentCameraMode !== mode) {
-                window.stopVisionCamera(); 
-            }
-
+            if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); }
             if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') {
                 window.speak(mode === "user" ? "સેલ્ફી કેમેરો ચાલુ..." : "પાછળનો કેમેરો ચાલુ...");
                 await window.activateVision(mode);
-                setTimeout(window.takeActualPhoto, 3000); // 3 sec delay
+                setTimeout(window.takeActualPhoto, 3000); 
             } else {
                 window.takeActualPhoto(); 
             }
@@ -515,17 +494,13 @@
         window.startConversation = () => { try{recognition.start();}catch(e){} };
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
 
-        // 🎥 UPDATED VISION ACTIVATION WITH MODE
+        // 🎥 VISION
         window.activateVision = async (mode = "user") => { 
             try { 
                 visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); 
                 selfieVideo.srcObject = visionStream; 
                 selfieVideo.style.display = 'block'; 
-                
-                // Mirror effect ONLY for Front Camera
-                if(mode === "user") selfieVideo.style.transform = "scaleX(-1)";
-                else selfieVideo.style.transform = "scaleX(1)";
-
+                if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)";
                 document.getElementById('video-container').style.display = 'none'; 
                 visionMode = true; 
                 currentCameraMode = mode; 
@@ -543,7 +518,7 @@
             if(isSilentListening) { 
                 if(cmd.includes("પૂરી") || cmd.includes("stop")) { 
                     isSilentListening = false; 
-                    await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) });
+                    if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) });
                     conversationBuffer=""; 
                     window.speak("યાદ રાખી લીધું."); 
                 } else { conversationBuffer += text + ". "; } 
@@ -552,7 +527,7 @@
             
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) {
                 let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim();
-                if(memoryText) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; }
+                if(memoryText && db) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; }
             }
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { window.makeCall(text); return; }
             if(cmd.includes("મેસેજ કર")) { window.sendMessage(text); return; }
@@ -561,7 +536,6 @@
             if(cmd.includes("નોંધ")) { window.addNote(text.replace("નોંધ","")); return; }
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             
-            // 📸 CAMERA COMMANDS
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
             if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { window.captureAndAnalyze("environment"); return; }
 
@@ -582,10 +556,10 @@
 
             return `
             [Current Data - Time: ${now}, Date: ${dateStr}]
-            IMPORTANT INSTRUCTIONS:
+            IMPORTANT:
             1. You are a FEMALE AI named Vidushi created by Devendrabhai.
             2. Speak in very NATURAL Gujarati.
-            3. When asked for time, say it naturally like "સાડા પાંચ થયા છે" or "દસ ને વીસ થઈ છે". DO NOT say "Time is..." or "Time...".
+            3. Say time naturally like "સાડા પાંચ થયા છે".
             4. Keep answers SHORT.
             ${moodPrompt}
             [DATA SOURCE]: ${familyDataString}
@@ -655,4 +629,12 @@
             if(bestVoice) u.voice = bestVoice;
             const angryWords = ["મૂર્ખ", "ડોબા", "શરમ", "ચૂપ", "nonsense", "stupid", "ગુસ્સો", "ભાન"];
             let isTextAngry = angryWords.some(word => clean.toLowerCase().includes(word));
-            if (currentMood === 'normal' && !isTextAngry) { u.pitch = 0.95 + (Math.random() *
+            if (currentMood === 'normal' && !isTextAngry) { u.pitch = 0.95 + (Math.random() * 0.1); u.rate = 0.95 + (Math.random() * 0.1); } 
+            else if (currentMood === 'angry' || isTextAngry) { u.pitch = 0.8; u.rate = 1.2; }
+            u.onstart = () => { if (currentMood === 'angry' || isTextAngry) { playVideo('angry'); statusText.style.border = "2px solid red"; } else { playVideo('talking'); statusText.style.border = "1px solid rgba(255,255,255,0.2)"; } };
+            u.onend = () => { if (currentMood === 'angry' || isTextAngry) playVideo('silent'); else playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) try { recognition.start(); } catch(e) {} };
+            window.speechSynthesis.speak(u);
+        };
+    </script>
+</body>
+</html>
