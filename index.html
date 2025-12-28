@@ -443,9 +443,29 @@
                 await window.activateVision();
                 setTimeout(window.takeActualPhoto, 3000); // 3 sec delay
             } else {
-                window.takeActualPhoto(); // Immediate capture
-            }
+                        window.takeActualPhoto = () => {
+            canvas.width = selfieVideo.videoWidth; 
+            canvas.height = selfieVideo.videoHeight; 
+            canvas.getContext('2d').drawImage(selfieVideo, 0, 0); 
+            
+            window.stopVisionCamera(); 
+            playVideo('thinking'); 
+            
+            // 1. ફોટો બતાવો અને સેવ બટન લાવો
+            const base64Image = canvas.toDataURL('image/jpeg');
+            generatedImage.src = base64Image;
+            generatedImage.style.display = "block";
+            imageLoadingText.style.display = "none";
+            document.getElementById('download-btn').style.display = "block"; 
+            imageOverlay.style.display = 'flex';
+            
+            // 2. 🔥 આ લાઈન ઉમેરી એટલે AI ફોટો જોઈને જવાબ આપશે! 🔥
+            const base64ForAI = base64Image.split(',')[1]; // ડેટા ક્લીન કર્યો
+            window.askGeminiVision(base64ForAI); // Gemini ને મોકલ્યો
+            
+            // (નોંધ: હવે વિદુષી "સેવ કરવો છે?" એવું પૂછવાને બદલે, ફોટામાં શું છે તે બોલશે)
         };
+
 
         window.takeActualPhoto = () => {
             canvas.width = selfieVideo.videoWidth; 
