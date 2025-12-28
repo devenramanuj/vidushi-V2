@@ -130,6 +130,15 @@
                 <div class="section-title">Step 3: Groq Key</div>
                 <input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
+            
+            <!-- 🔥 NEW: Firebase API Key Section -->
+            <div class="section-title">Firebase Database (Cloud Storage)</div>
+            <label>Firebase API Key:</label>
+            <input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
+            <small style="color: #aaa; font-size: 10px; display: block; margin-top: 5px;">
+                📍 બાકીના Firebase સેટિંગ્સ (Project ID, App ID વગેરે) કોડમાં જ રહેશે
+            </small>
+            
             <button class="save-btn" onclick="window.clearMemories()" style="background:#555; margin-top:20px;">🧠 મેમરી સાફ કરો</button>
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE</button>
         </div>
@@ -172,9 +181,9 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 🔥 FIREBASE CONFIG
+        // 🔥 FIREBASE CONFIG - Other settings remain in code, only API key from settings
         const firebaseConfig = {
-            apiKey: "AIza",
+            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyDUMMYKEY1234567890", // Will be set from settings
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
             projectId: "vidushi-ai-614cb",
             storageBucket: "vidushi-ai-614cb.firebasestorage.app",
@@ -250,6 +259,7 @@
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
+        let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
 
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
         let isSilentListening = false;
@@ -306,6 +316,10 @@
             document.getElementById('groqModelSelect').value = groqModel; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('moodSelect').value = currentMood; 
+            
+            // 🔥 Load Firebase API key from localStorage
+            document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
+            
             window.toggleProviderSettings(); 
         };
         
@@ -323,6 +337,10 @@
             groqModel = document.getElementById('groqModelSelect').value; 
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value;
+            
+            // 🔥 Save Firebase API key
+            firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
+            
             localStorage.setItem('vidushi_username', userName); 
             localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); 
@@ -331,8 +349,17 @@
             localStorage.setItem('vidushi_groq_model', groqModel); 
             localStorage.setItem('vidushi_continuous', continuousMode); 
             localStorage.setItem('vidushi_mood', currentMood);
+            localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
+            
             document.getElementById('settings-modal').style.display = 'none'; 
-            window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
+            window.speak("સેટિંગ્સ સેવ થઈ ગયા. પેજ રીફ્રેશ કરો."); 
+            
+            // 🔥 Show message about Firebase API key update
+            if (firebaseApiKey) {
+                setTimeout(() => {
+                    alert("Firebase API key સેવ થઈ ગયો છે. પૂરી એપ્લિકેશન રીફ્રેશ કરો (Ctrl+F5) નવો API key લાગુ પાડવા માટે.");
+                }, 500);
+            }
         };
 
         window.clearMemories = async () => { if(confirm("Sure?")) { await setDoc(userDocRef, { memories: [] }); window.speak("ભૂલી ગઈ."); } };
