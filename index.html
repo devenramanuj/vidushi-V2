@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Stable</title>
+    <title>Vidushi AI - Final Fixed</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
@@ -82,6 +81,7 @@
             <select id="providerSelect" onchange="window.toggleProviderSettings()"><option value="gemini">Gemini</option><option value="groq">Groq</option></select>
             <div id="gemini-settings"><input type="text" id="geminiKeyInput" placeholder="Gemini Key"></div>
             <div id="groq-settings" style="display:none;"><input type="text" id="groqKeyInput" placeholder="Groq Key"></div>
+            <button class="save-btn" onclick="window.clearMemories()" style="background:#555; margin-top:20px;">🧠 મેમરી સાફ કરો</button>
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE</button>
         </div>
     </div>
@@ -109,6 +109,8 @@
         </div>
     </div>
 
+    <script src="vanshavali_data.js"></script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -129,26 +131,19 @@
         let notes = [], expenses = [], contacts = [];
         let currentCameraMode = "user";
         
-        // --- 🛡️ FAILSAFE INITIALIZATION ---
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
-            console.log("Firebase Init Success");
-        } catch (err) {
-            console.error("Firebase Init Failed:", err);
-            // Even if Firebase fails, app will start in Offline Mode
-            setTimeout(() => { document.getElementById('status-text').innerText = "તૈયાર (Offline)"; }, 2000);
+        } catch (err) { 
+            console.error("Init Error", err); 
+            setTimeout(() => { document.getElementById('status-text').innerText = "ઓફલાઈન મોડ"; }, 2000);
         }
 
-        // --- FORCE START IF STUCK ---
-        setTimeout(() => {
-            const st = document.getElementById('status-text');
-            if (st.innerText.includes("જોડાઉં") || st.innerText.includes("Cloud")) {
-                st.innerText = "માઈક દબાવો"; // Force Ready state
-                console.log("Forced Ready State");
-            }
-        }, 4000); // 4 seconds timeout
+        window.permanentMemories = [];
+        window.chatHistory = [];
+        
+        window.formatDate = (t) => { if(!t) return ""; let d = t.toDate ? t.toDate() : new Date(t); return d.toLocaleString('gu-IN'); };
 
         // --- FIREBASE LISTENERS ---
         if (userDocRef) {
@@ -159,7 +154,10 @@
                 } else {
                     setDoc(userDocRef, { memories: ["Init"] });
                 }
-            }, (e) => console.log("Offline"));
+            }, (e) => {
+                console.log("Offline");
+                document.getElementById('status-text').innerText = "માઈક દબાવો (Net Fail)";
+            });
 
             onSnapshot(query(collection(db, "vidushi_notes"), orderBy("timestamp", "desc")), (snap) => {
                 notes = snap.docs.map(d => ({id:d.id, ...d.data()}));
@@ -173,6 +171,9 @@
                 contacts = snap.docs.map(d => ({id:d.id, ...d.data()}));
                 if(document.getElementById('contacts-modal').style.display==='flex') window.renderContacts();
             });
+        } else {
+             // Fallback if DB fails
+             setTimeout(() => { document.getElementById('status-text').innerText = "માઈક દબાવો"; }, 2000);
         }
 
         // --- APP LOGIC ---
@@ -191,10 +192,8 @@
         const micBtn = document.getElementById('mic-btn');
         const statusText = document.getElementById('status-text');
 
-        window.formatDate = (t) => { if(!t) return ""; let d = t.toDate ? t.toDate() : new Date(t); return d.toLocaleString('gu-IN'); };
-
         window.onload = () => {
-            document.getElementById('silent-video').play();
+            document.getElementById('silent-video').play().catch(()=>{});
             setTimeout(() => window.speak("જય શ્રી કૃષ્ણ!"), 1000);
         };
 
@@ -258,7 +257,7 @@
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             window.stopVisionCamera();
-            document.getElementById('video-container').querySelector('#thinking-video').style.display='block'; // Thinking video
+            document.getElementById('video-container').querySelector('#thinking-video').style.display='block';
             
             const base64 = canvas.toDataURL('image/jpeg');
             generatedImage.src = base64;
@@ -277,61 +276,11 @@
         window.askGeminiText = async (text) => {
             let k = geminiKeys.split(',')[0]; if(!k) { window.speak("Key નથી."); return; }
             let history = window.chatHistory.slice(-5).map(m=>({role:m.role==='user'?'user':'model', parts:[{text:m.content}]}));
-            history.push({role:'user', parts:[{text:`You are Vidushi, a Gujarati AI. User said: ${text}. Keep answer short.`}]});
+            let now = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
+            
+            history.push({role:'user', parts:[{text:`[Time:${now}] You are Vidushi (Gujarati AI). User said: ${text}. Answer simply.`}]});
             
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
                     method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({ contents: history })
-                });
-                const d = await res.json();
-                const ans = d.candidates?.[0]?.content?.parts?.[0]?.text || "સમજાયું નહીં.";
-                window.chatHistory.push({role:'user', content:text}, {role:'assistant', content:ans});
-                window.speak(ans);
-            } catch(e) { window.speak("Net Error."); }
-        };
-
-        window.askGeminiVision = async (b64) => {
-            let k = geminiKeys.split(',')[0];
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, {
-                    method:'POST', headers:{'Content-Type':'application/json'},
-                    body:JSON.stringify({
-                        contents: [{role:'user', parts:[{text:"What is this? Answer in Gujarati."}, {inline_data:{mime_type:"image/jpeg", data:b64}}]}]
-                    })
-                });
-                const d = await res.json();
-                window.speak(d.candidates?.[0]?.content?.parts?.[0]?.text || "ફોટો ક્લીયર નથી.");
-            } catch(e) { window.speak("Vision Error."); }
-        };
-
-        // --- SPEECH ---
-        const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(SR) {
-            recognition = new SR(); recognition.lang='gu-IN';
-            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText="સાંભળું છું..."; };
-            recognition.onend = () => { micBtn.classList.remove('listening'); statusText.innerText="માઈક દબાવો"; if(document.getElementById('continuousModeCheck').checked) try{recognition.start();}catch(e){} };
-            recognition.onresult = (e) => window.processCommand(e.results[0][0].transcript);
-        }
-        window.startConversation = () => try{recognition.start();}catch(e){};
-        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); window.stopVisionCamera(); };
-
-        window.processCommand = (t) => {
-            if(t.length<2) return;
-            let c = t.toLowerCase();
-            if(c.includes("નોંધ")) window.addNote(t.replace("નોંધ",""));
-            else if(c.includes("હિસાબ")) window.addExpense(t);
-            else if(c.includes("સેલ્ફી")) window.captureAndAnalyze("user");
-            else if(c.includes("ફોટો") || c.includes("શું છે")) window.captureAndAnalyze("environment");
-            else window.askGeminiText(t);
-        };
-
-        window.speak = (t) => {
-            statusText.innerText = "બોલું છું...";
-            const u = new SpeechSynthesisUtterance(t); u.lang='gu-IN';
-            u.onend = () => statusText.innerText = "માઈક દબાવો";
-            window.speechSynthesis.speak(u);
-        };
-    </script>
-</body>
-</html>
+                    body:JSON
