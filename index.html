@@ -415,15 +415,14 @@
 
         window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         
-        // --- IMAGE HANDLING & DOWNLOAD ---
+        // --- IMAGE HANDLING ---
         window.closeImage = () => { 
             imageOverlay.style.display='none'; 
             playVideo('silent'); 
             isProcessing=false; 
-            document.getElementById('download-btn').style.display = 'none'; // Reset button
+            document.getElementById('download-btn').style.display = 'none'; // Reset
         };
         
-        // Function to handle Selfie Download manually
         window.downloadSelfie = () => {
             const base64Image = document.getElementById('generated-image').src;
             const link = document.createElement('a');
@@ -436,11 +435,23 @@
             window.closeImage();
         };
 
-        // Capture Selfie and SHOW PREVIEW (No Auto Download)
+        // 🔥 SMART SELFIE FUNCTION (Auto Camera Start)
         window.captureAndAnalyze = async () => { 
+            // Step 1: જો કેમેરો બંધ હોય, તો પહેલા ચાલુ કરો
+            if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') {
+                window.speak("એક મિનિટ, કેમેરો ચાલુ કરું છું... સ્માઈલ કરો!");
+                await window.activateVision();
+                setTimeout(window.takeActualPhoto, 3000); // 3 sec delay
+            } else {
+                window.takeActualPhoto(); // Immediate capture
+            }
+        };
+
+        window.takeActualPhoto = () => {
             canvas.width = selfieVideo.videoWidth; 
             canvas.height = selfieVideo.videoHeight; 
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0); 
+            
             window.stopVisionCamera(); 
             playVideo('thinking'); 
             
@@ -448,10 +459,10 @@
             generatedImage.src = base64Image;
             generatedImage.style.display = "block";
             imageLoadingText.style.display = "none";
-            document.getElementById('download-btn').style.display = "block"; // Show Save Button
+            document.getElementById('download-btn').style.display = "block"; 
             imageOverlay.style.display = 'flex';
             
-            window.speak("ફોટો કેવો છે? સેવ કરવો હોય તો બટન દબાવો.");
+            window.speak("કેવો આવ્યો ફોટો? સેવ કરવો છે?");
         };
 
         window.generateMagicImage = (p) => { 
@@ -459,13 +470,13 @@
             imageLoadingText.style.display = "block"; 
             generatedImage.style.display="none"; 
             imageOverlay.style.display='flex'; 
-            document.getElementById('download-btn').style.display = "none"; // Initially hide
+            document.getElementById('download-btn').style.display = "none"; 
 
             generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); 
             generatedImage.onload = () => { 
                 imageLoadingText.style.display="none"; 
                 generatedImage.style.display="block"; 
-                document.getElementById('download-btn').style.display = "block"; // Allow saving magic image too
+                document.getElementById('download-btn').style.display = "block"; 
                 window.speak("તૈયાર!"); 
             }; 
         };
