@@ -3,9 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate Edition</title>
+    <title>Vidushi AI - Camera Master</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        window.onerror = function(message, source, lineno, colno, error) {
+            const status = document.getElementById('status-text');
+            if(status) status.innerText = "Error: " + lineno;
+            // ભૂલ બોલવાનો પ્રયત્ન કરશે
+            const msg = new SpeechSynthesisUtterance("કોડમાં ભૂલ છે લાઈન નંબર " + lineno);
+            msg.lang = 'gu-IN';
+            window.speechSynthesis.speak(msg);
+        };
+    </script>
+
     <style>
         /* --- BASIC STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
@@ -15,7 +27,6 @@
         #silent-video { display: block; }
         
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        /* Note: Mirror effect is now handled in JS based on camera type */
         
         #canvas-capture { display: none; }
 
@@ -192,9 +203,11 @@
         window.permanentMemories = [];
         window.chatHistory = [];
         
+        // GLOBAL VARIABLES
         let notes = [];
         let expenses = [];
         let contacts = [];
+        let currentCameraMode = "user"; // To track Front/Back camera
 
         window.formatDate = (timestamp) => {
             if (!timestamp) return "";
@@ -267,7 +280,6 @@
         let visionMode = false;
         let visionStream = null;
         let wakeLock = null;
-        let currentCameraMode = "user"; // Track current camera
 
         window.requestWakeLock = async () => { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
@@ -437,20 +449,19 @@
             window.closeImage();
         };
 
-        // 🔥 SMART CAMERA + CAMERA SWITCHING 🔥
+        // 🔥 SMART CAMERA LOGIC 🔥
         window.captureAndAnalyze = async (mode = "user") => { 
-            // Check if we need to switch camera (e.g., from Front to Back)
+            // Check if we need to switch camera
             if (visionStream && currentCameraMode !== mode) {
-                window.stopVisionCamera(); // Stop old camera
+                window.stopVisionCamera(); 
             }
 
-            // Start new camera if not active or if we switched
             if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') {
                 window.speak(mode === "user" ? "સેલ્ફી કેમેરો ચાલુ..." : "પાછળનો કેમેરો ચાલુ...");
                 await window.activateVision(mode);
                 setTimeout(window.takeActualPhoto, 3000); // 3 sec delay
             } else {
-                window.takeActualPhoto(); // Immediate if already correct
+                window.takeActualPhoto(); 
             }
         };
 
@@ -469,7 +480,6 @@
             document.getElementById('download-btn').style.display = "block"; 
             imageOverlay.style.display = 'flex';
             
-            // 🧠 Send to Gemini
             const base64ForAI = base64Image.split(',')[1];
             window.askGeminiVision(base64ForAI);
         };
@@ -518,7 +528,7 @@
 
                 document.getElementById('video-container').style.display = 'none'; 
                 visionMode = true; 
-                currentCameraMode = mode; // Save current mode
+                currentCameraMode = mode; 
                 document.getElementById('vision-btn').style.background = "red"; 
             } catch(e) { alert("Camera Error: " + e); } 
         };
@@ -553,7 +563,7 @@
             
             // 📸 CAMERA COMMANDS
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
-            if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("સ્માર્ટ કેમેરા") || cmd.includes("કેમેરો")) { window.captureAndAnalyze("environment"); return; }
+            if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { window.captureAndAnalyze("environment"); return; }
 
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             
@@ -645,4 +655,4 @@
             if(bestVoice) u.voice = bestVoice;
             const angryWords = ["મૂર્ખ", "ડોબા", "શરમ", "ચૂપ", "nonsense", "stupid", "ગુસ્સો", "ભાન"];
             let isTextAngry = angryWords.some(word => clean.toLowerCase().includes(word));
-            if (currentMood === 'normal' && !isTextAngry) { u.pitch = 0.95 + (Math.random() * 0.1); u.rate = 0.95 + (Math.random() * 0.1); }
+            if (currentMood === 'normal' && !isTextAngry) { u.pitch = 0.95 + (Math.random() *
