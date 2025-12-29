@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Vanshavali Editor</title>
+    <title>Vidushi AI - Smart Lens</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -18,7 +18,7 @@
     </script>
 
     <style>
-        /* --- STYLES (No Changes, kept same) --- */
+        /* --- STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
@@ -64,9 +64,15 @@
         #download-btn { padding: 10px 25px; background: #00ff00; color: black; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; display: none; }
         #close-img-btn { padding: 10px 25px; background: red; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
-        #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid #d4af37; border-radius: 15px; padding: 15px; z-index: 50; flex-direction: row; gap: 20px; }
-        .arch-btn { display: flex; flex-direction: column; align-items: center; color: #d4af37; cursor: pointer; }
-        .arch-btn i { font-size: 24px; margin-bottom: 5px; }
+        /* 🔥 SMART LENS SELECTOR */
+        #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid #d4af37; border-radius: 15px; padding: 15px; z-index: 50; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
+        .lens-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .mode-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; }
+        .mode-btn.active { background: #d4af37; color: black; font-weight: bold; border-color: #fff; }
+        
+        .action-row { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; width: 100%; }
+        .arch-btn { display: flex; flex-direction: column; align-items: center; color: white; cursor: pointer; }
+        .arch-btn i { font-size: 24px; margin-bottom: 5px; color: #008cff; }
 
         #report-content-area { width: 100%; height: 60vh; background: #111; color: #ddd; border: 1px solid #555; padding: 10px; font-family: monospace; font-size: 14px; resize: none; border-radius: 5px; margin-bottom: 10px; }
     </style>
@@ -90,13 +96,27 @@
     <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="archeology-selector">
-        <div class="arch-btn" onclick="window.useArcheologyCamera()">
-            <i class="fas fa-camera"></i>
-            <span>કેમેરો</span>
+        <div style="color: #d4af37; text-align: center; font-size: 14px; margin-bottom: 5px;">તમારે શું સ્કેન કરવું છે?</div>
+        <div class="lens-modes">
+            <div class="mode-btn active" onclick="window.setVisionMode('history', this)">📜 શિલાલેખ</div>
+            <div class="mode-btn" onclick="window.setVisionMode('math', this)">🔢 ગણિત</div>
+            <div class="mode-btn" onclick="window.setVisionMode('translate', this)">🌐 ભાષાંતર</div>
+            <div class="mode-btn" onclick="window.setVisionMode('object', this)">🌿 ઓળખ</div>
+            <div class="mode-btn" onclick="window.setVisionMode('summary', this)">📝 સારાંશ</div>
         </div>
-        <div class="arch-btn" onclick="document.getElementById('galleryLoader').click()">
-            <i class="fas fa-image"></i>
-            <span>ગેલેરી</span>
+        <div class="action-row">
+            <div class="arch-btn" onclick="window.useArcheologyCamera()">
+                <i class="fas fa-camera"></i>
+                <span>કેમેરો</span>
+            </div>
+            <div class="arch-btn" onclick="document.getElementById('galleryLoader').click()">
+                <i class="fas fa-image"></i>
+                <span>ગેલેરી</span>
+            </div>
+            <div class="arch-btn" onclick="document.getElementById('archeology-selector').style.display='none'">
+                <i class="fas fa-times" style="color:red;"></i>
+                <span>બંધ</span>
+            </div>
         </div>
     </div>
 
@@ -108,7 +128,7 @@
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
-                <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-scroll" style="color:#d4af37;"></i> શિલાલેખ</div>
+                <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-search-plus" style="color:#d4af37;"></i> Smart Lens</div>
             </div>
             
             <div class="section-title">Personal Info</div>
@@ -208,12 +228,10 @@
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
             settingsDocRef = doc(db, "vidushi_db", "settings");
-            // 🔥 NEW: Vanshavali Cloud Path
             vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
-            
             console.log("✅ Firebase initialized successfully");
             loadCloudSettings();
-            loadVanshavaliFromCloud(); // Load family tree
+            loadVanshavaliFromCloud(); 
         } catch (err) { 
             console.error("Firebase Init Error:", err);
             document.getElementById('status-text').innerText = "DB Error: " + err.message;
@@ -246,19 +264,15 @@
             } catch (e) { console.error("Cloud Sync Error:", e); }
         }
 
-        // 🔥 VANSHAVALI LOAD LOGIC
         async function loadVanshavaliFromCloud() {
             if(!db) return;
             try {
                 const docSnap = await getDoc(vanshavaliDocRef);
                 if (docSnap.exists()) {
-                    console.log("🌳 Vanshavali loaded from Cloud");
                     window.activeFamilyTree = docSnap.data().tree;
                 } else {
-                    console.log("🌳 No Cloud Vanshavali. Using Local File...");
                     if(window.vanshavaliData) {
                         window.activeFamilyTree = window.vanshavaliData;
-                        // Upload initial data to cloud
                         await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
                     }
                 }
@@ -305,7 +319,6 @@
             }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Net Fail)"; });
         }
 
-        /* [Existing Note/Expense/Contact logic kept same for brevity] */
         if (db) {
             const notesCol = collection(db, "vidushi_notes");
             onSnapshot(query(notesCol, orderBy("timestamp", "desc")), (snapshot) => { notes = snapshot.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes(); });
@@ -315,8 +328,18 @@
             onSnapshot(query(contactsCol, orderBy("name")), (snapshot) => { contacts = snapshot.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts(); });
         }
 
-        let archeologyPrompt = `Analyze this image carefully. It may contain ancient scripts. Transliterate to Gujarati.`;
-        let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
+        // 🔥 SMART LENS PROMPTS
+        const visionPrompts = {
+            'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
+            'math': `Analyze this image for math problems. Solve the problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
+            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
+            'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
+            'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
+        };
+
+        let currentVisionPrompt = visionPrompts['history'];
+        let selectedLensMode = 'history';
+
         let isSilentListening = false;
         let conversationBuffer = "";
 
@@ -405,15 +428,8 @@
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         };
 
-        window.clearMemories = async () => { 
-            if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { 
-                await setDoc(userDocRef, { memories: [] }); 
-                window.speak("સાફ કરી દીધું."); 
-            } 
-        };
-        
+        window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: [] }); window.speak("સાફ કરી દીધું."); } };
         window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
-        /* Functions for Notes/Expense/Contacts - Kept Same */
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n) => `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
         window.deleteNote = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_notes", id)); };
@@ -440,9 +456,53 @@
 
         window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો ચાલુ..." : "પાછળનો કેમેરો ચાલુ..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
         window.takeActualPhoto = () => { canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight; canvas.getContext('2d').drawImage(selfieVideo, 0, 0); window.stopVisionCamera(); playVideo('thinking'); const base64Image = canvas.toDataURL('image/jpeg'); generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; imageOverlay.style.display = 'flex'; const base64ForAI = base64Image.split(',')[1]; window.askGeminiVision(base64ForAI); };
-        window.openArcheologyMenu = () => { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('archeology-selector').style.display = 'flex'; window.speak("શિલાલેખ મોડ."); currentVisionPrompt = archeologyPrompt; };
-        window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
-        window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageLoadingText.style.display = "block"; imageLoadingText.innerText = "ફોટો વાંચી રહી છું..."; generatedImage.style.display = "none"; imageOverlay.style.display = "flex"; const reader = new FileReader(); reader.onload = function(e) { const base64Image = e.target.result; generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; const base64ForAI = base64Image.split(',')[1]; window.askGeminiVision(base64ForAI); }; reader.readAsDataURL(file); };
+        
+        // 🔥 SMART LENS FUNCTIONS
+        window.openArcheologyMenu = () => {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('archeology-selector').style.display = 'flex';
+            if(!silentMode) window.speak("Smart Lens મોડ. શું સ્કેન કરવું છે તે પસંદ કરો.");
+            // Reset to History by default
+            window.setVisionMode('history', document.querySelector('.mode-btn'));
+        };
+
+        window.setVisionMode = (mode, btn) => {
+            selectedLensMode = mode;
+            currentVisionPrompt = visionPrompts[mode];
+            // Visual Update
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            console.log("Lens Mode Set:", mode);
+        };
+
+        window.useArcheologyCamera = () => {
+            document.getElementById('archeology-selector').style.display = 'none';
+            window.captureAndAnalyze("environment");
+        };
+
+        window.handleGalleryUpload = (input) => {
+            const file = input.files[0];
+            if(!file) return;
+            document.getElementById('archeology-selector').style.display = 'none';
+            playVideo('thinking');
+            imageLoadingText.style.display = "block";
+            imageLoadingText.innerText = "વિશ્લેષણ કરી રહી છું...";
+            generatedImage.style.display = "none";
+            imageOverlay.style.display = "flex";
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const base64Image = e.target.result;
+                generatedImage.src = base64Image;
+                generatedImage.style.display = "block";
+                imageLoadingText.style.display = "none";
+                document.getElementById('download-btn').style.display = "block";
+                const base64ForAI = base64Image.split(',')[1];
+                window.askGeminiVision(base64ForAI);
+            };
+            reader.readAsDataURL(file);
+        };
+
         window.generateMagicImage = (p) => { playVideo('thinking'); imageLoadingText.style.display = "block"; generatedImage.style.display="none"; imageOverlay.style.display='flex'; document.getElementById('download-btn').style.display = "none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display="none"; generatedImage.style.display="block"; document.getElementById('download-btn').style.display = "block"; window.speak("તૈયાર!"); }; };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -458,21 +518,13 @@
         window.activateVision = async (mode = "user") => { try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; document.getElementById('vision-btn').style.background = "red"; } catch(e) { alert("Camera Error: " + e); } };
         window.stopVisionCamera = () => { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); };
         
-        // 🔥🔥🔥 RECURSIVE FUNCTION TO ADD CHILD TO TREE 🔥🔥🔥
         function findParentAndAddChild(node, parentName, childName) {
-            // Check if current node is the parent
-            // We use .includes to handle partial matches (e.g., "Devendrabhai" vs "Devendra")
             if (node.name.toLowerCase().includes(parentName.toLowerCase()) || parentName.toLowerCase().includes(node.name.toLowerCase())) {
                 if (!node.children) node.children = [];
-                // Check if child already exists
-                if(node.children.some(c => c.name === childName)) {
-                    return "EXISTS";
-                }
+                if(node.children.some(c => c.name === childName)) return "EXISTS";
                 node.children.push({ name: childName, info: "નવો સભ્ય", children: [] });
                 return "ADDED";
             }
-            
-            // Search in children
             if (node.children && node.children.length > 0) {
                 for (let child of node.children) {
                     let result = findParentAndAddChild(child, parentName, childName);
@@ -488,45 +540,23 @@
             let cmd = text.toLowerCase();
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
             
-            // 🔥🔥🔥 VOICE COMMAND TO ADD NAME TO VANSHAVALI 🔥🔥🔥
-            // Pattern: "X નું નામ Y ના પુત્ર/દીકરા તરીકે add/ઉમેરો"
-            // Handles: "Shyam nu naam Devendra na putra tarike add karo"
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) {
                 try {
-                    // Extract names using Regex
                     let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/);
                     if (parts && parts.length >= 3) {
-                        let childName = parts[1].trim();
-                        let parentName = parts[2].trim();
-                        
-                        // Clean up names (remove honorifics if needed, though search handles partial)
-                        console.log(`Adding ${childName} to ${parentName}`);
-                        
-                        if (!window.activeFamilyTree) {
-                            window.speak("વંશાવલી ડેટા મળ્યો નથી.");
-                            return;
-                        }
-
-                        // Copy tree to modify
+                        let childName = parts[1].trim(); let parentName = parts[2].trim();
+                        if (!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા મળ્યો નથી."); return; }
                         let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree));
                         let result = findParentAndAddChild(newTree, parentName, childName);
-
                         if (result === "ADDED") {
                             window.activeFamilyTree = newTree;
-                            // Save to Cloud
                             if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, { tree: newTree });
-                            window.speak(`${childName} નું નામ ${parentName} ના પરિવારમાં ઉમેરાઈ ગયું.`);
-                        } else if (result === "EXISTS") {
-                            window.speak(`${childName} નું નામ પહેલેથી જ છે.`);
-                        } else {
-                            window.speak(`${parentName} નું નામ વંશાવલીમાં મળ્યું નહીં.`);
-                        }
-                        return; // Stop processing other commands
+                            window.speak(`${childName} નું નામ ઉમેરાઈ ગયું.`);
+                        } else if (result === "EXISTS") { window.speak(`${childName} નું નામ પહેલેથી જ છે.`); } 
+                        else { window.speak(`${parentName} નું નામ મળ્યું નહીં.`); }
+                        return;
                     }
-                } catch(e) {
-                    console.error(e);
-                    window.speak("નામ ઉમેરવામાં ભૂલ થઈ.");
-                }
+                } catch(e) { window.speak("નામ ઉમેરવામાં ભૂલ થઈ."); }
             }
 
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim(); if(memoryText && db) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; } }
@@ -559,17 +589,11 @@
             else if (currentMood === 'lazy') moodPrompt = "You are lazy and give very short answers.";
             else if (currentMood === 'poet') moodPrompt = "You speak in poetic Gujarati.";
             
-            // Use activeFamilyTree from Memory/Cloud
             let familyDataString = "";
-            try { 
-                if (window.activeFamilyTree) { 
-                    familyDataString = `[વંશાવાળી માહિતી (Updated)]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; 
-                } 
-            } catch (e) {}
+            try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી (Updated)]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {}
             return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} [Memory]: ${memories} Question: "${contextData}"`;
         }
 
-        /* [Gemini/Groq Functions - Kept Same] */
         window.askGeminiText = async (userText) => {
             let keys = geminiKeys.split(',').filter(k => k);
             if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; }
