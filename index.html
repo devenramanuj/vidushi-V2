@@ -21,7 +21,7 @@
             console.log("✅ VANSHVALI DATA LOADED FROM EXTERNAL FILE");
         } else {
             console.error("❌ ERROR: vanshavali_data.js file not found!");
-            alert("ભૂલ: vanshavali_data.js ફાઈલ મળી નથી!");
+            // alert("ભૂલ: vanshavali_data.js ફાઈલ મળી નથી!"); // જરૂર હોય તો ચાલુ કરવું
         }
         
         window.chatHistory = [];
@@ -29,7 +29,7 @@
     </script>
 
     <style>
-        /* --- ALL STYLES REMAIN SAME --- */
+        /* --- STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
@@ -137,11 +137,11 @@
             <label>Firebase API Key:</label>
             <input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
             <small style="color: #aaa; font-size: 10px; display: block; margin-top: 5px;">
-                📍 બાકીના Firebase સેટિંગ્સ (Project ID, App ID વગેરે) કોડમાં જ રહેશે
+                📍 બાકીના Firebase સેટિંગ્સ કોડમાં સુરક્ષિત છે.
             </small>
             
             <button class="save-btn" onclick="window.clearMemories()" style="background:#555; margin-top:20px;">🧠 મેમરી સાફ કરો</button>
-            <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE</button>
+            <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE (SYNC)</button>
         </div>
     </div>
 
@@ -178,7 +178,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // 🔥 FIREBASE CONFIG
         const firebaseConfig = {
@@ -193,15 +193,82 @@
 
         console.log("✅ VANSHVALI DATA CHECK (Inside Module):", window.vanshavaliData ? "LOADED" : "NOT LOADED");
 
-        let app, db, userDocRef;
+        let app, db, userDocRef, settingsDocRef;
+        
+        // --- Global Variables ---
+        let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
+        let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
+        let groqKey = localStorage.getItem('vidushi_groq_key') || '';
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-1.5-flash"; 
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
+        let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
+        let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
+        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
+        let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
+
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
+            settingsDocRef = doc(db, "vidushi_db", "settings"); // ☁️ Cloud Settings Path
             console.log("✅ Firebase initialized successfully");
+            
+            // 🔥 CLOUD SYNC: Load Settings from Firebase immediately
+            loadCloudSettings();
+
         } catch (err) { 
             console.error("Firebase Init Error:", err);
             document.getElementById('status-text').innerText = "DB Error: " + err.message;
+        }
+
+        // --- CLOUD SETTINGS LOGIC ---
+        async function loadCloudSettings() {
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(settingsDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    console.log("☁️ Cloud Settings Found! Syncing...", data);
+                    
+                    // Update Local Variables from Cloud
+                    if(data.userName) userName = data.userName;
+                    if(data.geminiKey) geminiKeys = data.geminiKey;
+                    if(data.groqKey) groqKey = data.groqKey;
+                    if(data.mood) currentMood = data.mood;
+                    if(data.provider) aiProvider = data.provider;
+                    if(data.geminiModel) geminiModel = data.geminiModel;
+                    
+                    // Update LocalStorage (So it works offline next time)
+                    localStorage.setItem('vidushi_username', userName);
+                    localStorage.setItem('vidushi_gemini_key', geminiKeys);
+                    localStorage.setItem('vidushi_groq_key', groqKey);
+                    localStorage.setItem('vidushi_mood', currentMood);
+                    localStorage.setItem('vidushi_provider', aiProvider);
+                    localStorage.setItem('vidushi_gemini_model', geminiModel);
+                    
+                    window.speak(`તમારા સેટિંગ્સ ક્લાઉડમાંથી મળી ગયા, ${userName}!`);
+                } else {
+                    console.log("☁️ No Cloud Settings found. Uploading current local settings...");
+                    await saveToCloud(); // First time upload
+                }
+            } catch (e) {
+                console.error("Cloud Sync Error:", e);
+            }
+        }
+
+        async function saveToCloud() {
+            if(!db) return;
+            const settingsData = {
+                userName: userName,
+                geminiKey: geminiKeys,
+                groqKey: groqKey,
+                mood: currentMood,
+                provider: aiProvider,
+                geminiModel: geminiModel,
+                lastUpdated: new Date()
+            };
+            await setDoc(settingsDocRef, settingsData, { merge: true });
+            console.log("☁️ Settings Saved to Cloud ✅");
         }
 
         window.permanentMemories = window.permanentMemories || [];
@@ -220,7 +287,6 @@
             return date.toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
         };
 
-        // 🛡️ SAFETY CHECK: Only run listeners if DB is connected
         if (userDocRef) {
             onSnapshot(userDocRef, (docSnap) => {
                 const status = document.getElementById('status-text');
@@ -240,38 +306,22 @@
 
         if (db) {
             console.log("✅ Firestore database connected");
-            
             const notesCol = collection(db, "vidushi_notes");
             onSnapshot(query(notesCol, orderBy("timestamp", "desc")), (snapshot) => {
                 notes = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
-                console.log("📝 Notes updated:", notes.length);
                 if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes();
             });
-
             const expCol = collection(db, "vidushi_expenses");
             onSnapshot(query(expCol, orderBy("timestamp", "desc")), (snapshot) => {
                 expenses = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 if(document.getElementById('expense-modal').style.display === 'flex') window.renderExpenses();
             });
-
             const contactsCol = collection(db, "vidushi_contacts");
             onSnapshot(query(contactsCol, orderBy("name")), (snapshot) => {
                 contacts = snapshot.docs.map(d => ({id: d.id, ...d.data()}));
                 if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts();
             });
-        } else {
-            console.warn("⚠️ Firestore database not connected");
         }
-
-        let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
-        let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
-        let groqKey = localStorage.getItem('vidushi_groq_key') || '';
-        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-1.5-flash"; 
-        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
-        let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
-        let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
-        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
-        let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
 
         let currentVisionPrompt = "આ શું છે? (ગુજરાતીમાં)";
         let isSilentListening = false;
@@ -307,17 +357,7 @@
             window.speechSynthesis.getVoices();
             setTimeout(() => { window.speak(`જય શ્રી કૃષ્ણ ${userName}! વંશાવાળી ડેટા સાથે તૈયાર છું.`); }, 1000); 
             window.requestWakeLock();
-            
-            if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
-            }
-            
-            // Check data after load
-            setTimeout(() => {
-                console.log("🌐 Current AI Provider:", aiProvider);
-                console.log("🧠 Permanent Memories:", window.permanentMemories.length);
-                console.log("👪 Vanshavali Data Available:", window.vanshavaliData ? "YES" : "NO");
-            }, 2000);
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
         };
 
         function playVideo(type) {
@@ -336,9 +376,7 @@
             document.getElementById('groqModelSelect').value = groqModel; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('moodSelect').value = currentMood; 
-            
             document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
-            
             window.toggleProviderSettings(); 
         };
         
@@ -347,7 +385,9 @@
             document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; 
             document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; 
         };
-        window.saveSettings = () => { 
+        
+        // 🔥 UPDATED SAVE FUNCTION TO SYNC WITH CLOUD
+        window.saveSettings = async () => { 
             userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
             aiProvider = document.getElementById('providerSelect').value; 
             geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
@@ -356,7 +396,6 @@
             groqModel = document.getElementById('groqModelSelect').value; 
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value;
-            
             firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
             
             localStorage.setItem('vidushi_username', userName); 
@@ -369,8 +408,11 @@
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
             
+            // Sync to Cloud
+            await saveToCloud();
+            
             document.getElementById('settings-modal').style.display = 'none'; 
-            window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
+            window.speak("સેટિંગ્સ લોકલ અને ક્લાઉડ બંનેમાં સેવ થઈ ગયા."); 
         };
 
         window.clearMemories = async () => { 
