@@ -14,119 +14,24 @@
             console.error("Error: " + msg + " on line " + line);
         };
         
-        // 🔥 તમારો VANSHVALI DATA - એક જ ફાઈલમાં
-        window.vanshavaliData = {
-            name: "જગદગુરુ રામાનંદાચાર્યજી", 
-            info: "વિ. સં. ૧૩૫૬",
-            children: [{
-                name: "અનંતાનંદજી", 
-                children: [{
-                    name: "ગેંડાજી", 
-                    children: [{
-                        name: "લક્ષ્મીદાસજી", 
-                        children: [{
-                            name: "માધવદાસજી", 
-                            children: [{
-                                name: "ખોજીજી", 
-                                children: [{
-                                    name: "મહેન્દ્રદાસજી", 
-                                    info: "પાલડી-મારવાડ (૧૪૯૫)", 
-                                    children: [{
-                                        name: "પુરણદાસજી બાપુ", 
-                                        info: "ઝીંઝર સમાધિ (૧૯૩૧)", 
-                                        children: [
-                                            {
-                                                name: "ગંગારામજી", 
-                                                children: [
-                                                    { 
-                                                        name: "આશારામજી", 
-                                                        children: [
-                                                            { 
-                                                                name: "ગિરધરદાસજી", 
-                                                                children: [
-                                                                    { name: "હરીરામજી" }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "મોજીરમજી", 
-                                                                children: [
-                                                                    { 
-                                                                        name: "જેજેરામ", 
-                                                                        children: [
-                                                                            { name: "ગૌતમ" }
-                                                                        ] 
-                                                                    }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "સીતારામજી", 
-                                                                children: [
-                                                                    { name: "પ્રભુદાસ" }, 
-                                                                    { name: "રાજુભાઈ" }
-                                                                ] 
-                                                            }
-                                                        ]
-                                                    },
-                                                    { 
-                                                        name: "વ્રજેશરામજી", 
-                                                        children: [
-                                                            { 
-                                                                name: "ભગવાનદાસજી", 
-                                                                info: "ગાંગોદ", 
-                                                                children: [
-                                                                    { name: "બાબુરામજી" }, 
-                                                                    { name: "ઈશ્વરદાસજી" }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "તુલસીદાસજી", 
-                                                                info: "રોજકા", 
-                                                                children: [
-                                                                    { name: "મનસુખભાઈ" }, 
-                                                                    { name: "વિમુભાઈ" }, 
-                                                                    { name: "પરશુરામ" }
-                                                                ] 
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                name: "રઘુરામજી", 
-                                                children: [{
-                                                    name: "દયારામજી", 
-                                                    info: "દિવાળીબેન (ઝમરાળા)", 
-                                                    children: [
-                                                        { name: "કાશીરામજી", info: "રામપુર" }, 
-                                                        { name: "વશરામજી", info: "સંખેજ" }, 
-                                                        { 
-                                                            name: "જાનકીદાસજી", 
-                                                            info: "ઝીંઝર", 
-                                                            children: [
-                                                                { name: "મનહરલાલ" }, 
-                                                                { name: "પ્રતાપભાઈ" }, 
-                                                                { name: "વૈકુંઠભાઈ" }, 
-                                                                { name: "સતીષભાઈ" }, 
-                                                                { name: "દેવેન્દ્રભાઈ" }
-                                                            ]
-                                                        }
-                                                    ]
-                                                }]
-                                            }
-                                        ]
-                                    }]
-                                }]
-                            }]
-                        }]
-                    }]
-                }]
-            }]
+        // 🔥 GLOBAL VARIABLES - WITH FALLBACK FOR VANSHVALI DATA
+        window.vanshavaliData = window.vanshavaliData || {
+            name: "વંશાવાળી ડેટા લોડ થયો નથી",
+            info: "કૃપા કરીને vanshavali_data.js ફાઈલ ચેક કરો",
+            children: []
         };
-        
-        console.log("✅ VANSHVALI DATA LOADED:", window.vanshavaliData);
         
         window.chatHistory = [];
         window.permanentMemories = [];
+        
+        // 🔥 Function to check if vanshavali data loaded
+        window.checkVanshavaliData = function() {
+            const hasData = window.vanshavaliData && 
+                          window.vanshavaliData.name !== "વંશાવાળી ડેટા લોડ થયો નથી";
+            
+            console.log("📖 Vanshavali Data Status:", hasData ? "LOADED" : "NOT LOADED/FALLBACK");
+            return hasData;
+        };
     </script>
 
     <style>
@@ -277,11 +182,17 @@
         </div>
     </div>
 
+    <!-- 🔥 VANSHVALI DATA LOADER (Optional) -->
+    <script src="vanshavali_data.js" 
+            onload="console.log('✅ vanshavali_data.js loaded successfully'); window.checkVanshavaliData();" 
+            onerror="console.log('ℹ️ vanshavali_data.js not found. Using fallback data for public mode.');">
+    </script>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // 🔥 FIREBASE CONFIG
+        // 🔥 FIREBASE CONFIG - API key will be set from settings
         const firebaseConfig = {
             apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -292,10 +203,9 @@
             measurementId: "G-ZM9RS2J6SR"
         };
 
-        console.log("✅ VANSHVALI DATA CHECK:", window.vanshavaliData ? "LOADED SUCCESSFULLY" : "NOT LOADED");
-        if (window.vanshavaliData) {
-            console.log("📖 Data structure:", window.vanshavaliData);
-        }
+        console.log("🔍 VANSHVALI DATA CHECK:");
+        console.log("- Available:", window.vanshavaliData ? "YES" : "NO");
+        console.log("- Is Fallback:", window.vanshavaliData && window.vanshavaliData.name === "વંશાવાળી ડેટા લોડ થયો નથી" ? "YES" : "NO");
 
         let app, db, userDocRef;
         try {
@@ -308,6 +218,7 @@
             document.getElementById('status-text').innerText = "DB Error: " + err.message;
         }
 
+        // Use global variables defined in window
         window.permanentMemories = window.permanentMemories || [];
         window.chatHistory = window.chatHistory || [];
         
@@ -407,20 +318,23 @@
         window.requestWakeLock = async () => { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
         window.onload = () => {
+            // Check vanshavali data status
+            const hasVanshavaliData = window.checkVanshavaliData();
+            
+            // Speak appropriate message
+            if (hasVanshavaliData) {
+                window.speak(`જય શ્રી કૃષ્ણ ${userName}! વંશાવાળી ડેટા લોડ થયો.`);
+            } else {
+                window.speak(`જય શ્રી કૃષ્ણ ${userName}! વંશાવાળી ફાઈલ નથી. પબ્લિક મોડમાં છું.`);
+            }
+            
             playVideo('smiling'); 
             window.speechSynthesis.getVoices();
-            setTimeout(() => { window.speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
             window.requestWakeLock();
+            
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
             }
-            
-            // Check data after load
-            setTimeout(() => {
-                console.log("🌐 Current AI Provider:", aiProvider);
-                console.log("🧠 Permanent Memories:", window.permanentMemories.length);
-                console.log("👪 Vanshavali Data Available:", window.vanshavaliData ? "YES" : "NO");
-            }, 2000);
         };
 
         function playVideo(type) {
@@ -699,10 +613,9 @@
             }
         }
 
-        // 🔥 VANSHVALI DATA CONVERTER FUNCTION
-        function formatVanshavaliData(data, level = 0) {
-            if (!data) return "વંશાવાળી ડેટા ઉપલબ્ધ નથી.";
-            
+        // 🔥 VANSHVALI DATA FORMATTING FUNCTION
+        function formatVanshavaliTree(data, level = 0) {
+            if (!data) return "";
             let result = "";
             const indent = "  ".repeat(level);
             
@@ -714,7 +627,7 @@
             
             if (data.children && data.children.length > 0) {
                 data.children.forEach(child => {
-                    result += formatVanshavaliData(child, level + 1);
+                    result += formatVanshavaliTree(child, level + 1);
                 });
             }
             
@@ -728,26 +641,34 @@
             else if (currentMood === 'lazy') moodPrompt = "You are lazy and give very short answers.";
             else if (currentMood === 'poet') moodPrompt = "You speak in poetic Gujarati.";
 
-            // 🔥 VANSHVALI DATA FORMATTING
+            // 🔥 SMART VANSHVALI DATA HANDLING
             let familyDataString = "";
             try {
-                if (window.vanshavaliData) {
-                    familyDataString = `
-                    [વંશાવાળી માહિતી - IMPORTANT: જ્યારે પરિવાર, વંશ, ગોત્ર વિશે પૂછવામાં આવે તો આ માહિતી વાપરો]:
+                if (window.vanshavaliData && window.vanshavaliData.name) {
+                    const isFallback = window.vanshavaliData.name === "વંશાવાળી ડેટા લોડ થયો નથી";
                     
-                    વંશાવાળી:
-                    ${formatVanshavaliData(window.vanshavaliData)}
-                    
-                    મહત્વપૂર્ણ નોંધ: આ પરિવાર રામાનંદ સંપ્રદાયનો છે. મૂળ ગુરુ: જગદગુરુ રામાનંદાચાર્યજી.
-                    `;
-                    console.log("✅ Vanshavali data formatted for system prompt");
-                } else {
-                    familyDataString = "[વંશાવાળી માહિતી: ઉપલબ્ધ નથી]";
-                    console.warn("⚠️ Vanshavali data not available");
+                    if (!isFallback) {
+                        // Real vanshavali data is available
+                        familyDataString = `
+                        [વંશાવાળી માહિતી - IMPORTANT: જ્યારે પરિવાર, વંશ, પૂર્વજો વિશે પૂછવામાં આવે ત્યારે આ માહિતી વાપરો]:
+                        
+                        વંશાવાળી (રામાનંદ સંપ્રદાય):
+                        ${formatVanshavaliTree(window.vanshavaliData)}
+                        
+                        જરૂરી સૂચના: આ પરિવાર રામાનંદ સંપ્રદાયનો છે. મૂળ ગુરુ: જગદગુરુ રામાનંદાચાર્યજી.
+                        `;
+                    } else {
+                        // Fallback data (vanshavali_data.js file not found)
+                        familyDataString = `
+                        [વંશાવાળી માહિતી]:
+                        વંશાવાળી ડેટા ફાઈલ (vanshavali_data.js) લોડ થયો નથી.
+                        જ્યારે પરિવાર વિશે પૂછવામાં આવે ત્યારે જણાવો: "વંશાવાળી માહિતી લોડ થયો નથી. કૃપા કરીને vanshavali_data.js ફાઈલ ચેક કરો."
+                        `;
+                    }
                 }
             } catch (e) {
-                console.error("Error formatting vanshavaliData:", e);
-                familyDataString = "[વંશાવાળી માહિતી: ફોર્મેટિંગ ભૂલ]";
+                console.error("Error processing vanshavali data:", e);
+                familyDataString = "[વંશાવાળી: ડેટા પ્રોસેસ કરવામાં ભૂલ]";
             }
             
             let now = new Date().toLocaleTimeString('en-US', { timeZone: 'Asia/Kolkata', hour: 'numeric', minute: '2-digit', hour12: true });
@@ -856,7 +777,6 @@
             
             console.log("📤 Groq Messages:", messages.length);
             console.log("🧠 System prompt includes memories:", window.permanentMemories.length);
-            console.log("👪 System prompt includes vanshavali data:", messages[0].content.includes("વંશાવાળી"));
             
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
