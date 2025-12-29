@@ -7,6 +7,8 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <script src="vanshavali_data.js"></script>
+
     <script>
         window.onerror = function(msg, url, line) {
             const status = document.getElementById('status-text');
@@ -14,116 +16,13 @@
             console.error("Error: " + msg + " on line " + line);
         };
         
-        // 🔥 VANSHVALI DATA - DIRECTLY IN MAIN FILE
-        window.vanshavaliData = {
-            name: "જગદગુરુ રામાનંદાચાર્યજી", 
-            info: "વિ. સં. ૧૩૫૬",
-            children: [{
-                name: "અનંતાનંદજી", 
-                children: [{
-                    name: "ગેંડાજી", 
-                    children: [{
-                        name: "લક્ષ્મીદાસજી", 
-                        children: [{
-                            name: "માધવદાસજી", 
-                            children: [{
-                                name: "ખોજીજી", 
-                                children: [{
-                                    name: "મહેન્દ્રદાસજી", 
-                                    info: "પાલડી-મારવાડ (૧૪૯૫)", 
-                                    children: [{
-                                        name: "પુરણદાસજી બાપુ", 
-                                        info: "ઝીંઝર સમાધિ (૧૯૩૧)", 
-                                        children: [
-                                            {
-                                                name: "ગંગારામજી", 
-                                                children: [
-                                                    { 
-                                                        name: "આશારામજી", 
-                                                        children: [
-                                                            { 
-                                                                name: "ગિરધરદાસજી", 
-                                                                children: [
-                                                                    { name: "હરીરામજી" }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "મોજીરમજી", 
-                                                                children: [
-                                                                    { 
-                                                                        name: "જેજેરામ", 
-                                                                        children: [
-                                                                            { name: "ગૌતમ" }
-                                                                        ] 
-                                                                    }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "સીતારામજી", 
-                                                                children: [
-                                                                    { name: "પ્રભુદાસ" }, 
-                                                                    { name: "રાજુભાઈ" }
-                                                                ] 
-                                                            }
-                                                        ]
-                                                    },
-                                                    { 
-                                                        name: "વ્રજેશરામજી", 
-                                                        children: [
-                                                            { 
-                                                                name: "ભગવાનદાસજી", 
-                                                                info: "ગાંગોદ", 
-                                                                children: [
-                                                                    { name: "બાબુરામજી" }, 
-                                                                    { name: "ઈશ્વરદાસજી" }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "તુલસીદાસજી", 
-                                                                info: "રોજકા", 
-                                                                children: [
-                                                                    { name: "મનસુખભાઈ" }, 
-                                                                    { name: "વિમુભાઈ" }, 
-                                                                    { name: "પરશુરામ" }
-                                                                ] 
-                                                            }
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                name: "રઘુરામજી", 
-                                                children: [{
-                                                    name: "દયારામજી", 
-                                                    info: "દિવાળીબેન (ઝમરાળા)", 
-                                                    children: [
-                                                        { name: "કાશીરામજી", info: "રામપુર" }, 
-                                                        { name: "વશરામજી", info: "સંખેજ" }, 
-                                                        { 
-                                                            name: "જાનકીદાસજી", 
-                                                            info: "ઝીંઝર", 
-                                                            children: [
-                                                                { name: "મનહરલાલ" }, 
-                                                                { name: "પ્રતાપભાઈ" }, 
-                                                                { name: "વૈકુંઠભાઈ" }, 
-                                                                { name: "સતીષભાઈ" }, 
-                                                                { name: "દેવેન્દ્રભાઈ" }
-                                                            ]
-                                                        }
-                                                    ]
-                                                }]
-                                            }
-                                        ]
-                                    }]
-                                }]
-                            }]
-                        }]
-                    }]
-                }]
-            }]
-        };
-        
-        console.log("✅ VANSHVALI DATA LOADED:", window.vanshavaliData);
+        // ડેટા લોડ થયો છે કે નહીં તે ચેક કરવા માટે
+        if(window.vanshavaliData) {
+            console.log("✅ VANSHVALI DATA LOADED FROM EXTERNAL FILE");
+        } else {
+            console.error("❌ ERROR: vanshavali_data.js file not found!");
+            alert("ભૂલ: vanshavali_data.js ફાઈલ મળી નથી!");
+        }
         
         window.chatHistory = [];
         window.permanentMemories = [];
@@ -277,8 +176,6 @@
         </div>
     </div>
 
-    <!-- 🔥 NO SEPARATE VANSHVALI DATA FILE NEEDED - ALL IN ONE FILE -->
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -294,7 +191,7 @@
             measurementId: "G-ZM9RS2J6SR"
         };
 
-        console.log("✅ VANSHVALI DATA CHECK:", window.vanshavaliData ? "LOADED" : "NOT LOADED");
+        console.log("✅ VANSHVALI DATA CHECK (Inside Module):", window.vanshavaliData ? "LOADED" : "NOT LOADED");
 
         let app, db, userDocRef;
         try {
