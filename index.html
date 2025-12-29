@@ -3,11 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Smart Lens Ultimate</title>
+    <title>Vidushi AI - Ultimate System</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="vanshavali_data.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 
     <script>
         window.onerror = function(msg, url, line) { console.error("Error: " + msg + " on line " + line); };
@@ -15,13 +17,17 @@
     </script>
 
     <style>
+        /* --- CORE STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        #canvas-capture { display: none; }
         
+        /* Camera & Canvas */
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
+        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        
+        /* UI Elements */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
         
@@ -60,7 +66,7 @@
         #download-btn { padding: 10px 25px; background: #00ff00; color: black; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; display: none; }
         #close-img-btn { padding: 10px 25px; background: red; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
-        /* SMART LENS STYLES */
+        /* 🔥 SMART LENS & LIVE VISION STYLES */
         #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid #d4af37; border-radius: 15px; padding: 15px; z-index: 50; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
         .lens-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
         .mode-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; }
@@ -73,7 +79,6 @@
     </style>
 </head>
 <body>
-
     <div id="video-container">
         <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
         <video id="talking-video" muted loop playsinline><source src="talking.mp4" type="video/mp4"></video>
@@ -84,10 +89,7 @@
     
     <audio id="tts-preload-audio" src="" preload="auto"></audio>
     <video id="selfie-video" autoplay playsinline></video>
-    <canvas id="canvas-capture"></canvas>
-
-    <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
-
+    <canvas id="canvas-capture"></canvas> <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
     <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="archeology-selector">
@@ -98,6 +100,7 @@
             <div class="mode-btn" onclick="window.setVisionMode('translate', this)">🌐 ભાષાંતર</div>
             <div class="mode-btn" onclick="window.setVisionMode('object', this)">🌿 ઓળખ</div>
             <div class="mode-btn" onclick="window.setVisionMode('summary', this)">📝 સારાંશ</div>
+            <div class="mode-btn" onclick="window.startLiveVision(this)" style="color: #ff4500; font-weight:bold;">⚡ લાઈવ વિઝન</div>
         </div>
         <div class="action-row">
             <div class="arch-btn" onclick="window.useArcheologyCamera()"><i class="fas fa-camera"></i><span>કેમેરો</span></div>
@@ -116,33 +119,23 @@
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
                 <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-search-plus" style="color:#d4af37;"></i> Smart Lens</div>
             </div>
-            
             <div class="section-title">Personal Info</div>
-            <label>તમારું નામ:</label>
-            <input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
+            <label>તમારું નામ:</label><input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
             <label class="checkbox-container"><span>🔇 અવાજ બંધ (Silent Mode)</span><input type="checkbox" id="silentModeCheck"></label>
             <label class="checkbox-container"><span>સતત વાતચીત (Hands-Free)</span><input type="checkbox" id="continuousModeCheck"></label>
-            
             <div class="section-title">AI Provider</div>
             <select id="providerSelect" onchange="window.toggleProviderSettings()"><option value="gemini">Google Gemini</option><option value="groq">Groq (Llama)</option></select>
-            
             <div id="gemini-settings">
-                <div class="section-title">Step 2: Select Gemini Model</div>
+                <div class="section-title">Select Gemini Model</div>
                 <select id="geminiModelSelect"><option value="gemini-2.5-flash">Gemini 2.5 Flash</option><option value="gemini-2.5-pro">Gemini 2.5 Pro</option><option value="gemini-2.0-flash">Gemini 2.0 Flash</option></select>
-                <div class="section-title">Step 3: API Keys</div>
-                <textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2..."></textarea>
+                <div class="section-title">API Keys</div><textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2..."></textarea>
             </div>
-            
             <div id="groq-settings" style="display:none;">
-                <div class="section-title">Step 2: Select Groq Model</div>
-                <select id="groqModelSelect"><option value="llama-3.1-8b-instant">Llama 8B</option></select>
-                <div class="section-title">Step 3: Groq Key</div>
-                <input type="password" id="groqKeyInput" placeholder="gsk_...">
+                <div class="section-title">Select Groq Model</div><select id="groqModelSelect"><option value="llama-3.1-8b-instant">Llama 8B</option></select>
+                <div class="section-title">Groq Key</div><input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
-            
             <div class="section-title">Firebase Database</div>
-            <label>Firebase API Key:</label>
-            <input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
+            <label>Firebase API Key:</label><input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE (SYNC)</button>
         </div>
     </div>
@@ -154,13 +147,13 @@
             <button class="save-btn" onclick="window.copyReport()" style="background:#008cff;">📋 Copy</button>
             <button class="save-btn" onclick="window.saveReportToFile()" style="background:#00ff00; color:black;">💾 Save</button>
         </div>
-        <button class="save-btn" onclick="window.speakReportFromModal()" style="margin-top:10px; background:#444;">🔊 રિપોર્ટ સાંભળો (Speak)</button>
+        <button class="save-btn" onclick="window.speakReportFromModal()" style="margin-top:10px; background:#444;">🔊 રિપોર્ટ સાંભળો</button>
     </div>
 
-    <div id="notes-modal" class="modal"><div class="notes-header"><span>મારી ડાયરી (Cloud)</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
+    <div id="notes-modal" class="modal"><div class="notes-header"><span>મારી ડાયરી</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
     <div id="music-modal" class="modal"><div class="notes-header"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
-    <div id="expense-modal" class="modal"><div class="notes-header"><span>હિસાબ (Cloud)</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
-    <div id="contacts-modal" class="modal"><div class="notes-header"><span>સંપર્કો (Cloud)</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
+    <div id="expense-modal" class="modal"><div class="notes-header"><span>હિસાબ</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
+    <div id="contacts-modal" class="modal"><div class="notes-header"><span>સંપર્કો</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
     <div id="image-overlay"><img id="generated-image" src="" alt="Magic Image"><div id="image-loading-text">ઉકેલી રહી છું...</div><div class="overlay-btns"><button id="download-btn" onclick="window.downloadSelfie()">⬇ સેવ કરો</button><button id="close-img-btn" onclick="window.closeImage()">બંધ કરો</button></div></div>
 
     <div id="mic-container">
@@ -188,7 +181,6 @@
         };
 
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
-        
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -209,10 +201,7 @@
             console.log("✅ Firebase initialized successfully");
             loadCloudSettings();
             loadVanshavaliFromCloud(); 
-        } catch (err) { 
-            console.error("Firebase Init Error:", err);
-            document.getElementById('status-text').innerText = "DB Error: " + err.message;
-        }
+        } catch (err) { document.getElementById('status-text').innerText = "DB Error: " + err.message; }
 
         async function loadCloudSettings() {
             if(!db) return;
@@ -223,18 +212,16 @@
                     if(data.userName) userName = data.userName;
                     if(data.geminiKey) geminiKeys = data.geminiKey;
                     if(data.groqKey) groqKey = data.groqKey;
-                    if(data.mood) currentMood = data.mood;
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
                     localStorage.setItem('vidushi_groq_key', groqKey);
-                    localStorage.setItem('vidushi_mood', currentMood);
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
-                    if(!silentMode) window.speak(`તમારા સેટિંગ્સ તૈયાર છે, ${userName}!`);
+                    if(!silentMode) window.speak(`સિસ્ટમ તૈયાર છે, ${userName}!`);
                 } else { await saveToCloud(); }
-            } catch (e) { console.error("Cloud Sync Error:", e); }
+            } catch (e) { console.error("Sync Error", e); }
         }
 
         async function loadVanshavaliFromCloud() {
@@ -243,7 +230,7 @@
                 const docSnap = await getDoc(vanshavaliDocRef);
                 if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
                 else { if(window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
-            } catch(e) { console.error("Vanshavali Load Error", e); }
+            } catch(e) { console.error("Vanshavali Error", e); }
         }
 
         async function saveToCloud() {
@@ -277,7 +264,6 @@
             onSnapshot(query(collection(db, "vidushi_contacts"), orderBy("name")), (s) => { contacts = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts(); });
         }
 
-        // 🔥 SMART LENS PROMPTS
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
             'math': `Analyze this image for math problems. Solve the problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
@@ -387,17 +373,35 @@
         window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
         window.takeActualPhoto = () => { canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight; canvas.getContext('2d').drawImage(selfieVideo, 0, 0); window.stopVisionCamera(); playVideo('thinking'); const base64Image = canvas.toDataURL('image/jpeg'); generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; imageOverlay.style.display = 'flex'; window.askGeminiVision(base64Image.split(',')[1]); };
         
-        window.openArcheologyMenu = () => {
-            document.getElementById('settings-modal').style.display = 'none';
-            document.getElementById('archeology-selector').style.display = 'flex';
-            if(!silentMode) window.speak("Smart Lens મોડ.");
-            window.setVisionMode('history', document.querySelector('.mode-btn'));
+        // 🔥 LIVE VISION LOGIC
+        let liveModel = null;
+        let isLiveVisionActive = false;
+        window.startLiveVision = async (btn) => {
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active');
+            document.getElementById('archeology-selector').style.display = 'none'; document.getElementById('video-container').style.display = 'none';
+            if(!silentMode) window.speak("લાઈવ વિઝન ચાલુ કરું છું...");
+            await window.activateVision("environment");
+            if(!liveModel) { liveModel = await cocoSsd.load(); }
+            isLiveVisionActive = true; document.getElementById('canvas-capture').style.display = 'block';
+            window.detectFrame();
+            if(!silentMode) window.speak("શરૂ.");
         };
-        window.setVisionMode = (mode, btn) => {
-            selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode];
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
+        window.detectFrame = () => {
+            if(!isLiveVisionActive) return;
+            const video = document.getElementById('selfie-video'); const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d');
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+            liveModel.detect(video).then(predictions => {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                predictions.forEach(prediction => {
+                    ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke();
+                    ctx.font = '24px Arial'; ctx.fillStyle = '#00ff00'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5);
+                });
+                if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
+            });
         };
+
+        window.openArcheologyMenu = () => { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('archeology-selector').style.display = 'flex'; if(!silentMode) window.speak("Smart Lens મોડ."); window.setVisionMode('history', document.querySelector('.mode-btn')); };
+        window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
         window.handleGalleryUpload = (input) => {
             const file = input.files[0]; if(!file) return;
@@ -416,7 +420,13 @@
         window.startConversation = () => { try{recognition.start();}catch(e){} };
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
         window.activateVision = async (mode = "user") => { try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; document.getElementById('vision-btn').style.background = "red"; } catch(e) { alert("Camera Error: " + e); } };
-        window.stopVisionCamera = () => { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); };
+        
+        // MODIFIED STOP VISION to handle Live Mode
+        window.stopVisionCamera = () => { 
+            isLiveVisionActive = false; document.getElementById('canvas-capture').style.display = 'none';
+            const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); 
+        };
         
         function findParentAndAddChild(node, parentName, childName) {
             if (node.name.toLowerCase().includes(parentName.toLowerCase()) || parentName.toLowerCase().includes(node.name.toLowerCase())) {
@@ -478,7 +488,6 @@
             else if (currentMood === 'sadhu') moodPrompt = "You are a spiritual Guru.";
             else if (currentMood === 'lazy') moodPrompt = "You are lazy and give very short answers.";
             else if (currentMood === 'poet') moodPrompt = "You speak in poetic Gujarati.";
-            
             let familyDataString = "";
             try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {}
             return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} [Memory]: ${memories} Question: "${contextData}"`;
