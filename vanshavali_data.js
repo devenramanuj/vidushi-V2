@@ -1,4 +1,6 @@
-// vanshavali_data.js - Personal Family Data (Optional)
+// ફાઈલનું નામ: vanshavali_data.js
+// આ ફાઈલમાં ફક્ત વંશાવલીનો ડેટા રહેશે.
+
 window.vanshavaliData = {
     name: "જગદગુરુ રામાનંદાચાર્યજી", 
     info: "વિ. સં. ૧૩૫૬",
@@ -107,4 +109,4 @@ window.vanshavaliData = {
     }]
 };
 
-console.log("✅ Personal vanshavali data loaded successfully");
+console.log("✅ Vanshavali External File Loaded Successfully");
