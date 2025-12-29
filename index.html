@@ -25,13 +25,14 @@
         
         /* Camera & Canvas */
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        /* Canvas for Drawing Boxes - Must be above video */
+        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
         /* UI Elements */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; align-items: center; }
@@ -67,7 +68,7 @@
         #close-img-btn { padding: 10px 25px; background: red; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
         /* 🔥 SMART LENS & LIVE VISION STYLES */
-        #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid #d4af37; border-radius: 15px; padding: 15px; z-index: 50; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
+        #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid #d4af37; border-radius: 15px; padding: 15px; z-index: 150; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
         .lens-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
         .mode-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; }
         .mode-btn.active { background: #d4af37; color: black; font-weight: bold; border-color: #fff; }
@@ -165,7 +166,7 @@
         </div>
     </div>
 
-<script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -373,77 +374,66 @@
         window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
         window.takeActualPhoto = () => { canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight; canvas.getContext('2d').drawImage(selfieVideo, 0, 0); window.stopVisionCamera(); playVideo('thinking'); const base64Image = canvas.toDataURL('image/jpeg'); generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; imageOverlay.style.display = 'flex'; window.askGeminiVision(base64Image.split(',')[1]); };
         
-        // 🔥 LIVE VISION LOGIC
+        // 🔥🔥🔥 LIVE VISION (TERMINATOR MODE) 🔥🔥🔥
         let liveModel = null;
         let isLiveVisionActive = false;
+
         window.startLiveVision = async (btn) => {
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active');
-            document.getElementById('archeology-selector').style.display = 'none'; document.getElementById('video-container').style.display = 'none';
-            if(!silentMode) window.speak("લાઈવ વિઝન ચાલુ કરું છું...");
-            await window.activateVision("environment");
-            if(!liveModel) { liveModel = await cocoSsd.load(); }
-            isLiveVisionActive = true; document.getElementById('canvas-capture').style.display = 'block';
-            window.detectFrame();
-            if(!silentMode) window.speak("શરૂ.");
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+            document.getElementById('archeology-selector').style.display = 'none';
+            document.getElementById('video-container').style.display = 'none';
+
+            try {
+                if(!silentMode) window.speak("કેમેરો ચાલુ કરું છું...");
+                await window.activateVision("environment");
+                
+                if(!liveModel) {
+                    if(!silentMode) window.speak("પહેલીવાર વાર લાગશે... AI મોડલ ડાઉનલોડ થઈ રહ્યું છે.");
+                    if(typeof cocoSsd === 'undefined') { throw new Error("ઈન્ટરનેટ એરર: TensorFlow લાઈબ્રેરી મળી નથી."); }
+                    liveModel = await cocoSsd.load();
+                    console.log("✅ Model Loaded Successfully!");
+                }
+
+                if(!silentMode) window.speak("શરૂ થઈ ગયું! હવે ફોન ફેરવો.");
+                isLiveVisionActive = true;
+                const canvas = document.getElementById('canvas-capture');
+                canvas.style.display = 'block';
+                canvas.style.zIndex = '100'; 
+                window.detectFrame();
+
+            } catch (error) {
+                console.error("Live Vision Error:", error);
+                window.speak("ભૂલ આવી: " + error.message);
+                window.stopVisionCamera();
+            }
         };
-                // 🔥 આ નવું સુધારેલું ફંક્શન કોપી કરી જૂનાની જગ્યાએ મૂકો 🔥
+
         window.detectFrame = () => {
             if(!isLiveVisionActive) return;
-
             const video = document.getElementById('selfie-video');
             const canvas = document.getElementById('canvas-capture');
             const ctx = canvas.getContext('2d');
 
-            // ૧. જો વિડીયો રેડી ન હોય તો રાહ જુઓ
-            if (video.readyState < 2 || video.videoWidth === 0) {
-                requestAnimationFrame(window.detectFrame);
-                return;
-            }
+            if (video.readyState < 2 || video.videoWidth === 0) { requestAnimationFrame(window.detectFrame); return; }
 
-            // ૨. કેન્વાસની સાઈઝ વિડીયો જેવડી જ કરો
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            canvas.style.display = 'block'; // ખાતરી કરો કે તે દેખાય છે
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
 
-            // ૩. ઓબ્જેક્ટ શોધો
             liveModel.detect(video).then(predictions => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height); // જૂનું ભૂંસો
-                
-                if (predictions.length > 0) {
-                    console.log("વસ્તુ મળી:", predictions); // ચેક કરવા માટે
-                }
-
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
                 predictions.forEach(prediction => {
-                    // બોક્સ દોરો
-                    ctx.beginPath();
-                    ctx.rect(...prediction.bbox);
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#00ff00'; // લીલો કલર
-                    ctx.fillStyle = '#00ff00';
-                    ctx.stroke();
-                    
-                    // નામ લખો (જેમ કે Person, Mobile)
-                    ctx.font = 'bold 24px Arial';
-                    const text = prediction.class.toUpperCase() + " (" + Math.round(prediction.score * 100) + "%)";
-                    const textWidth = ctx.measureText(text).width;
-                    
-                    // નામની પાછળ કાળી પટ્ટી
-                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                    ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, textWidth + 10, 30);
-                    
-                    // સફેદ અક્ષરે નામ
-                    ctx.fillStyle = '#ffffff';
-                    ctx.fillText(text, prediction.bbox[0] + 5, prediction.bbox[1] - 5);
+                    ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke();
+                    const text = prediction.class.toUpperCase();
+                    ctx.font = 'bold 24px Arial'; const textWidth = ctx.measureText(text).width;
+                    ctx.fillStyle = '#00ff00'; ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, textWidth + 10, 30);
+                    ctx.fillStyle = '#000000'; ctx.fillText(text, prediction.bbox[0] + 5, prediction.bbox[1] - 5);
                 });
-                
-                // ફરીથી લૂપ ચલાવો
                 if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
             }).catch(err => {
                 console.error("Detection Error:", err);
                 if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
             });
         };
-
 
         window.openArcheologyMenu = () => { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('archeology-selector').style.display = 'flex'; if(!silentMode) window.speak("Smart Lens મોડ."); window.setVisionMode('history', document.querySelector('.mode-btn')); };
         window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
@@ -466,7 +456,6 @@
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
         window.activateVision = async (mode = "user") => { try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; document.getElementById('vision-btn').style.background = "red"; } catch(e) { alert("Camera Error: " + e); } };
         
-        // MODIFIED STOP VISION to handle Live Mode
         window.stopVisionCamera = () => { 
             isLiveVisionActive = false; document.getElementById('canvas-capture').style.display = 'none';
             const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
