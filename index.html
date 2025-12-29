@@ -386,19 +386,64 @@
             window.detectFrame();
             if(!silentMode) window.speak("શરૂ.");
         };
+                // 🔥 આ નવું સુધારેલું ફંક્શન કોપી કરી જૂનાની જગ્યાએ મૂકો 🔥
         window.detectFrame = () => {
             if(!isLiveVisionActive) return;
-            const video = document.getElementById('selfie-video'); const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+
+            const video = document.getElementById('selfie-video');
+            const canvas = document.getElementById('canvas-capture');
+            const ctx = canvas.getContext('2d');
+
+            // ૧. જો વિડીયો રેડી ન હોય તો રાહ જુઓ
+            if (video.readyState < 2 || video.videoWidth === 0) {
+                requestAnimationFrame(window.detectFrame);
+                return;
+            }
+
+            // ૨. કેન્વાસની સાઈઝ વિડીયો જેવડી જ કરો
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.style.display = 'block'; // ખાતરી કરો કે તે દેખાય છે
+
+            // ૩. ઓબ્જેક્ટ શોધો
             liveModel.detect(video).then(predictions => {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                ctx.clearRect(0, 0, canvas.width, canvas.height); // જૂનું ભૂંસો
+                
+                if (predictions.length > 0) {
+                    console.log("વસ્તુ મળી:", predictions); // ચેક કરવા માટે
+                }
+
                 predictions.forEach(prediction => {
-                    ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke();
-                    ctx.font = '24px Arial'; ctx.fillStyle = '#00ff00'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5);
+                    // બોક્સ દોરો
+                    ctx.beginPath();
+                    ctx.rect(...prediction.bbox);
+                    ctx.lineWidth = 4;
+                    ctx.strokeStyle = '#00ff00'; // લીલો કલર
+                    ctx.fillStyle = '#00ff00';
+                    ctx.stroke();
+                    
+                    // નામ લખો (જેમ કે Person, Mobile)
+                    ctx.font = 'bold 24px Arial';
+                    const text = prediction.class.toUpperCase() + " (" + Math.round(prediction.score * 100) + "%)";
+                    const textWidth = ctx.measureText(text).width;
+                    
+                    // નામની પાછળ કાળી પટ્ટી
+                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, textWidth + 10, 30);
+                    
+                    // સફેદ અક્ષરે નામ
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillText(text, prediction.bbox[0] + 5, prediction.bbox[1] - 5);
                 });
+                
+                // ફરીથી લૂપ ચલાવો
+                if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
+            }).catch(err => {
+                console.error("Detection Error:", err);
                 if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
             });
         };
+
 
         window.openArcheologyMenu = () => { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('archeology-selector').style.display = 'flex'; if(!silentMode) window.speak("Smart Lens મોડ."); window.setVisionMode('history', document.querySelector('.mode-btn')); };
         window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
