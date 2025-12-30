@@ -521,6 +521,21 @@
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
+                // 👇 આ કોડ ગમે ત્યાં Script માં પેસ્ટ કરી દો 👇
+        
+        window.formatVanshavaliTree = (node, parentName = "મૂળ પુરુષ") => {
+            let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
+            if(node.info) text += ` [માહિતી: ${node.info}]`;
+            text += "\n";
+            
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    text += window.formatVanshavaliTree(child, node.name);
+                });
+            }
+            return text;
+        };
+
 
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
