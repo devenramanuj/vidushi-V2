@@ -611,9 +611,8 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // ⚠️ અહીં તમારું સાચું Firebase Config હોવું જોઈએ
-        const firebaseConfig = {
-            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
+                const firebaseConfig = {
+            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
             projectId: "vidushi-ai-614cb",
             storageBucket: "vidushi-ai-614cb.firebasestorage.app",
@@ -621,6 +620,7 @@
             appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
             measurementId: "G-ZM9RS2J6SR"
         };
+
 
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
