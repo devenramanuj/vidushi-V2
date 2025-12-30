@@ -580,6 +580,21 @@
                 window.speak("Network Error."); 
             } 
         };
+                // 👇 આ કોડ ગમે ત્યાં Script માં પેસ્ટ કરી દો 👇
+        
+        window.formatVanshavaliTree = (node, parentName = "મૂળ પુરુષ") => {
+            let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
+            if(node.info) text += ` [માહિતી: ${node.info}]`;
+            text += "\n";
+            
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    text += window.formatVanshavaliTree(child, node.name);
+                });
+            }
+            return text;
+        };
+
 
         window.askGroqText = async (userText) => { if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } let messages = [{ role: "system", content: getSystemPrompt(window.permanentMemories.join("\n"), userText) }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; try { const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages, temperature: 0.7, max_tokens: 1000 }) }); const data = await res.json(); if(data.choices) { let reply = data.choices[0].message.content; window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply); } else { window.speak("જવાબ નથી મળ્યો."); } } catch(e) { window.speak("Groq કનેક્શન એરર."); isProcessing=false; } };
         
