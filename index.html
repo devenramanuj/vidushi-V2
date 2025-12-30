@@ -379,3 +379,263 @@
     </script>
 </body>
 </html>
+
+ <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
+            authDomain: "vidushi-ai-614cb.firebaseapp.com",
+            projectId: "vidushi-ai-614cb",
+            storageBucket: "vidushi-ai-614cb.firebasestorage.app",
+            messagingSenderId: "146312927144",
+            appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
+            measurementId: "G-ZM9RS2J6SR"
+        };
+
+        let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
+        let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
+        let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
+        let groqKey = localStorage.getItem('vidushi_groq_key') || '';
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
+        let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
+        let silentMode = localStorage.getItem('vidushi_silent') === 'true';
+        let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
+        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
+        let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
+
+        // 🔥 RAG MEMORY STORAGE
+        window.ragContent = ""; 
+
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            userDocRef = doc(db, "vidushi_db", "main_memory");
+            settingsDocRef = doc(db, "vidushi_db", "settings");
+            vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
+            console.log("✅ Firebase initialized successfully");
+            loadCloudSettings();
+            loadVanshavaliFromCloud(); 
+        } catch (err) { document.getElementById('status-text').innerText = "DB Error: " + err.message; }
+
+        async function loadCloudSettings() {
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(settingsDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.userName) userName = data.userName;
+                    if(data.geminiKey) geminiKeys = data.geminiKey;
+                    if(data.groqKey) groqKey = data.groqKey;
+                    if(data.mood) currentMood = data.mood;
+                    if(data.provider) aiProvider = data.provider;
+                    if(data.geminiModel) geminiModel = data.geminiModel;
+                    
+                    localStorage.setItem('vidushi_username', userName);
+                    localStorage.setItem('vidushi_gemini_key', geminiKeys);
+                    localStorage.setItem('vidushi_groq_key', groqKey);
+                    localStorage.setItem('vidushi_mood', currentMood);
+                    localStorage.setItem('vidushi_provider', aiProvider);
+                    localStorage.setItem('vidushi_gemini_model', geminiModel);
+                    if(!silentMode) window.speak(`સિસ્ટમ તૈયાર છે, ${userName}!`);
+                } else { await saveToCloud(); }
+            } catch (e) { console.error("Sync Error", e); }
+        }
+
+        async function loadVanshavaliFromCloud() {
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(vanshavaliDocRef);
+                if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
+                else { if(window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
+            } catch(e) { console.error("Vanshavali Error", e); }
+        }
+
+        async function saveToCloud() {
+            if(!db) return;
+            const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, lastUpdated: new Date() };
+            await setDoc(settingsDocRef, settingsData, { merge: true });
+        }
+
+        window.permanentMemories = window.permanentMemories || [];
+        window.chatHistory = window.chatHistory || [];
+        let notes = [], expenses = [], contacts = [], currentCameraMode = "user"; 
+
+        window.formatDate = (timestamp) => {
+            if (!timestamp) return "";
+            let date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
+        };
+
+        if (userDocRef) {
+            onSnapshot(userDocRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    window.permanentMemories = docSnap.data().memories || [];
+                    document.getElementById('status-text').innerText = "માઈક દબાવો (Ready)";
+                } else { setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે.", "હું દેવેન્દ્રભાઈ દ્વારા બનાવવામાં આવી છું."] }); }
+            }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Net Fail)"; });
+        }
+
+        if (db) {
+            onSnapshot(query(collection(db, "vidushi_notes"), orderBy("timestamp", "desc")), (s) => { notes = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes(); });
+            onSnapshot(query(collection(db, "vidushi_expenses"), orderBy("timestamp", "desc")), (s) => { expenses = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('expense-modal').style.display === 'flex') window.renderExpenses(); });
+            onSnapshot(query(collection(db, "vidushi_contacts"), orderBy("name")), (s) => { contacts = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts(); });
+        }
+
+        const visionPrompts = {
+            'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
+            'math': `Analyze this image for math problems. Solve the problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
+            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
+            'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
+            'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
+        };
+
+        let currentVisionPrompt = visionPrompts['history'];
+        let selectedLensMode = 'history';
+        let isSilentListening = false;
+        let conversationBuffer = "";
+
+        const statusText = document.getElementById('status-text');
+        const micBtn = document.getElementById('mic-btn');
+        const selfieVideo = document.getElementById('selfie-video');
+        const canvas = document.getElementById('canvas-capture');
+        const imageOverlay = document.getElementById('image-overlay');
+        const generatedImage = document.getElementById('generated-image');
+        const imageLoadingText = document.getElementById('image-loading-text');
+        
+        const videos = {
+            silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'),
+            thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video')
+        };
+
+        let recognition, isProcessing = false, isAiSpeaking = false, visionMode = false, visionStream = null, wakeLock = null;
+
+        window.requestWakeLock = async () => { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
+
+        window.onload = () => {
+            playVideo('smiling'); window.speechSynthesis.getVoices();
+            setTimeout(() => { if(!silentMode) window.speak(`જય શ્રી કૃષ્ણ ${userName}!`); }, 1000); 
+            window.requestWakeLock();
+            if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
+        };
+
+        function playVideo(type) {
+            if(selfieVideo.style.display === 'block') return;
+            Object.values(videos).forEach(v => { v.style.display = 'none'; v.pause(); });
+            if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
+        }
+
+        window.openSettings = () => { 
+            document.getElementById('settings-modal').style.display = 'flex'; 
+            document.getElementById('userNameInput').value = userName; 
+            document.getElementById('providerSelect').value = aiProvider; 
+            document.getElementById('geminiKeyInput').value = geminiKeys; 
+            document.getElementById('geminiModelSelect').value = geminiModel; 
+            document.getElementById('groqKeyInput').value = groqKey; 
+            document.getElementById('groqModelSelect').value = groqModel; 
+            document.getElementById('continuousModeCheck').checked = continuousMode; 
+            document.getElementById('silentModeCheck').checked = silentMode; 
+            document.getElementById('moodSelect').value = currentMood; 
+            document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
+            window.toggleProviderSettings(); 
+        };
+        window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
+        window.toggleProviderSettings = () => { 
+            document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; 
+            document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; 
+        };
+        window.saveSettings = async () => { 
+            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
+            aiProvider = document.getElementById('providerSelect').value; 
+            geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
+            geminiModel = document.getElementById('geminiModelSelect').value; 
+            groqKey = document.getElementById('groqKeyInput').value.trim(); 
+            groqModel = document.getElementById('groqModelSelect').value; 
+            continuousMode = document.getElementById('continuousModeCheck').checked; 
+            silentMode = document.getElementById('silentModeCheck').checked; 
+            currentMood = document.getElementById('moodSelect').value; 
+            firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
+            localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
+            localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
+            localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
+            localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
+            localStorage.setItem('vidushi_mood', currentMood);
+            localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
+            await saveToCloud();
+            document.getElementById('settings-modal').style.display = 'none'; 
+            if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
+        };
+
+        window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: [] }); window.speak("સાફ કરી દીધું."); } };
+        window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
+        window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
+        window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n) => `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
+        window.deleteNote = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_notes", id)); };
+        window.speakNotes = () => { window.speak(notes.map(n=>n.text).join(". ")); };
+        window.addExpense = async (text) => { let amt = text.match(/\d+/); if(amt && db) { let d = text.replace(amt[0],"").replace("રૂપિયા","").trim(); await addDoc(collection(db, "vidushi_expenses"), {amount:parseInt(amt[0]), desc:d||"પરચુરણ", timestamp: Date.now()}); window.speak(`${amt[0]} લખ્યા.`); } };
+        window.renderExpenses = () => { let t=0; document.getElementById('expense-list').innerHTML = expenses.map((n) => { t+=n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc} <br><small style="color:gray; font-size:10px;">🕒 ${window.formatDate(n.timestamp)}</small></span><span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = t; };
+        window.deleteExpense = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_expenses", id)); };
+        window.clearExpenses = async () => { if(confirm("બધો હિસાબ સાફ કરવો છે?") && db) { const snapshot = await getDocs(collection(db, "vidushi_expenses")); const batch = writeBatch(db); snapshot.forEach((doc) => batch.delete(doc.ref)); await batch.commit(); window.speak("હિસાબ સાફ."); } };
+        window.addContactUI = async () => { const name = document.getElementById('contactName').value.trim(); const num = document.getElementById('contactNumber').value.trim(); if(name && num && db) { await addDoc(collection(db, "vidushi_contacts"), {name: name, number: num}); document.getElementById('contactName').value = ""; document.getElementById('contactNumber').value = ""; } };
+        window.renderContacts = () => { document.getElementById('contacts-list').innerHTML = contacts.map((c) => `<div class="list-item contact-item"><span><b>${c.name}</b><br><small>${c.number}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteContact('${c.id}')">x</span></div>`).join(''); };
+        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); };
+        window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
+        window.makeCall = (text) => { let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને કોલ જોડું છું.`); setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
+        window.sendMessage = (text) => { let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`); setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
+        window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
+        window.closeImage = () => { imageOverlay.style.display='none'; document.getElementById('archeology-selector').style.display = 'none'; playVideo('silent'); isProcessing=false; document.getElementById('download-btn').style.display = 'none'; };
+        
+        window.closeReport = () => { document.getElementById('report-modal').style.display = 'none'; playVideo('silent'); isProcessing = false; };
+        window.copyReport = () => { document.getElementById("report-content-area").select(); document.execCommand("copy"); if(!silentMode) window.speak("કોપી થઈ ગયું."); };
+        window.saveReportToFile = () => { const text = document.getElementById("report-content-area").value; const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" })); link.download = `Vidushi_Report_${Date.now()}.txt`; link.click(); if(!silentMode) window.speak("ફાઈલ ડાઉનલોડ થઈ ગઈ."); };
+        window.speakReportFromModal = () => { window.speak(document.getElementById("report-content-area").value, true); };
+        window.downloadSelfie = () => { const link = document.createElement('a'); link.href = document.getElementById('generated-image').src; link.download = `Vidushi_Capture_${new Date().getTime()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); window.speak("સેવ થઈ ગયો!"); window.closeImage(); };
+
+        // 🔥🔥🔥 RAG LOGIC: READ PDF & FILES 🔥🔥🔥
+        window.handleRAGUpload = async (input) => {
+            const file = input.files[0];
+            if (!file) return;
+
+            window.speak("ફાઈલ વાંચવાનું કામ ચાલુ છે...");
+            document.getElementById('rag-status').style.display = 'block';
+            document.getElementById('rag-status').innerText = '⏳ Reading File...';
+
+            try {
+                let extractedText = "";
+
+                if (file.type === "application/pdf") {
+                    // PDF HANDLING
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    
+                    for (let i = 1; i <= pdf.numPages; i++) {
+                        const page = await pdf.getPage(i);
+                        const textContent = await page.getTextContent();
+                        const pageText = textContent.items.map(item => item.str).join(" ");
+                        extractedText += pageText + "\n";
+                        document.getElementById('rag-status').innerText = `Reading Page ${i}/${pdf.numPages}...`;
+                    }
+                } else {
+                    // TEXT HANDLING (txt, csv, js, py, html)
+                    extractedText = await file.text();
+                }
+
+                // CLEANUP & SAVE TO GLOBAL MEMORY
+                window.ragContent = extractedText.replace(/\s+/g, " ").trim();
+                
+                document.getElementById('rag-status').innerText = '✅ RAG Ready';
+                window.speak("ફાઈલ વાંચી લીધી છે. હવે પૂછો.");
+                playVideo('smiling');
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('rag-status').style.background = 'red';
+                document.getElementById('rag-status').innerText = '❌ Error Reading';
+                window.speak("ફાઈલ વાંચવામાં ભૂલ થઈ.");
+            }
+        };
+
+        window.captureAndAnalyze = async (mode = "us
