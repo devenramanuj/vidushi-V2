@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - 2.5 Ultimate</title>
+    <title>Vidushi AI - 2.5 Unlocked</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -163,9 +163,10 @@
             <div id="gemini-settings">
                 <div class="section-title">Select Gemini Model</div>
                 <select id="geminiModelSelect">
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Super Fast)</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro (High Quality)</option>
-                    <option value="gemini-2.0-flash">Gemini 2.0 Flash (Balanced)</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
+                    <option value="gemini-exp-1206">Gemini Exp 1206 (Experimental)</option>
                 </select>
                 <div class="section-title">API Keys</div><textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2..."></textarea>
             </div>
@@ -223,7 +224,7 @@
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
-        // 🔥 DEFAULT MODEL SET TO YOUR PREFERENCE
+        // 🔥 DEFAULT MODEL FROM YOUR LIST
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
@@ -255,6 +256,9 @@
                     if(data.mood) currentMood = data.mood;
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
+                    
+                    // 🔥 REMOVED THE AUTO-DOWNGRADE LOGIC. NOW IT ACCEPTS 2.5
+                    
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
                     localStorage.setItem('vidushi_groq_key', groqKey);
