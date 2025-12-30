@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Generative Creator</title>
+    <title>Vidushi AI - 3D Universe</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <script src="vanshavali_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    <script src="//unpkg.com/3d-force-graph"></script>
 
     <script>
         window.onerror = function(msg, url, line) { console.error("Error: " + msg + " on line " + line); };
@@ -74,12 +75,11 @@
 
         #report-content-area { width: 100%; height: 60vh; background: #111; color: #ddd; border: 1px solid #555; padding: 10px; font-family: monospace; font-size: 14px; resize: none; border-radius: 5px; margin-bottom: 10px; }
 
-        /* 🔥 GENERATIVE UI CONTAINER 🔥 */
-        #app-viewer-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; flex-direction: column; }
-        #app-viewer-header { padding: 15px; background: #222; border-bottom: 2px solid #ff4500; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; }
-        #app-render-area { flex: 1; width: 100%; background: white; overflow: auto; position: relative; }
-        /* Style for content inside generated app */
-        #app-render-area body { font-family: sans-serif; padding: 20px; }
+        /* 🔥 3D UNIVERSE CONTAINER */
+        #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
+        #graph-container { width: 100%; height: 100%; }
+        #close-3d-btn { position: fixed; top: 20px; right: 20px; background: red; color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; cursor: pointer; border-radius: 5px; }
+        #graph-instruction { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.5); z-index: 301; pointer-events: none; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -98,12 +98,10 @@
     <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
     <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
 
-    <div id="app-viewer-modal">
-        <div id="app-viewer-header">
-            <span>✨ વિદુષી સર્જન (Live App)</span>
-            <button onclick="window.closeAppViewer()" style="background:red; color:white; border:none; padding:5px 15px; border-radius:5px;">બંધ કરો</button>
-        </div>
-        <div id="app-render-area"></div>
+    <div id="vanshavali-3d-modal">
+        <button id="close-3d-btn" onclick="window.close3DVanshavali()">🔙 પાછા (Back)</button>
+        <div id="graph-container"></div>
+        <div id="graph-instruction">🖱️ ફેરવવા માટે ડ્રેગ કરો • 🤏 ઝૂમ કરો • નામ પર ક્લિક કરો</div>
     </div>
 
     <div id="archeology-selector">
@@ -132,7 +130,9 @@
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
                 <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-search-plus" style="color:#d4af37;"></i> Smart Lens</div>
+                <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid #d4af37;"><i class="fas fa-globe" style="color:#d4af37;"></i> 🌌 3D વંશાવલી</div>
             </div>
+            
             <div class="section-title">Personal Info</div>
             <label>તમારું નામ:</label><input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
             <label class="checkbox-container"><span>🔇 અવાજ બંધ (Silent Mode)</span><input type="checkbox" id="silentModeCheck"></label>
@@ -186,7 +186,7 @@
         </div>
     </div>
 
-<script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -340,7 +340,7 @@
             document.getElementById('groqModelSelect').value = groqModel; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('silentModeCheck').checked = silentMode; 
-            document.getElementById('moodSelect').value = currentMood; // 🔥 Load Mood
+            document.getElementById('moodSelect').value = currentMood; 
             document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
             window.toggleProviderSettings(); 
         };
@@ -358,7 +358,7 @@
             groqModel = document.getElementById('groqModelSelect').value; 
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
-            currentMood = document.getElementById('moodSelect').value; // 🔥 Save Mood
+            currentMood = document.getElementById('moodSelect').value; 
             firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
@@ -371,7 +371,6 @@
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         };
 
-        /* ... [Standard functions like clearMemories, addNote etc. remain same - condensed for brevity] ... */
         window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: [] }); window.speak("સાફ કરી દીધું."); } };
         window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
@@ -417,7 +416,6 @@
             if(!isLiveVisionActive) return;
             const video = document.getElementById('selfie-video'); const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            // Debug Text
             ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30);
             liveModel.detect(video).then(predictions => {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -436,6 +434,46 @@
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
         window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageLoadingText.style.display = "block"; imageLoadingText.innerText = "વિશ્લેષણ..."; generatedImage.style.display = "none"; imageOverlay.style.display = "flex"; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageLoadingText.style.display = "block"; generatedImage.style.display="none"; imageOverlay.style.display='flex'; document.getElementById('download-btn').style.display = "none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display="none"; generatedImage.style.display="block"; document.getElementById('download-btn').style.display = "block"; window.speak("તૈયાર!"); }; };
+
+        // 🔥 3D GRAPH LOGIC
+        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('graph-container').innerHTML = ''; window.speak("3D મોડ બંધ."); };
+        
+        function convertTreeToGraph(node, nodes = [], links = [], parent = null) {
+            nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info });
+            if (parent) links.push({ source: parent.name, target: node.name });
+            if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node));
+            return { nodes, links };
+        }
+
+        window.open3DVanshavali = () => {
+            if(!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા નથી."); return; }
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('vanshavali-3d-modal').style.display = 'block';
+            
+            const gData = convertTreeToGraph(window.activeFamilyTree);
+            
+            // Initialize 3D Graph
+            const Graph = ForceGraph3D()
+                (document.getElementById('graph-container'))
+                .graphData(gData)
+                .nodeLabel('id')
+                .nodeAutoColorBy('group')
+                .linkDirectionalArrowLength(3.5)
+                .linkDirectionalArrowRelPos(1)
+                .onNodeClick(node => {
+                    // Aim at node from outside it
+                    const distance = 40;
+                    const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z);
+
+                    Graph.cameraPosition(
+                        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, // new position
+                        node, // lookAt ({ x, y, z })
+                        3000  // ms transition duration
+                    );
+                    window.speak("આ છે " + node.id + ". " + (node.info || ""));
+                });
+            window.speak("3D વંશાવલી બ્રહ્માંડ. ગોળ ફેરવો.");
+        };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
@@ -462,13 +500,6 @@
             if (node.children && node.children.length > 0) { for (let child of node.children) { let result = findParentAndAddChild(child, parentName, childName); if (result === "ADDED" || result === "EXISTS") return result; } }
             return "NOT_FOUND";
         }
-
-        // 🔥 GENERATIVE UI: CLOSE FUNCTION
-        window.closeAppViewer = () => {
-            document.getElementById('app-viewer-modal').style.display = 'none';
-            document.getElementById('app-render-area').innerHTML = ''; // Clear app
-            window.speak("એપ બંધ કરી.");
-        };
 
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
@@ -511,41 +542,7 @@
             
             let familyDataString = "";
             try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {}
-            
-            // 🔥 INSTRUCTION FOR GENERATIVE UI
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} [Memory]: ${memories} Question: "${contextData}"
-            
-            [GENERATIVE UI INSTRUCTION]:
-            If the user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code.
-            Wrap the code exactly like this:
-            :::APP_START:::
-            <style> ...CSS... </style>
-            <div> ...HTML... </div>
-            <script> ...JS... <\/script>
-            :::APP_END:::
-            Do not explain the code, just provide it.
-            `;
-        }
-
-        // 🔥 GEN-UI PARSER
-        function handleGenUI(reply) {
-            if(reply.includes(":::APP_START:::")) {
-                let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0];
-                document.getElementById('app-viewer-modal').style.display = 'flex';
-                document.getElementById('app-render-area').innerHTML = code;
-                
-                // Execute Scripts manually
-                const scripts = document.getElementById('app-render-area').querySelectorAll("script");
-                scripts.forEach(oldScript => {
-                    const newScript = document.createElement("script");
-                    newScript.textContent = oldScript.textContent;
-                    document.body.appendChild(newScript);
-                });
-                
-                window.speak("એપ બનાવી દીધી છે. જુઓ!");
-                return true;
-            }
-            return false;
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} [Memory]: ${memories} Question: "${contextData}"`;
         }
 
         window.askGeminiText = async (userText) => {
@@ -559,10 +556,7 @@
                 const data = await response.json();
                 if(data.candidates) {
                     let reply = data.candidates[0].content.parts[0].text;
-                    // Check for App
-                    if(!handleGenUI(reply)) {
-                        window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply);
-                    }
+                    window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply);
                 } else { window.speak("કાંઈ સમજાયું નહીં."); }
             } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; }
         };
