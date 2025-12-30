@@ -148,14 +148,18 @@
     <div id="settings-modal" class="modal">
         <div class="settings-box">
             <h3>મેનૂ & સેટિંગ્સ</h3>
-            <div class="menu-grid">
+                        <div class="menu-grid">
                 <div class="menu-btn" onclick="window.openFeature('notes')"><i class="fas fa-book" style="color:orange;"></i> ડાયરી</div>
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
-                <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-search-plus" style="color:#d4af37;"></i> Smart Lens</div>
+                
+                <div class="menu-btn" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf" style="color:red;"></i> દસ્તાવેજ</div>
+                
+                <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-eye" style="color:#d4af37;"></i> Smart Lens</div>
                 <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid #d4af37;"><i class="fas fa-globe" style="color:#d4af37;"></i> 🌌 3D વંશાવલી</div>
             </div>
+
             
             <div class="section-title">Personal Info</div>
             <label>તમારું નામ:</label><input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
