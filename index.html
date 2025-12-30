@@ -414,20 +414,18 @@
         window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
         
         window.takeActualPhoto = () => {
-            // 1. Setup Canvas Dimensions
+            // 1. Draw to canvas FIRST
             canvas.width = selfieVideo.videoWidth;
             canvas.height = selfieVideo.videoHeight;
-            
-            // 2. Draw Image BEFORE stopping stream
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             
-            // 3. Save Data BEFORE stopping stream
+            // 2. Save data
             const base64Image = canvas.toDataURL('image/jpeg');
             
-            // 4. NOW stop camera
+            // 3. THEN stop camera
             window.stopVisionCamera(); 
             
-            // 5. Update UI
+            // 4. Update UI
             playVideo('thinking');
             generatedImage.src = base64Image;
             generatedImage.style.display = "block";
@@ -435,7 +433,7 @@
             document.getElementById('download-btn').style.display = "block";
             imageOverlay.style.display = 'flex';
             
-            // 6. Send to Gemini
+            // 5. Send to Gemini
             window.askGeminiVision(base64Image.split(',')[1]);
         };
         
