@@ -212,14 +212,11 @@
 
     <div id="mic-container">
         <div id="status-text">Cloud સાથે જોડું છું...</div>
-        <div class="controls-row">
-            <button id="doc-btn" class="round-btn" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf"></i></button>
-            
-            <button id="vision-btn" class="round-btn" onclick="window.activateVision('environment')"><i class="fas fa-eye"></i></button>
+                <div class="controls-row">
             <button id="mic-btn" class="round-btn" onclick="window.startConversation()"><i class="fas fa-microphone"></i></button>
             <button id="stop-btn" class="round-btn" onclick="window.stopConversation()"><i class="fas fa-stop"></i></button>
         </div>
-    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
