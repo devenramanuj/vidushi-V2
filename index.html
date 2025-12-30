@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate System</title>
+    <title>Vidushi AI - Generative Creator</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -23,31 +23,17 @@
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
         
-        /* Camera & Canvas - Z-Index સુધાર્યું */
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        
-        /* 🔥 Canvas Fixed to ensure visibility */
-        #canvas-capture { 
-            display: none; 
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100%; 
-            height: 100%; 
-            z-index: 999; /* વિડીયોની ઉપર */
-            pointer-events: none; 
-        }
+        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
         /* UI Elements */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .side-btn:active { transform: scale(0.9); background: #ff4500; }
         
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 100; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
         .list-container { overflow-y:auto; flex:1; width:100%; display:flex; flex-direction:column; align-items:center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 10px; border-radius: 8px; border-left: 4px solid #ff4500; color: white; width: 90%; text-align: left; display:flex; justify-content:space-between; align-items: center; }
-        .expense-item { border-left: 4px solid #00ff00; }
-        .contact-item { border-left: 4px solid #008cff; }
         
         .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 85%; max-width: 350px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
         input[type="text"], input[type="password"], input[type="number"], select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; font-size: 14px;}
@@ -77,7 +63,7 @@
         #download-btn { padding: 10px 25px; background: #00ff00; color: black; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; display: none; }
         #close-img-btn { padding: 10px 25px; background: red; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; font-size: 16px; }
 
-        /* 🔥 SMART LENS & LIVE VISION STYLES */
+        /* SMART LENS */
         #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid #d4af37; border-radius: 15px; padding: 15px; z-index: 150; flex-direction: column; gap: 10px; width: 90%; max-width: 400px; }
         .lens-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
         .mode-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 10px; border-radius: 8px; font-size: 12px; text-align: center; cursor: pointer; }
@@ -87,6 +73,13 @@
         .arch-btn i { font-size: 24px; margin-bottom: 5px; color: #008cff; }
 
         #report-content-area { width: 100%; height: 60vh; background: #111; color: #ddd; border: 1px solid #555; padding: 10px; font-family: monospace; font-size: 14px; resize: none; border-radius: 5px; margin-bottom: 10px; }
+
+        /* 🔥 GENERATIVE UI CONTAINER 🔥 */
+        #app-viewer-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; flex-direction: column; }
+        #app-viewer-header { padding: 15px; background: #222; border-bottom: 2px solid #ff4500; display: flex; justify-content: space-between; align-items: center; color: white; font-weight: bold; }
+        #app-render-area { flex: 1; width: 100%; background: white; overflow: auto; position: relative; }
+        /* Style for content inside generated app */
+        #app-render-area body { font-family: sans-serif; padding: 20px; }
     </style>
 </head>
 <body>
@@ -100,8 +93,18 @@
     
     <audio id="tts-preload-audio" src="" preload="auto"></audio>
     <video id="selfie-video" autoplay playsinline></video>
-    <canvas id="canvas-capture"></canvas> <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
+    <canvas id="canvas-capture"></canvas>
+
+    <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
     <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
+
+    <div id="app-viewer-modal">
+        <div id="app-viewer-header">
+            <span>✨ વિદુષી સર્જન (Live App)</span>
+            <button onclick="window.closeAppViewer()" style="background:red; color:white; border:none; padding:5px 15px; border-radius:5px;">બંધ કરો</button>
+        </div>
+        <div id="app-render-area"></div>
+    </div>
 
     <div id="archeology-selector">
         <div style="color: #d4af37; text-align: center; font-size: 14px; margin-bottom: 5px;">તમારે શું સ્કેન કરવું છે?</div>
@@ -134,6 +137,13 @@
             <label>તમારું નામ:</label><input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
             <label class="checkbox-container"><span>🔇 અવાજ બંધ (Silent Mode)</span><input type="checkbox" id="silentModeCheck"></label>
             <label class="checkbox-container"><span>સતત વાતચીત (Hands-Free)</span><input type="checkbox" id="continuousModeCheck"></label>
+            
+            <div class="section-title">સ્વભાવ (Personality)</div>
+            <select id="moodSelect" style="border: 2px solid #ff4500; padding: 10px; font-weight: bold; background: #222; color: #ff4500;">
+                <option value="normal">😇 ડાહી ડમરી (Normal)</option>
+                <option value="angry">😡 ઝઘડાળુ (Angry Mode)</option>
+            </select>
+
             <div class="section-title">AI Provider</div>
             <select id="providerSelect" onchange="window.toggleProviderSettings()"><option value="gemini">Google Gemini</option><option value="groq">Groq (Llama)</option></select>
             <div id="gemini-settings">
@@ -176,7 +186,7 @@
         </div>
     </div>
 
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -223,11 +233,13 @@
                     if(data.userName) userName = data.userName;
                     if(data.geminiKey) geminiKeys = data.geminiKey;
                     if(data.groqKey) groqKey = data.groqKey;
+                    if(data.mood) currentMood = data.mood;
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
                     localStorage.setItem('vidushi_groq_key', groqKey);
+                    localStorage.setItem('vidushi_mood', currentMood);
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
                     if(!silentMode) window.speak(`સિસ્ટમ તૈયાર છે, ${userName}!`);
@@ -328,6 +340,7 @@
             document.getElementById('groqModelSelect').value = groqModel; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('silentModeCheck').checked = silentMode; 
+            document.getElementById('moodSelect').value = currentMood; // 🔥 Load Mood
             document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
             window.toggleProviderSettings(); 
         };
@@ -345,17 +358,20 @@
             groqModel = document.getElementById('groqModelSelect').value; 
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
+            currentMood = document.getElementById('moodSelect').value; // 🔥 Save Mood
             firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
             localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
             localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
+            localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
             await saveToCloud();
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         };
 
+        /* ... [Standard functions like clearMemories, addNote etc. remain same - condensed for brevity] ... */
         window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: [] }); window.speak("સાફ કરી દીધું."); } };
         window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
@@ -384,81 +400,33 @@
         window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
         window.takeActualPhoto = () => { canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight; canvas.getContext('2d').drawImage(selfieVideo, 0, 0); window.stopVisionCamera(); playVideo('thinking'); const base64Image = canvas.toDataURL('image/jpeg'); generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; imageOverlay.style.display = 'flex'; window.askGeminiVision(base64Image.split(',')[1]); };
         
-        // 🔥🔥🔥 LIVE VISION (TERMINATOR MODE) 🔥🔥🔥
+        // 🔥 LIVE VISION LOGIC
         let liveModel = null;
         let isLiveVisionActive = false;
-
         window.startLiveVision = async (btn) => {
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            if(btn) btn.classList.add('active');
-            document.getElementById('archeology-selector').style.display = 'none';
-            document.getElementById('video-container').style.display = 'none';
-
-            try {
-                if(!silentMode) window.speak("કેમેરો ચાલુ કરું છું...");
-                await window.activateVision("environment");
-                
-                if(!liveModel) {
-                    if(!silentMode) window.speak("પહેલીવાર વાર લાગશે... AI મોડલ ડાઉનલોડ થઈ રહ્યું છે.");
-                    if(typeof cocoSsd === 'undefined') { throw new Error("ઈન્ટરનેટ એરર: TensorFlow લાઈબ્રેરી મળી નથી."); }
-                    liveModel = await cocoSsd.load();
-                    console.log("✅ Model Loaded Successfully!");
-                }
-
-                if(!silentMode) window.speak("શરૂ થઈ ગયું! હવે ફોન ફેરવો.");
-                isLiveVisionActive = true;
-                const canvas = document.getElementById('canvas-capture');
-                canvas.style.display = 'block'; // Canvas ON
-                window.detectFrame();
-
-            } catch (error) {
-                console.error("Live Vision Error:", error);
-                window.speak("ભૂલ આવી: " + error.message);
-                window.stopVisionCamera();
-            }
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active');
+            document.getElementById('archeology-selector').style.display = 'none'; document.getElementById('video-container').style.display = 'none';
+            if(!silentMode) window.speak("કેમેરો ચાલુ...");
+            await window.activateVision("environment");
+            if(!liveModel) { if(!silentMode) window.speak("AI મોડલ લોડ થાય છે, રાહ જુઓ..."); liveModel = await cocoSsd.load(); }
+            isLiveVisionActive = true; document.getElementById('canvas-capture').style.display = 'block';
+            if(!silentMode) window.speak("શરૂ.");
+            window.detectFrame();
         };
-
         window.detectFrame = () => {
             if(!isLiveVisionActive) return;
-            const video = document.getElementById('selfie-video');
-            const canvas = document.getElementById('canvas-capture');
-            const ctx = canvas.getContext('2d');
-
-            if (video.readyState < 2 || video.videoWidth === 0) { requestAnimationFrame(window.detectFrame); return; }
-
+            const video = document.getElementById('selfie-video'); const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d');
             canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-
-            // DRAW DEBUG TEXT (To prove canvas is working)
-            ctx.font = '20px Arial';
-            ctx.fillStyle = 'red';
-            ctx.fillText("SCANNING...", 20, 30);
-
+            // Debug Text
+            ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30);
             liveModel.detect(video).then(predictions => {
-                // Clear old drawings
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
-                
-                // Redraw "Scanning..."
-                ctx.font = '20px Arial';
-                ctx.fillStyle = 'red';
-                ctx.fillText("SCANNING...", 20, 30);
-
-                if (predictions.length > 0) {
-                    // Speak first object occasionally
-                    if(!silentMode && Math.random() < 0.05) { // 5% chance to speak to avoid spam
-                        window.speak("મને દેખાય છે: " + predictions[0].class);
-                    }
-                }
-
+                ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30);
                 predictions.forEach(prediction => {
                     ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke();
-                    const text = prediction.class.toUpperCase();
-                    ctx.font = 'bold 24px Arial'; const textWidth = ctx.measureText(text).width;
-                    ctx.fillStyle = '#00ff00'; ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, textWidth + 10, 30);
-                    ctx.fillStyle = '#000000'; ctx.fillText(text, prediction.bbox[0] + 5, prediction.bbox[1] - 5);
+                    ctx.font = 'bold 24px Arial'; ctx.fillStyle = '#00ff00'; ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30);
+                    ctx.fillStyle = '#000000'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5);
                 });
-                if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
-            }).catch(err => {
-                console.error("Detection Error:", err);
                 if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
             });
         };
@@ -466,11 +434,7 @@
         window.openArcheologyMenu = () => { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('archeology-selector').style.display = 'flex'; if(!silentMode) window.speak("Smart Lens મોડ."); window.setVisionMode('history', document.querySelector('.mode-btn')); };
         window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
-        window.handleGalleryUpload = (input) => {
-            const file = input.files[0]; if(!file) return;
-            document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageLoadingText.style.display = "block"; imageLoadingText.innerText = "વિશ્લેષણ..."; generatedImage.style.display = "none"; imageOverlay.style.display = "flex";
-            const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file);
-        };
+        window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageLoadingText.style.display = "block"; imageLoadingText.innerText = "વિશ્લેષણ..."; generatedImage.style.display = "none"; imageOverlay.style.display = "flex"; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageLoadingText.style.display = "block"; generatedImage.style.display="none"; imageOverlay.style.display='flex'; document.getElementById('download-btn').style.display = "none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display="none"; generatedImage.style.display="block"; document.getElementById('download-btn').style.display = "block"; window.speak("તૈયાર!"); }; };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -483,7 +447,6 @@
         window.startConversation = () => { try{recognition.start();}catch(e){} };
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
         window.activateVision = async (mode = "user") => { try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; document.getElementById('vision-btn').style.background = "red"; } catch(e) { alert("Camera Error: " + e); } };
-        
         window.stopVisionCamera = () => { 
             isLiveVisionActive = false; document.getElementById('canvas-capture').style.display = 'none';
             const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -499,6 +462,13 @@
             if (node.children && node.children.length > 0) { for (let child of node.children) { let result = findParentAndAddChild(child, parentName, childName); if (result === "ADDED" || result === "EXISTS") return result; } }
             return "NOT_FOUND";
         }
+
+        // 🔥 GENERATIVE UI: CLOSE FUNCTION
+        window.closeAppViewer = () => {
+            document.getElementById('app-viewer-modal').style.display = 'none';
+            document.getElementById('app-render-area').innerHTML = ''; // Clear app
+            window.speak("એપ બંધ કરી.");
+        };
 
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
@@ -535,24 +505,47 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         }
 
-        function formatVanshavaliTree(data, level = 0) {
-            if (!data) return "";
-            let result = "";
-            const indent = "  ".repeat(level);
-            if (data.name) { result += indent + "• " + data.name; if (data.info) result += " (" + data.info + ")"; result += "\n"; }
-            if (data.children && data.children.length > 0) { data.children.forEach(child => { result += formatVanshavaliTree(child, level + 1); }); }
-            return result;
-        }
-
         function getSystemPrompt(memories, contextData) {
             let moodPrompt = "You are a helpful assistant.";
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic.";
-            else if (currentMood === 'sadhu') moodPrompt = "You are a spiritual Guru.";
-            else if (currentMood === 'lazy') moodPrompt = "You are lazy and give very short answers.";
-            else if (currentMood === 'poet') moodPrompt = "You speak in poetic Gujarati.";
+            
             let familyDataString = "";
             try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {}
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} [Memory]: ${memories} Question: "${contextData}"`;
+            
+            // 🔥 INSTRUCTION FOR GENERATIVE UI
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} [Memory]: ${memories} Question: "${contextData}"
+            
+            [GENERATIVE UI INSTRUCTION]:
+            If the user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code.
+            Wrap the code exactly like this:
+            :::APP_START:::
+            <style> ...CSS... </style>
+            <div> ...HTML... </div>
+            <script> ...JS... <\/script>
+            :::APP_END:::
+            Do not explain the code, just provide it.
+            `;
+        }
+
+        // 🔥 GEN-UI PARSER
+        function handleGenUI(reply) {
+            if(reply.includes(":::APP_START:::")) {
+                let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0];
+                document.getElementById('app-viewer-modal').style.display = 'flex';
+                document.getElementById('app-render-area').innerHTML = code;
+                
+                // Execute Scripts manually
+                const scripts = document.getElementById('app-render-area').querySelectorAll("script");
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement("script");
+                    newScript.textContent = oldScript.textContent;
+                    document.body.appendChild(newScript);
+                });
+                
+                window.speak("એપ બનાવી દીધી છે. જુઓ!");
+                return true;
+            }
+            return false;
         }
 
         window.askGeminiText = async (userText) => {
@@ -566,7 +559,10 @@
                 const data = await response.json();
                 if(data.candidates) {
                     let reply = data.candidates[0].content.parts[0].text;
-                    window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply);
+                    // Check for App
+                    if(!handleGenUI(reply)) {
+                        window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply);
+                    }
                 } else { window.speak("કાંઈ સમજાયું નહીં."); }
             } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; }
         };
