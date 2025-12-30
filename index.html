@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - 2.5 Corrected</title>
+    <title>Vidushi AI - Final Complete</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -205,7 +205,7 @@
         </div>
     </div>
 
-    <script type="module">
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -224,7 +224,10 @@
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
+        
+        // 🔥 DEFAULT MODEL (તમારી પસંદગી મુજબ)
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
+        
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let silentMode = localStorage.getItem('vidushi_silent') === 'true';
@@ -482,7 +485,7 @@
                 if(data.error) {
                     console.error(data.error);
                     document.getElementById('report-modal').style.display = 'flex';
-                    document.getElementById('report-content-area').value = "GOOGLE ERROR:\n" + data.error.message + "\n\n(કૃપા કરીને સેટિંગમાં જઈને Gemini 1.5 Flash પસંદ કરો.)";
+                    document.getElementById('report-content-area').value = "GOOGLE ERROR:\n" + data.error.message + "\n\n(કૃપા કરીને સેટિંગમાં જઈને Gemini Flash Latest પસંદ કરો.)";
                     window.speak("ગૂગલ એરર આવી છે. રિપોર્ટ વાંચો.");
                     window.closeImage();
                     return;
