@@ -537,20 +537,34 @@
         };
 
 
-        function getSystemPrompt(memories, contextData) { 
+                function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
             
             let familyDataString = ""; 
             try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
             
-            // 🔥 NEW: INJECT RAG CONTENT
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
-                // Truncate to avoid token limit if very large (Simple Chunking Logic)
                 const safeContent = window.ragContent.substring(0, 500000); 
                 ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer the user's question accurately.)\n`;
             }
+
+            // 👇 અહીં મેં ખાસ સૂચના (INSTRUCTION) ઉમેરી છે 👇
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} 
+            
+            [INSTRUCTION FOR FAMILY/VANSHAVALI]:
+            When listing family members or lineage:
+            1. 🚫 DO NOT use numbers (like 1, 2, 3) or bullet points.
+            2. ✅ Speak naturally in full sentences/paragraphs.
+            3. Example: Instead of saying "1. Ram, 2. Shyam", say "Ram's son is Shyam and he lived in...".
+            4. Use respectful Gujarati language (માનવાચક શબ્દો).
+
+            ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" 
+            
+            [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator, YOU MUST generate the full HTML/CSS/JS code. Wrap code in :::APP_START::: and :::APP_END::: tags.`; 
+        }
+
 
             return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
         }
