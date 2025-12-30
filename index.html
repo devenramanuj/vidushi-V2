@@ -12,6 +12,7 @@
         // PDF Worker Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
+
     <script src="vanshavali_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
@@ -215,13 +216,13 @@
             <button id="stop-btn" class="round-btn" onclick="window.stopConversation()"><i class="fas fa-stop"></i></button>
         </div>
     </div>
-        <script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // ✅ સુધારેલું પરફેક્ટ સેટિંગ (તમારા પ્રોજેક્ટ મુજબ)
+        // FIREBASE CONFIG
         const firebaseConfig = {
-            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "",
+            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
             projectId: "vidushi-ai-614cb",
             storageBucket: "vidushi-ai-614cb.firebasestorage.app",
@@ -241,18 +242,9 @@
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
-        window.ragContent = ""; 
 
-        // 🔥 વંશાવલી ફોર્મેટિંગ ફંક્શન (જેથી વિદુષી વાંચી શકે)
-        window.formatVanshavaliTree = (node, parentName = "મૂળ પુરુષ") => {
-            let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
-            if(node.info) text += ` [માહિતી: ${node.info}]`;
-            text += "\n";
-            if (node.children && node.children.length > 0) {
-                node.children.forEach(child => { text += window.formatVanshavaliTree(child, node.name); });
-            }
-            return text;
-        };
+        // 🔥 RAG MEMORY STORAGE
+        window.ragContent = ""; 
 
         try {
             app = initializeApp(firebaseConfig);
@@ -260,13 +252,10 @@
             userDocRef = doc(db, "vidushi_db", "main_memory");
             settingsDocRef = doc(db, "vidushi_db", "settings");
             vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
-            console.log("✅ Firebase initialized");
+            console.log("✅ Firebase initialized successfully");
             loadCloudSettings();
             loadVanshavaliFromCloud(); 
-        } catch (err) { 
-            console.error(err);
-            document.getElementById('status-text').innerText = "Config Error! Check Console."; 
-        }
+        } catch (err) { document.getElementById('status-text').innerText = "DB Error: " + err.message; }
 
         async function loadCloudSettings() {
             if(!db) return;
@@ -280,6 +269,7 @@
                     if(data.mood) currentMood = data.mood;
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
+                    
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
                     localStorage.setItem('vidushi_groq_key', groqKey);
@@ -296,13 +286,7 @@
             try {
                 const docSnap = await getDoc(vanshavaliDocRef);
                 if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
-                else { 
-                    // ડમી ડેટા જો ક્લાઉડ ખાલી હોય તો
-                    if(typeof window.vanshavaliData !== 'undefined') { 
-                        window.activeFamilyTree = window.vanshavaliData; 
-                        await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); 
-                    }
-                }
+                else { if(window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
             } catch(e) { console.error("Vanshavali Error", e); }
         }
 
@@ -380,9 +364,25 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        window.openSettings = () => { document.getElementById('settings-modal').style.display = 'flex'; document.getElementById('userNameInput').value = userName; document.getElementById('providerSelect').value = aiProvider; document.getElementById('geminiKeyInput').value = geminiKeys; document.getElementById('geminiModelSelect').value = geminiModel; document.getElementById('groqKeyInput').value = groqKey; document.getElementById('groqModelSelect').value = groqModel; document.getElementById('continuousModeCheck').checked = continuousMode; document.getElementById('silentModeCheck').checked = silentMode; document.getElementById('moodSelect').value = currentMood; document.getElementById('firebaseApiKeyInput').value = firebaseApiKey; window.toggleProviderSettings(); };
+        window.openSettings = () => { 
+            document.getElementById('settings-modal').style.display = 'flex'; 
+            document.getElementById('userNameInput').value = userName; 
+            document.getElementById('providerSelect').value = aiProvider; 
+            document.getElementById('geminiKeyInput').value = geminiKeys; 
+            document.getElementById('geminiModelSelect').value = geminiModel; 
+            document.getElementById('groqKeyInput').value = groqKey; 
+            document.getElementById('groqModelSelect').value = groqModel; 
+            document.getElementById('continuousModeCheck').checked = continuousMode; 
+            document.getElementById('silentModeCheck').checked = silentMode; 
+            document.getElementById('moodSelect').value = currentMood; 
+            document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
+            window.toggleProviderSettings(); 
+        };
         window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
-        window.toggleProviderSettings = () => { document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; };
+        window.toggleProviderSettings = () => { 
+            document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; 
+            document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; 
+        };
         window.saveSettings = async () => { 
             userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
             aiProvider = document.getElementById('providerSelect').value; 
@@ -430,17 +430,23 @@
         window.speakReportFromModal = () => { window.speak(document.getElementById("report-content-area").value, true); };
         window.downloadSelfie = () => { const link = document.createElement('a'); link.href = document.getElementById('generated-image').src; link.download = `Vidushi_Capture_${new Date().getTime()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); window.speak("સેવ થઈ ગયો!"); window.closeImage(); };
 
+        // 🔥🔥🔥 RAG LOGIC: READ PDF & FILES 🔥🔥🔥
         window.handleRAGUpload = async (input) => {
             const file = input.files[0];
             if (!file) return;
+
             window.speak("ફાઈલ વાંચવાનું કામ ચાલુ છે...");
             document.getElementById('rag-status').style.display = 'block';
             document.getElementById('rag-status').innerText = '⏳ Reading File...';
+
             try {
                 let extractedText = "";
+
                 if (file.type === "application/pdf") {
+                    // PDF HANDLING
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
+                    
                     for (let i = 1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
@@ -448,16 +454,37 @@
                         extractedText += pageText + "\n";
                         document.getElementById('rag-status').innerText = `Reading Page ${i}/${pdf.numPages}...`;
                     }
-                } else { extractedText = await file.text(); }
+                } else {
+                    // TEXT HANDLING (txt, csv, js, py, html)
+                    extractedText = await file.text();
+                }
+
+                // CLEANUP & SAVE TO GLOBAL MEMORY
                 window.ragContent = extractedText.replace(/\s+/g, " ").trim();
+                
                 document.getElementById('rag-status').innerText = '✅ RAG Ready';
                 window.speak("ફાઈલ વાંચી લીધી છે. હવે પૂછો.");
                 playVideo('smiling');
-            } catch (e) { console.error(e); document.getElementById('rag-status').style.background = 'red'; document.getElementById('rag-status').innerText = '❌ Error Reading'; window.speak("ફાઈલ વાંચવામાં ભૂલ થઈ."); }
+
+            } catch (e) {
+                console.error(e);
+                document.getElementById('rag-status').style.background = 'red';
+                document.getElementById('rag-status').innerText = '❌ Error Reading';
+                window.speak("ફાઈલ વાંચવામાં ભૂલ થઈ.");
+            }
         };
 
         window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
-        window.takeActualPhoto = () => { canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight; canvas.getContext('2d').drawImage(selfieVideo, 0, 0); const base64Image = canvas.toDataURL('image/jpeg'); window.stopVisionCamera(); playVideo('thinking'); generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; imageOverlay.style.display = 'flex'; window.askGeminiVision(base64Image.split(',')[1]); };
+        
+        window.takeActualPhoto = () => {
+            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
+            canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            const base64Image = canvas.toDataURL('image/jpeg');
+            window.stopVisionCamera(); 
+            playVideo('thinking');
+            generatedImage.src = base64Image; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; imageOverlay.style.display = 'flex';
+            window.askGeminiVision(base64Image.split(',')[1]);
+        };
         
         let liveModel = null; let isLiveVisionActive = false;
         window.startLiveVision = async (btn) => { document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); document.getElementById('archeology-selector').style.display = 'none'; document.getElementById('video-container').style.display = 'none'; if(!silentMode) window.speak("કેમેરો ચાલુ..."); await window.activateVision("environment"); if(!liveModel) { if(!silentMode) window.speak("AI મોડલ લોડ થાય છે..."); liveModel = await cocoSsd.load(); } isLiveVisionActive = true; document.getElementById('canvas-capture').style.display = 'block'; window.detectFrame(); };
@@ -494,80 +521,27 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
-        // 🛠️ SYSTEM PROMPT (With Natural Speaking Fix)
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
             
             let familyDataString = ""; 
-            try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
+            try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
             
+            // 🔥 NEW: INJECT RAG CONTENT
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
+                // Truncate to avoid token limit if very large (Simple Chunking Logic)
                 const safeContent = window.ragContent.substring(0, 500000); 
                 ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer the user's question accurately.)\n`;
             }
 
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} 
-            
-            [INSTRUCTION FOR FAMILY/VANSHAVALI]:
-            When listing family members or lineage:
-            1. 🚫 DO NOT use numbers (like 1, 2, 3) or bullet points.
-            2. ✅ Speak naturally in full sentences/paragraphs.
-            3. Example: Instead of saying "1. Ram, 2. Shyam", say "Ram's son is Shyam and he lived in...".
-            4. Use respectful Gujarati language (માનવાચક શબ્દો).
-
-            ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" 
-            
-            [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator, YOU MUST generate the full HTML/CSS/JS code. Wrap code in :::APP_START::: and :::APP_END::: tags.`; 
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
         }
 
-        window.askGeminiText = async (userText) => { 
-            let keys = geminiKeys.split(',').filter(k => k); 
-            if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; } 
-
-            // AUTO-MEMORY PROMPT INJECTION
-            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText) + 
-                ` \n[SECRET INSTRUCTION]: If the user tells you any NEW personal fact (e.g. name, likes, relations, work, location), add it at the very end of your response in this format: :::MEM:::The user's ... is ...::: (Keep it hidden from speech).`;
-
-            let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); 
-            contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
-
-            try { 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) }); 
-                const data = await response.json(); 
-                
-                if(data.candidates) { 
-                    let reply = data.candidates[0].content.parts[0].text; 
-
-                    // AUTO-MEMORY SAVE LOGIC
-                    if (reply.includes(":::MEM:::")) {
-                        let parts = reply.split(":::MEM:::");
-                        let actualReply = parts[0].trim();
-                        let memoryToSave = parts[1].replace(":::","").trim();
-
-                        if(db && memoryToSave) {
-                            await updateDoc(userDocRef, { memories: arrayUnion(memoryToSave) });
-                            console.log("🧠 Auto-Saved Memory:", memoryToSave);
-                            document.getElementById('status-text').innerText = "🧠 નવી વાત યાદ રાખી લીધી!";
-                        }
-                        reply = actualReply; 
-                    }
-
-                    if(!handleGenUI(reply)) { 
-                        window.chatHistory.push({ role: "user", content: userText }); 
-                        window.chatHistory.push({ role: "assistant", content: reply }); 
-                        window.speak(reply); 
-                    } 
-                } else { 
-                    window.speak("કાંઈ સમજાયું નહીં."); 
-                } 
-            } catch (e) { 
-                console.error(e);
-                window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; 
-            } 
-        };
+        window.askGeminiText = async (userText) => { let keys = geminiKeys.split(',').filter(k => k); if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; } const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); contents.push({ role: "user", parts: [{ text: systemInstruction }] }); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) }); const data = await response.json(); if(data.candidates) { let reply = data.candidates[0].content.parts[0].text; if(!handleGenUI(reply)) { window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply); } } else { window.speak("કાંઈ સમજાયું નહીં."); } } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; } };
         
+        // 🔥🔥🔥 UPDATED VISION FUNCTION FOR BETTER DEBUGGING 🔥🔥🔥
         window.askGeminiVision = async (base64Image) => { 
             let keys = geminiKeys.split(',').filter(k=>k); 
             if(!keys.length) { window.speak("API Key નથી."); return; } 
@@ -578,9 +552,31 @@
                     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
                 }); 
                 const data = await response.json(); 
-                if(data.error) { document.getElementById('report-modal').style.display = 'flex'; document.getElementById('report-content-area').value = "GOOGLE ERROR:\n" + data.error.message; window.speak("ગૂગલ એરર આવી છે."); window.closeImage(); return; }
-                if(data.candidates) { const text = data.candidates[0].content.parts[0].text; document.getElementById('report-modal').style.display = 'flex'; document.getElementById('report-content-area').value = text; window.closeImage(); if(!silentMode) { window.speak("રિપોર્ટ તૈયાર છે."); } else { isProcessing = false; playVideo('silent'); } } else { window.speak("કોઈ જવાબ મળ્યો નહીં."); } 
-            } catch(e) { console.error(e); window.speak("Network Error."); } 
+                
+                // CHECK FOR ERROR RESPONSE
+                if(data.error) {
+                    console.error(data.error);
+                    document.getElementById('report-modal').style.display = 'flex';
+                    document.getElementById('report-content-area').value = "GOOGLE ERROR:\n" + data.error.message + "\n\n(કૃપા કરીને સેટિંગમાં જઈને Gemini Flash Latest પસંદ કરો.)";
+                    window.speak("ગૂગલ એરર આવી છે. રિપોર્ટ વાંચો.");
+                    window.closeImage();
+                    return;
+                }
+
+                if(data.candidates) { 
+                    const text = data.candidates[0].content.parts[0].text; 
+                    document.getElementById('report-modal').style.display = 'flex'; 
+                    document.getElementById('report-content-area').value = text; 
+                    window.closeImage(); 
+                    if(!silentMode) { window.speak("રિપોર્ટ તૈયાર છે."); } else { isProcessing = false; playVideo('silent'); } 
+                } else { 
+                    console.log(data); 
+                    window.speak("કોઈ જવાબ મળ્યો નહીં."); 
+                } 
+            } catch(e) { 
+                console.error(e); 
+                window.speak("Network Error."); 
+            } 
         };
 
         window.askGroqText = async (userText) => { if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } let messages = [{ role: "system", content: getSystemPrompt(window.permanentMemories.join("\n"), userText) }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; try { const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages, temperature: 0.7, max_tokens: 1000 }) }); const data = await res.json(); if(data.choices) { let reply = data.choices[0].message.content; window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply); } else { window.speak("જવાબ નથી મળ્યો."); } } catch(e) { window.speak("Groq કનેક્શન એરર."); isProcessing=false; } };
@@ -596,5 +592,3 @@
     </script>
 </body>
 </html>
-
-        
