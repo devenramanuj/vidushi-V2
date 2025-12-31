@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vidushi AI - Ultimate RAG (API Key Fix)</title>
+    <title>Vidushi AI - Ultimate RAG (Thinking Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -228,7 +228,6 @@
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- FIREBASE & STATE CONFIG ---
-        // Pre-set details from code, API Key will be injected here
         const staticFirebaseConfig = {
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
             projectId: "vidushi-ai-614cb",
@@ -236,15 +235,8 @@
             messagingSenderId: "146312927144",
             appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d"
         };
-
-        // Load API Key from localStorage or use placeholder
         let userFirebaseKey = localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey";
-        
-        // Combine them
-        const firebaseConfig = {
-            ...staticFirebaseConfig,
-            apiKey: userFirebaseKey
-        };
+        const firebaseConfig = { ...staticFirebaseConfig, apiKey: userFirebaseKey };
 
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
@@ -374,7 +366,6 @@
             document.getElementById('geminiModelSelect').value = geminiModel; 
             document.getElementById('groqKeyInput').value = groqKey; 
             document.getElementById('groqModelSelect').value = groqModel; 
-            // LOAD FIREBASE KEY
             document.getElementById('firebaseKeyInput').value = userFirebaseKey; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('silentModeCheck').checked = silentMode; 
@@ -406,7 +397,6 @@
                 geminiModel = document.getElementById('geminiModelSelect').value; 
                 groqKey = document.getElementById('groqKeyInput').value.trim(); 
                 groqModel = document.getElementById('groqModelSelect').value; 
-                // SAVE FIREBASE KEY
                 userFirebaseKey = document.getElementById('firebaseKeyInput').value.trim(); 
                 localStorage.setItem('vidushi_firebase_apiKey', userFirebaseKey);
 
@@ -426,12 +416,9 @@
                     console.warn("Cloud save failed, but local saved.");
                 }
 
-                // Reloading page to apply new Firebase Key immediately
                 alert("Firebase Key updated. Reloading app to connect...");
                 location.reload(); 
                 
-                // document.getElementById('settings-modal').style.display = 'none'; 
-                // if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
             } catch (e) {
                 console.error("Save Error:", e);
                 alert("Error saving settings");
@@ -574,9 +561,10 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
+        // FIX: Added isProcessing=false in catch block
         window.askGeminiText = async (userText) => { 
             let keys = geminiKeys.split(',').filter(k => k); 
-            if (!keys.length) { window.speak("API Key નથી."); isProcessing = false; return; } 
+            if (!keys.length) { window.speak("API Key નથી."); isProcessing = false; playVideo('angry'); return; } 
             
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); 
             
@@ -596,12 +584,17 @@
                         window.speak(reply); 
                     } 
                 } else { window.speak("જવાબ મળ્યો નહીં."); } 
-            } catch (e) { window.speak("ઈન્ટરનેટ એરર."); isProcessing = false; } 
+            } catch (e) { 
+                window.speak("ઈન્ટરનેટ એરર."); 
+                isProcessing = false; // FIX: Ensure state is reset on error
+                playVideo('angry'); 
+            } 
         };
         
+        // FIX: Added isProcessing=false in catch block
         window.askGeminiVision = async (base64Image) => { 
             let keys = geminiKeys.split(',').filter(k=>k); 
-            if(!keys.length) { window.speak("API Key નથી."); return; } 
+            if(!keys.length) { window.speak("API Key નથી."); isProcessing=false; playVideo('angry'); return; } 
             try { 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
                     method: "POST", 
@@ -616,11 +609,16 @@
                     window.closeImage(); 
                     if(!silentMode) { window.speak("રિપોર્ટ તૈયાર."); } else { isProcessing = false; playVideo('silent'); } 
                 } else { window.speak("કંઈ મળ્યું નહીં."); } 
-            } catch(e) { window.speak("Network Error."); } 
+            } catch(e) { 
+                window.speak("Network Error."); 
+                isProcessing = false; // FIX: Ensure state is reset on error
+                window.closeImage(); 
+            } 
         };
         
+        // FIX: Added isProcessing=false in catch block
         window.askGroqText = async (userText) => { 
-            if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } 
+            if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; playVideo('angry'); return; } 
             
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText);
 
@@ -636,7 +634,11 @@
                     window.chatHistory.push({ role: "assistant", content: reply }); 
                     window.speak(reply); 
                 } else { window.speak("જવાબ નથી મળ્યો."); } 
-            } catch(e) { window.speak("Groq એરર."); isProcessing=false; } 
+            } catch(e) { 
+                window.speak("Groq એરર."); 
+                isProcessing = false; // FIX: Ensure state is reset on error
+                playVideo('angry'); 
+            } 
         };
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
