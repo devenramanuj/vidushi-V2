@@ -9,9 +9,11 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script> pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; </script>
+
     <script src="vanshavali_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    
     <script src="//unpkg.com/3d-force-graph"></script>
     <script src="//unpkg.com/three"></script>
     <script src="//unpkg.com/three-spritetext"></script>
@@ -19,18 +21,14 @@
     <style>
         /* CORE STYLES */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
-        
-        /* VIDEO AVATAR LAYERS */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
         #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
-        
-        /* STATUS BAR */
         #rag-status { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #008cff; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 50; box-shadow: 0 0 10px #008cff; }
         
-        /* UI BUTTONS & MODALS */
+        /* UI ELEMENTS */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -42,7 +40,6 @@
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 15px 5px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; gap: 5px; text-align: center; }
         
-        /* MIC & CONTROLS */
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
         .controls-row { display: flex; gap: 20px; align-items: center; }
@@ -165,7 +162,8 @@
             <button id="stop-btn" class="round-btn" onclick="window.stopConversation()"><i class="fas fa-stop"></i></button>
         </div>
     </div>
-       <script type="module">
+
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -218,9 +216,7 @@
             let displayHours = hours % 12;
             displayHours = displayHours ? displayHours : 12; 
             
-            // મિનિટ્સ (જેમ કે 5 ને બદલે 05 ન બોલાય તો ચાલે, પણ લખવા માટે ઠીક છે)
-            // બોલવા માટે આપણે સીધો આંકડો જ લઈએ છીએ.
-            
+            // વાક્ય બનાવો
             return `અત્યારે ${period} ${displayHours} વાગીને ${minutes} મિનિટ થઈ છે.`;
         }
 
@@ -456,7 +452,7 @@
                     if(window.findParentAndAddChild(newTree, parts[2].trim(), parts[1].trim()) === "ADDED") {
                         window.activeFamilyTree = newTree; 
                         if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, {tree:newTree}); 
-                        window.speak("ઉમેરાઈ ગયું.");
+                        window.speak("વંશાવલીમાં ઉમેરાઈ ગયું.");
                     } else window.speak("પિતાનું નામ મળ્યું નથી.");
                     return;
                 }
@@ -554,3 +550,5 @@
             };
         }
     </script>
+</body>
+</html>
