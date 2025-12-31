@@ -464,31 +464,29 @@
             document.getElementById('graph-container').innerHTML='';
         };
 
-        // AI LOGIC WITH CORRECT TIME
+        // AI LOGIC WITH CORRECT TIME - FIXED TIME FORMAT
         window.processCommand = async (text) => {
             if(text.trim().length<2) return;
             let cmd = text.toLowerCase();
             
-            // TIME QUERY HANDLING - FIXED
-            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા")) {
+            // TIME QUERY HANDLING - FIXED FORMAT
+            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ")) {
                 const now = new Date();
-                const options = { 
-                    timeZone: 'Asia/Kolkata', 
-                    hour12: true, 
-                    hour: 'numeric', 
-                    minute: 'numeric',
-                    second: 'numeric'
-                };
-                const gujaratiTime = now.toLocaleTimeString('gu-IN', options);
-                const gujaratiDate = now.toLocaleDateString('gu-IN', { 
-                    timeZone: 'Asia/Kolkata',
-                    weekday: 'long',
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                });
                 
-                const timeMessage = `હમણાંનો સમય ${gujaratiTime} છે. તારીખ ${gujaratiDate} છે.`;
+                // Get Gujarati time in 12-hour format
+                const hour = now.getHours() % 12 || 12;
+                const minute = now.getMinutes();
+                const second = now.getSeconds();
+                const ampm = now.getHours() >= 12 ? "પીએમ" : "એએમ";
+                
+                // Get Gujarati date
+                const day = now.getDate();
+                const month = now.getMonth() + 1; // 1-12
+                const year = now.getFullYear();
+                
+                // Format time properly
+                const timeMessage = `અત્યારે ${hour} ${minute} વાગ્યા છે, અને તારીખ ${day}, ${month}, ${year} થઈ છે.`;
+                
                 window.speak(timeMessage);
                 return;
             }
@@ -542,31 +540,26 @@
             
             // GET CURRENT TIME WITH PROPER FORMATTING
             const now = new Date();
-            const timeOptions = { 
-                timeZone: 'Asia/Kolkata', 
-                hour12: true, 
-                hour: 'numeric', 
-                minute: 'numeric',
-                second: 'numeric',
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            };
-            const currentTimeStr = now.toLocaleString('gu-IN', timeOptions);
+            const hour = now.getHours() % 12 || 12;
+            const minute = now.getMinutes();
+            const second = now.getSeconds();
+            const ampm = now.getHours() >= 12 ? "પીએમ" : "એએમ";
+            const day = now.getDate();
+            const month = now.getMonth() + 1;
+            const year = now.getFullYear();
+            
+            const currentTimeStr = `અત્યારે ${hour} ${minute} વાગ્યા છે, અને તારીખ ${day}, ${month}, ${year} થઈ છે.`;
             
             // ENHANCED SYSTEM PROMPT WITH TIME
             const sys = `તમે વિદુષી છો. વપરાશકર્તા: ${userName}. હમેશાં ગુજરાતીમાં જ જવાબ આપજો.
             
             મહત્વપૂર્ણ: વર્તમાન સમય અને તારીખ: ${currentTimeStr}
             
-            જો વપરાશકર્તા સમય અથવા તારીખ વિશે પૂછે, તો ઉપરોક્ત સમયનો ઉપયોગ કરીને જવાબ આપજો.
+            જો વપરાશકર્તા સમય અથવા તારીખ વિશે પૂછે, તો આ સમય જણાવજો: "${currentTimeStr}"
             
             અન્ય માહિતી:
             - વપરાશકર્તાની યાદગીરીઓ: ${window.permanentMemories.slice(-5).join(', ')}
             - RAG સામગ્રી: ${window.ragContent.substring(0, 200)}...`;
-            
-            const queryWithTime = `${userText}`;
             
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
@@ -575,7 +568,7 @@
                     body: JSON.stringify({ 
                         contents: [{
                             role:"user", 
-                            parts:[{text: sys + "\n\n" + queryWithTime}]
+                            parts:[{text: sys + "\n\n" + userText}]
                         }],
                         generationConfig: {
                             temperature: 0.7,
