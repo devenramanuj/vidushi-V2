@@ -1199,5 +1199,3 @@
         window.speak = (text, forceSpeak = false) => { if(silentMode && !forceSpeak) { statusText.innerText = "મૌન (Silent)..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "બોલું છું..."; isAiSpeaking = true; const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; let voices = window.speechSynthesis.getVoices(); let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); if(bestVoice) u.voice = bestVoice; u.onstart = () => { playVideo('talking'); statusText.style.border = "1px solid rgba(255,255,255,0.2)"; }; u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; window.speechSynthesis.speak(u); };
     </script>
 
-</body>
-</html>
