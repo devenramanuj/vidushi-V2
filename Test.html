@@ -345,7 +345,7 @@
             onSnapshot(query(collection(db, "vidushi_contacts"), orderBy("name")), (s) => { contacts = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts(); });
         }
 
-        // --- VISION & CAMERA LOGIC ---
+        // --- VISION PROMPTS ---
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
             'math': `Analyze this image for math problems. Solve the problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
@@ -376,13 +376,12 @@
 
         window.requestWakeLock = async () => { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
 
-        // ✅ AUTO OPEN SETTINGS IF KEY MISSING
+        // --- ONLOAD: CHECK KEY & GREET ---
         window.onload = () => {
             playVideo('smiling'); window.speechSynthesis.getVoices();
             window.requestWakeLock();
             if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
 
-            // Check if Firebase Key is missing
             if (!firebaseApiKey) {
                 setTimeout(() => {
                     window.speak("તમારી સેટિંગ્સ બાકી છે. મહેરબાની કરીને API Key નાખો.");
@@ -439,9 +438,7 @@
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
             
             await saveToCloud();
-            // Reload page to apply new firebase key if needed
             if (firebaseApiKey && !app) location.reload();
-            
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         };
@@ -502,19 +499,24 @@
         
         window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('graph-container').innerHTML = ''; window.speak("3D મોડ બંધ."); };
         
-        // ✅ NEW: CONVERT TREE WITH BRANCH COLORS
-        function convertTreeToGraph(node, nodes = [], links = [], parent = null, branchGroup = null) {
-            let myGroup = branchGroup;
-            // Root logic
-            if (!parent) { myGroup = "ROOT"; } else if (branchGroup === "ROOT") { myGroup = node.name; } // New Branch Start
+        // -------------------------------------------------------------------------
+        // ✅ 3D VANSHAVALI LOGIC (UPDATED WITH COLORS & HARDCODED PALETTE)
+        // -------------------------------------------------------------------------
+        const branchColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A133FF', '#33FFF5', '#F5FF33', '#FF8C00', '#8B0000', '#006400'];
+
+        function convertTreeToGraph(node, nodes = [], links = [], parent = null, myColor = null) {
+            let assignedColor = myColor;
+            if (!parent) { assignedColor = '#FFD700'; } 
+            else if (parent.group === "ROOT") { assignedColor = branchColors[nodes.length % branchColors.length]; }
             
-            nodes.push({ id: node.name, group: myGroup, info: node.info });
+            const newNode = { id: node.name, group: parent ? parent.group : "ROOT", color: assignedColor, info: node.info };
+            nodes.push(newNode);
+
             if (parent) { links.push({ source: parent.name, target: node.name }); }
-            if (node.children) { node.children.forEach(child => { convertTreeToGraph(child, nodes, links, node, myGroup); }); }
+            if (node.children) { node.children.forEach(child => { convertTreeToGraph(child, nodes, links, newNode, assignedColor); }); }
             return { nodes, links };
         }
 
-        // ✅ NEW: 3D GRAPH WITH SPRITE TEXT & COLORS
         window.open3DVanshavali = () => {
             if(!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા નથી."); return; }
             document.getElementById('settings-modal').style.display = 'none';
@@ -527,11 +529,10 @@
                 (document.getElementById('graph-container'))
                 .graphData(gData)
                 .backgroundColor('#000011') 
-                .nodeAutoColorBy('group') // Branch Color Magic
                 .nodeThreeObject(node => {
                     const obj = new THREE.Mesh(new THREE.SphereGeometry(5), new THREE.MeshLambertMaterial({ color: node.color }));
                     const sprite = new SpriteText(node.id);
-                    sprite.color = '#ffffff'; sprite.textHeight = 10; sprite.backgroundColor = 'rgba(0,0,0,0.5)'; sprite.padding = 2; sprite.borderRadius = 4; sprite.position.y = -12;
+                    sprite.color = '#ffffff'; sprite.textHeight = 10; sprite.backgroundColor = 'rgba(0,0,0,0.6)'; sprite.padding = 3; sprite.borderRadius = 4; sprite.position.y = -12;
                     obj.add(sprite); return obj;
                 })
                 .linkWidth(1.5).linkColor(() => 'rgba(255,255,255,0.2)')
@@ -553,7 +554,7 @@
             let cmd = text.toLowerCase();
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
             
-            // ✅ FIX: ADDED MISSING FUNCTION CALL LOGIC
+            // ✅ MISSING FUNCTION CHECK
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { 
                 try { 
                     let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); 
@@ -561,7 +562,6 @@
                         let childName = parts[1].trim(); let parentName = parts[2].trim(); 
                         if (!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા નથી."); return; } 
                         let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree)); 
-                        // Using the new function below
                         let result = window.findParentAndAddChild(newTree, parentName, childName); 
                         if (result === "ADDED") { window.activeFamilyTree = newTree; if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, { tree: newTree }); window.speak(`${childName} નું નામ ઉમેરાઈ ગયું.`); } else if (result === "EXISTS") { window.speak("નામ પહેલેથી છે."); } else { window.speak("પિતાનું નામ મળ્યું નહીં."); } return; 
                     } 
@@ -581,15 +581,34 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
-        // ✅ FIX: ADDED TIME AWARENESS
+        // -------------------------------------------------------------------------
+        // ✅ TIME AWARE PROMPT (DATE/TIME IS PRIORITY)
+        // -------------------------------------------------------------------------
         function getSystemPrompt(memories, contextData) { 
+            const now = new Date();
+            const timeString = now.toLocaleTimeString('gu-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+            const dateString = now.toLocaleDateString('gu-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+
             let moodPrompt = "You are a helpful assistant."; if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
             let familyDataString = ""; try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
-            let ragContext = ""; if(window.ragContent && window.ragContent.length > 0) { const safeContent = window.ragContent.substring(0, 500000); ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer the user's question accurately.)\n`; }
-            
-            const timeNow = new Date().toLocaleString('gu-IN'); // 🕒 Time Added
+            let ragContext = ""; if(window.ragContent && window.ragContent.length > 0) { const safeContent = window.ragContent.substring(0, 500000); ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use this content to answer.)\n`; }
 
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. [Current Time: ${timeNow}] ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
+            return `
+            [SYSTEM INFO]
+            Current Date: ${dateString}
+            Current Time: ${timeString}
+            User Name: ${userName}
+            Mood: ${currentMood}
+            
+            [INSTRUCTIONS]
+            ${moodPrompt}
+            Always answer in Gujarati.
+            ${familyDataString}
+            ${ragContext}
+            [USER MEMORY]: ${memories}
+            User Question: "${contextData}"
+            [GENERATIVE UI RULE]: If user asks for app/tool, wrap code in :::APP_START::: and :::APP_END:::.
+            `; 
         }
 
         window.askGeminiText = async (userText) => { let keys = geminiKeys.split(',').filter(k => k); if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; } const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); contents.push({ role: "user", parts: [{ text: systemInstruction }] }); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) }); const data = await response.json(); if(data.candidates) { let reply = data.candidates[0].content.parts[0].text; if(!handleGenUI(reply)) { window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply); } } else { window.speak("કાંઈ સમજાયું નહીં."); } } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; } };
@@ -607,7 +626,9 @@
         window.stopVisionCamera = () => { isLiveVisionActive = false; document.getElementById('canvas-capture').style.display = 'none'; const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; document.getElementById('vision-btn').style.background = "#008cff"; playVideo('silent'); };
         window.speak = (text, forceSpeak = false) => { if(silentMode && !forceSpeak) { statusText.innerText = "મૌન (Silent)..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "બોલું છું..."; isAiSpeaking = true; const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; let voices = window.speechSynthesis.getVoices(); let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); if(bestVoice) u.voice = bestVoice; u.onstart = () => { playVideo('talking'); statusText.style.border = "1px solid rgba(255,255,255,0.2)"; }; u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; window.speechSynthesis.speak(u); };
 
-        // ✅ FIX: ADDED MISSING HELPER FUNCTION (REQUIRED FOR ADDING NAMES)
+        // -------------------------------------------------------------------------
+        // ✅ MISSING FUNCTION ADDED (FOR ADDING NAMES)
+        // -------------------------------------------------------------------------
         window.findParentAndAddChild = (node, parentName, childName) => {
             if (node.name.trim() === parentName.trim()) {
                 if (!node.children) node.children = [];
