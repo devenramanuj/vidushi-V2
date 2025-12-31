@@ -165,10 +165,11 @@
             <button id="stop-btn" class="round-btn" onclick="window.stopConversation()"><i class="fas fa-stop"></i></button>
         </div>
     </div>
-    <script type="module">
+       <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // --- CONFIGURATION ---
         const firebaseConfig = {
             apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "", 
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -194,33 +195,36 @@
         let notes=[], expenses=[], contacts=[], currentCameraMode="user";
         let recognition, isProcessing=false;
 
-        // --- 1. NEW & FINAL ACCURATE INDIAN TIME (No Math, Pure Zone Logic) ---
-function getIndianTime() {
-    const now = new Date();
-    // કોમ્પ્યુટરની ગણતરી છોડો, સીધો ભારતનો ટાઈમ સ્ટ્રિંગમાં માંગો
-    const indianTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
-    const istDate = new Date(indianTimeStr);
+        // --- 1. FINAL TIME FUNCTION (SIMPLE & ACCURATE) ---
+        // આ ફંક્શન હવે સીધું વાક્ય જ આપશે, કોઈ ગણિત નહીં.
+        function getIndianTime() {
+            const now = new Date();
+            // બ્રાઉઝર પાસેથી ભારતનો ટાઈમ લાવો
+            const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric', minute: 'numeric', day: 'numeric', month: 'long', year: 'numeric' };
+            const formatter = new Intl.DateTimeFormat('en-US', options);
+            const parts = formatter.formatToParts(now);
 
-    let hours = istDate.getHours();
-    let minutes = istDate.getMinutes();
-    
-    // સવાર/બપોર/સાંજ
-    let period = "સવારના";
-    if (hours >= 12) period = "બપોરના";
-    if (hours >= 17) period = "સાંજના";
-    if (hours >= 20 || hours < 4) period = "રાતના";
+            // વેલ્યુ કાઢો
+            let hours = parseInt(parts.find(p => p.type === 'hour').value);
+            let minutes = parseInt(parts.find(p => p.type === 'minute').value);
+            
+            // સવાર/સાંજ નક્કી કરો
+            let period = "સવારના";
+            if (hours >= 12) period = "બપોરના";
+            if (hours >= 17) period = "સાંજના";
+            if (hours >= 20 || hours < 4) period = "રાતના";
 
-    // 12 કલાક ફોર્મેટ
-    hours = hours % 12;
-    hours = hours ? hours : 12; 
+            // 12 કલાક ફોર્મેટ
+            let displayHours = hours % 12;
+            displayHours = displayHours ? displayHours : 12; 
+            
+            // મિનિટ્સ (જેમ કે 5 ને બદલે 05 ન બોલાય તો ચાલે, પણ લખવા માટે ઠીક છે)
+            // બોલવા માટે આપણે સીધો આંકડો જ લઈએ છીએ.
+            
+            return `અત્યારે ${period} ${displayHours} વાગીને ${minutes} મિનિટ થઈ છે.`;
+        }
 
-    // વાક્ય
-    return `અત્યારે ${period} ${hours} વાગીને ${minutes} મિનિટ થઈ છે.`;
-}
-
-
-
-        // INIT FIREBASE
+        // --- FIREBASE INIT ---
         try {
             if (!firebaseConfig.apiKey) { console.warn("Key Missing"); } else {
                 app = initializeApp(firebaseConfig);
@@ -257,7 +261,7 @@ function getIndianTime() {
             await setDoc(settingsDocRef, { userName, geminiKey: geminiKeys, groqKey: groqKey, provider: aiProvider, geminiModel: geminiModel, lastUpdated: new Date() }, { merge: true });
         }
 
-        // ONLOAD
+        // --- ONLOAD ---
         window.onload = () => {
             playVideo('smiling'); window.speechSynthesis.getVoices();
             if (!firebaseApiKey) { setTimeout(() => { window.speak("API Key બાકી છે."); window.openSettings(); }, 2000); }
@@ -271,7 +275,7 @@ function getIndianTime() {
             }
         };
 
-        // UI FUNCS
+        // --- UI FUNCTIONS ---
         window.openSettings = () => { 
             document.getElementById('settings-modal').style.display='flex'; 
             document.getElementById('userNameInput').value=userName; 
@@ -315,7 +319,7 @@ function getIndianTime() {
             window.toggleModal(t); 
         };
         
-        // STANDARD FEATURES
+        // --- STANDARD APP FEATURES ---
         window.renderNotes = () => { 
             document.getElementById('notes-list').innerHTML = notes.map(n=>`
                 <div class="list-item">
@@ -362,9 +366,9 @@ function getIndianTime() {
             if(n&&no&&db) await addDoc(collection(db,"vidushi_contacts"),{name:n,number:no});
         };
 
-        // --- 2. 3D VANSHAVALI COLOR UPDATE (PURPLE) ---
+        // --- 2. 3D VANSHAVALI (PURPLE COLOR FIX) ---
         function convertTreeToGraph(node, nodes=[], links=[], parent=null) {
-            // કલર લોજિક: મૂળ પુરુષ (Root) = ગોલ્ડન, બાકી બધા જાંબલી (#8E44AD)
+            // મૂળ પુરુષ (Root) ગોલ્ડન, બાકી બધું જાંબલી (#8E44AD)
             let color = parent ? '#8E44AD' : '#FFD700';
             
             let newNode = {
@@ -403,7 +407,6 @@ function getIndianTime() {
                 .graphData(graphData)
                 .backgroundColor('#000011')
                 .nodeThreeObject(node => {
-                    // જાંબલી કલરના ગોળા (Spheres)
                     const obj = new THREE.Mesh(
                         new THREE.SphereGeometry(6), 
                         new THREE.MeshLambertMaterial({color: node.color, transparent:true, opacity:0.9})
@@ -415,7 +418,7 @@ function getIndianTime() {
                     return obj;
                 })
                 .linkWidth(2)
-                .linkColor(link => link.color) // જાંબલી લાઈનો
+                .linkColor(link => link.color)
                 .linkOpacity(0.7)
                 .showNavInfo(false)
                 .onNodeClick(node => {
@@ -434,32 +437,18 @@ function getIndianTime() {
             document.getElementById('graph-container').innerHTML='';
         };
 
-        // AI & VOICE LOGIC
-        function getIndianTime() {
-    const now = new Date();
-    // કોમ્પ્યુટરની ગણતરી છોડો, સીધો ભારતનો ટાઈમ સ્ટ્રિંગમાં માંગો
-    const indianTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
-    const istDate = new Date(indianTimeStr);
-
-    let hours = istDate.getHours();
-    let minutes = istDate.getMinutes();
-    
-    // સવાર/બપોર/સાંજ
-    let period = "સવારના";
-    if (hours >= 12) period = "બપોરના";
-    if (hours >= 17) period = "સાંજના";
-    if (hours >= 20 || hours < 4) period = "રાતના";
-
-    // 12 કલાક ફોર્મેટ
-    hours = hours % 12;
-    hours = hours ? hours : 12; 
-
-    // વાક્ય
-    return `અત્યારે ${period} ${hours} વાગીને ${minutes} મિનિટ થઈ છે.`;
-}
-
+        // --- COMMAND PROCESSING ---
+        window.processCommand = async (text) => {
+            if(text.trim().length<2) return;
+            let cmd = text.toLowerCase();
             
-            // Vanshavali Addition
+            // --- TIME FIX: Call function directly, no .timeString property ---
+            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ")) {
+                const timeMessage = getIndianTime(); // Now returns a clean STRING
+                window.speak(timeMessage);
+                return;
+            }
+            
             if(cmd.includes("નામ") && (cmd.includes("પુત્ર") || cmd.includes("દીકરા"))) {
                 let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા)/);
                 if(parts && parts.length>=3 && window.activeFamilyTree) {
@@ -492,8 +481,7 @@ function getIndianTime() {
             if(!keys.length) { window.speak("API Key નથી."); isProcessing=false; return; }
             
             // System Prompt with Accurate Time
-            const indianTime = getIndianTime();
-            const timeInfo = `${indianTime.timeString}, ${indianTime.dateString}`;
+            const timeInfo = getIndianTime(); // Returns string now
             
             const sys = `તમે વિદુષી છો. યુઝર: ${userName}. ભાષા: ગુજરાતી.
             અત્યારનો સમય: ${timeInfo}.
@@ -550,7 +538,7 @@ function getIndianTime() {
             if(videos[t]){ videos[t].style.display = 'block'; videos[t].play().catch(()=>{}); }
         }
         
-        // VOICE RECOGNITION
+        // --- VOICE RECOGNITION SETUP ---
         window.startConversation = () => { try { recognition.start(); } catch(e) { window.speak("એરર."); } }; 
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('smiling'); };
         
@@ -566,5 +554,3 @@ function getIndianTime() {
             };
         }
     </script>
-</body>
-</html>
