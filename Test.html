@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vidushi AI - Ultimate RAG (Memory Fix)</title>
+    <title>Vidushi AI - Ultimate RAG (API Key Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -177,7 +177,6 @@
                 <label>Gemini Keys (comma sep):</label><textarea id="geminiKeyInput" rows="2"></textarea>
             </div>
             
-            <!-- GROQ SETTINGS -->
             <div id="groq-settings" style="display:none;">
                 <label>Groq Key:</label><input type="password" id="groqKeyInput" placeholder="gsk_...">
                 
@@ -188,6 +187,13 @@
                     <option value="llama-3.3-70b-specdec">Llama 3.3 70B (Speculative)</option>
                     <option value="mixtral-8x7b-32768">Mixtral 8x7b</option>
                 </select>
+            </div>
+
+            <!-- NEW: Firebase API Key -->
+            <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+                <label style="color:var(--accent); font-weight:bold;">Firebase Config</label>
+                <label>API Key:</label><input type="password" id="firebaseKeyInput" placeholder="AIzaSy...">
+                <div style="font-size:10px; color:#777; text-align:left; margin-top:-5px;">(Only API Key is required. Other details are pre-set.)</div>
             </div>
 
             <button class="save-btn" onclick="window.saveSettings()">SAVE & SYNC</button>
@@ -222,13 +228,22 @@
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- FIREBASE & STATE CONFIG ---
-        const firebaseConfig = {
-            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey",
+        // Pre-set details from code, API Key will be injected here
+        const staticFirebaseConfig = {
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
             projectId: "vidushi-ai-614cb",
             storageBucket: "vidushi-ai-614cb.firebasestorage.app",
             messagingSenderId: "146312927144",
             appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d"
+        };
+
+        // Load API Key from localStorage or use placeholder
+        let userFirebaseKey = localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey";
+        
+        // Combine them
+        const firebaseConfig = {
+            ...staticFirebaseConfig,
+            apiKey: userFirebaseKey
         };
 
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
@@ -254,7 +269,6 @@
             loadVanshavaliFromCloud();
         } catch (err) { console.error("Firebase Error", err); }
 
-        // --- MEMORY FIX ---
         async function loadCloudSettings() {
             if(!db) return;
             try {
@@ -296,18 +310,15 @@
             await setDoc(settingsDocRef, settingsData, { merge: true });
         }
 
-        // HYBRID MEMORY LOAD: Try Cloud first, fallback to LocalStorage
         window.permanentMemories = JSON.parse(localStorage.getItem('vidushi_local_memories')) || [];
 
         if (userDocRef) {
             onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) { 
                     window.permanentMemories = docSnap.data().memories || []; 
-                    // Save locally for backup
                     localStorage.setItem('vidushi_local_memories', JSON.stringify(window.permanentMemories));
                 }
                 else { 
-                    // If cloud is empty, check if we have local memory to restore
                     if(window.permanentMemories.length > 0) {
                          setDoc(userDocRef, { memories: window.permanentMemories }); 
                     } else {
@@ -363,6 +374,8 @@
             document.getElementById('geminiModelSelect').value = geminiModel; 
             document.getElementById('groqKeyInput').value = groqKey; 
             document.getElementById('groqModelSelect').value = groqModel; 
+            // LOAD FIREBASE KEY
+            document.getElementById('firebaseKeyInput').value = userFirebaseKey; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('silentModeCheck').checked = silentMode; 
             document.getElementById('moodSelect').value = currentMood; 
@@ -393,6 +406,10 @@
                 geminiModel = document.getElementById('geminiModelSelect').value; 
                 groqKey = document.getElementById('groqKeyInput').value.trim(); 
                 groqModel = document.getElementById('groqModelSelect').value; 
+                // SAVE FIREBASE KEY
+                userFirebaseKey = document.getElementById('firebaseKeyInput').value.trim(); 
+                localStorage.setItem('vidushi_firebase_apiKey', userFirebaseKey);
+
                 continuousMode = document.getElementById('continuousModeCheck').checked; 
                 silentMode = document.getElementById('silentModeCheck').checked; 
                 currentMood = document.getElementById('moodSelect').value; 
@@ -408,9 +425,13 @@
                 } catch(e) {
                     console.warn("Cloud save failed, but local saved.");
                 }
+
+                // Reloading page to apply new Firebase Key immediately
+                alert("Firebase Key updated. Reloading app to connect...");
+                location.reload(); 
                 
-                document.getElementById('settings-modal').style.display = 'none'; 
-                if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
+                // document.getElementById('settings-modal').style.display = 'none'; 
+                // if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
             } catch (e) {
                 console.error("Save Error:", e);
                 alert("Error saving settings");
@@ -520,9 +541,8 @@
             });
 
             let familyDataString = ""; 
-            // VANSHAVALI FIX: Explicitly format data for AI
             if (window.activeFamilyTree) { 
-                familyDataString = `\n\n[FAMILY DATA (Vanshavali)]:\n${JSON.stringify(window.activeFamilyTree)}\nIMPORTANT: This is the user's family tree data. Use it to answer questions about relatives.`; 
+                familyDataString = `\n\n[FAMILY DATA (Vanshavali)]:\n${JSON.stringify(window.activeFamilyTree)}\nIMPORTANT: This is user's family tree data. Use it to answer questions about relatives.`; 
             } 
             
             let ragContext = "";
@@ -532,7 +552,7 @@
             }
 
             return `CURRENT LOCAL TIME: ${timeString}. 
-            IMPORTANT: If user asks about time, day, or date, use the "CURRENT LOCAL TIME" provided above.
+            IMPORTANT: If user asks about time, day, or date, use "CURRENT LOCAL TIME" provided above.
             User: ${userName}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} 
             Question: "${contextData}" 
             [GENERATIVE UI]: If user asks to make a tool/app, generate HTML/CSS/JS. Wrap code in :::APP_START::: and :::APP_END:::.`; 
