@@ -196,32 +196,28 @@
 
         // --- 1. NEW & FINAL ACCURATE INDIAN TIME (No Math, Pure Zone Logic) ---
 function getIndianTime() {
-    // 1. અત્યારનો સમય લો
     const now = new Date();
-
-    // 2. તેને સીધો ભારતનો ટાઈમ બનાવીને સ્ટ્રિંગમાં ફેરવો (Asia/Kolkata)
+    // કોમ્પ્યુટરની ગણતરી છોડો, સીધો ભારતનો ટાઈમ સ્ટ્રિંગમાં માંગો
     const indianTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
-    
-    // 3. તે સ્ટ્રિંગમાંથી પાછી નવી ડેટ (Date) બનાવો (જેથી આપણને સાચા કલાક મળે)
     const istDate = new Date(indianTimeStr);
 
-    // 4. હવે આમાંથી કલાક મિનિટ ખેંચો
     let hours = istDate.getHours();
     let minutes = istDate.getMinutes();
     
-    // 5. સવાર/સાંજ નક્કી કરો (જેથી કમ્પ્યુટર જેવું ન લાગે)
+    // સવાર/બપોર/સાંજ
     let period = "સવારના";
     if (hours >= 12) period = "બપોરના";
     if (hours >= 17) period = "સાંજના";
     if (hours >= 20 || hours < 4) period = "રાતના";
 
-    // 6. 12 કલાક ફોર્મેટ
+    // 12 કલાક ફોર્મેટ
     hours = hours % 12;
-    hours = hours ? hours : 12; // 0 ને 12 કરો
+    hours = hours ? hours : 12; 
 
-    // 7. વાક્ય રીતર્ન કરો
+    // વાક્ય
     return `અત્યારે ${period} ${hours} વાગીને ${minutes} મિનિટ થઈ છે.`;
 }
+
 
 
         // INIT FIREBASE
