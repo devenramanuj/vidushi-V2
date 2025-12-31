@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vidushi AI - Ultimate RAG (Fixed Save)</title>
+    <title>Vidushi AI - Ultimate RAG (Memory Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -236,7 +236,6 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
-        // FIXED: Default to 70B so user sees correct model initially
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-versatile"; 
         
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
@@ -255,6 +254,7 @@
             loadVanshavaliFromCloud();
         } catch (err) { console.error("Firebase Error", err); }
 
+        // --- MEMORY FIX ---
         async function loadCloudSettings() {
             if(!db) return;
             try {
@@ -296,20 +296,24 @@
             await setDoc(settingsDocRef, settingsData, { merge: true });
         }
 
-        window.permanentMemories = window.permanentMemories || [];
-        window.chatHistory = window.chatHistory || [];
-        let notes = [], expenses = [], contacts = [], currentCameraMode = "user"; 
-
-        window.formatDate = (timestamp) => {
-            if (!timestamp) return "";
-            let date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
-            return date.toLocaleString('gu-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
-        };
+        // HYBRID MEMORY LOAD: Try Cloud first, fallback to LocalStorage
+        window.permanentMemories = JSON.parse(localStorage.getItem('vidushi_local_memories')) || [];
 
         if (userDocRef) {
             onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) { window.permanentMemories = docSnap.data().memories || []; }
-                else { setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] }); }
+                if (docSnap.exists()) { 
+                    window.permanentMemories = docSnap.data().memories || []; 
+                    // Save locally for backup
+                    localStorage.setItem('vidushi_local_memories', JSON.stringify(window.permanentMemories));
+                }
+                else { 
+                    // If cloud is empty, check if we have local memory to restore
+                    if(window.permanentMemories.length > 0) {
+                         setDoc(userDocRef, { memories: window.permanentMemories }); 
+                    } else {
+                         setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] });
+                    }
+                }
             });
         }
         
@@ -381,7 +385,6 @@
             }
         };
         
-        // FIXED: Safe saving to prevent crash if cloud fails
         window.saveSettings = async () => { 
             try {
                 userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
@@ -400,7 +403,6 @@
                 localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
                 localStorage.setItem('vidushi_mood', currentMood);
                 
-                // Try saving to cloud, but don't crash if it fails
                 try {
                     await saveToCloud();
                 } catch(e) {
@@ -506,7 +508,7 @@
         
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; window.speak("એપ બની."); return true; } return false; }
         
-        // --- TIME FIX FUNCTION ---
+        // --- VANSHAVALI & TIME FIX FUNCTION ---
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = currentMood === 'angry' ? "You are very angry." : "You are a helpful assistant."; 
             
@@ -518,7 +520,10 @@
             });
 
             let familyDataString = ""; 
-            if (window.activeFamilyTree) { familyDataString = `[FAMILY DATA]:\n${window.activeFamilyTree}`; } 
+            // VANSHAVALI FIX: Explicitly format data for AI
+            if (window.activeFamilyTree) { 
+                familyDataString = `\n\n[FAMILY DATA (Vanshavali)]:\n${JSON.stringify(window.activeFamilyTree)}\nIMPORTANT: This is the user's family tree data. Use it to answer questions about relatives.`; 
+            } 
             
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
