@@ -9,11 +9,9 @@
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script> pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; </script>
-
     <script src="vanshavali_data.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-    
     <script src="//unpkg.com/3d-force-graph"></script>
     <script src="//unpkg.com/three"></script>
     <script src="//unpkg.com/three-spritetext"></script>
@@ -21,14 +19,18 @@
     <style>
         /* CORE STYLES */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
+        
+        /* VIDEO AVATAR LAYERS */
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
         #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+        
+        /* STATUS BAR */
         #rag-status { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #008cff; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 50; box-shadow: 0 0 10px #008cff; }
         
-        /* UI ELEMENTS */
+        /* UI BUTTONS & MODALS */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
         .notes-header { width: 100%; display: flex; justify-content: space-between; color: #ff4500; font-size: 22px; font-weight: bold; margin-bottom: 20px; border-bottom: 1px solid #333; padding-bottom: 10px; }
@@ -40,6 +42,7 @@
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 15px 5px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; gap: 5px; text-align: center; }
         
+        /* MIC & CONTROLS */
         #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
         #status-text { color: white; margin-bottom: 15px; font-size: 14px; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.2); transition: 0.3s; }
         .controls-row { display: flex; gap: 20px; align-items: center; }
@@ -162,7 +165,6 @@
             <button id="stop-btn" class="round-btn" onclick="window.stopConversation()"><i class="fas fa-stop"></i></button>
         </div>
     </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -182,7 +184,6 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
-        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
         let silentMode = localStorage.getItem('vidushi_silent') === 'true';
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
@@ -191,44 +192,48 @@
         window.permanentMemories = [];
         window.chatHistory = [];
         let notes=[], expenses=[], contacts=[], currentCameraMode="user";
-        let recognition, isProcessing=false, visionStream=null;
+        let recognition, isProcessing=false;
 
-        // HELPER FUNCTION TO GET INDIAN TIME
+        // --- 1. DEEPSEEK TIME LOGIC (UTC + 5.5 Hours) ---
         function getIndianTime() {
             const now = new Date();
             
-            // Get UTC time and add 5 hours 30 minutes for IST
-            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
-            const indiaTime = new Date(utcTime + (5.5 * 60 * 60000));
+            // IST Offset: 5.5 hours in milliseconds
+            const istOffset = 5.5 * 60 * 60 * 1000; 
             
-            // Extract components
-            let hours = indiaTime.getHours();
-            const minutes = indiaTime.getMinutes();
-            const seconds = indiaTime.getSeconds();
+            // Calculate IST using UTC + Offset
+            const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+
+            let hours = istTime.getHours();
+            let minutes = istTime.getMinutes();
+            let seconds = istTime.getSeconds();
             
-            // Convert to 12-hour format
+            // AM/PM Logic
             const ampm = hours >= 12 ? 'પીએમ' : 'એએમ';
-            hours = hours % 12;
-            hours = hours ? hours : 12; // 0 should be 12
             
-            // Format minutes with leading zero if needed
+            // 12-Hour Format
+            let displayHours = hours % 12;
+            displayHours = displayHours ? displayHours : 12; 
+            
+            // Leading Zero for Minutes
             const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
             
-            // Get date components
-            const day = indiaTime.getDate();
-            const month = indiaTime.getMonth() + 1; // Months are 0-indexed
-            const year = indiaTime.getFullYear();
+            // Date Components
+            const day = istTime.getDate();
+            const month = istTime.getMonth() + 1; 
+            const year = istTime.getFullYear();
             
             return {
-                hours: hours,
+                hours: displayHours,
                 minutes: formattedMinutes,
                 seconds: seconds,
                 ampm: ampm,
                 day: day,
                 month: month,
                 year: year,
-                timeString: `અત્યારે ${hours} ${formattedMinutes} વાગ્યા છે`,
-                dateString: `તારીખ ${day}, ${month}, ${year} થઈ છે`
+                // બોલવા માટે વાક્ય રચના
+                timeString: `અત્યારે ${displayHours} વાગીને ${formattedMinutes} મિનિટ થઈ છે`,
+                dateString: `આજે તારીખ ${day}, ${month}, ${year} છે`
             };
         }
 
@@ -328,7 +333,6 @@
         };
         
         // STANDARD FEATURES
-        window.formatDate = (ts) => new Date(ts).toLocaleDateString('gu-IN');
         window.renderNotes = () => { 
             document.getElementById('notes-list').innerHTML = notes.map(n=>`
                 <div class="list-item">
@@ -337,9 +341,8 @@
                 </div>
             `).join(''); 
         };
-        window.deleteNote = async(id) => { 
-            if(db) await deleteDoc(doc(db,"vidushi_notes",id)); 
-        };
+        window.deleteNote = async(id) => { if(db) await deleteDoc(doc(db,"vidushi_notes",id)); };
+        
         window.renderExpenses = () => { 
             let t=0; 
             document.getElementById('expense-list').innerHTML = expenses.map(n=>{
@@ -351,9 +354,8 @@
             }).join(''); 
             document.getElementById('total-expense').innerText=t; 
         };
-        window.deleteExpense = async(id) => { 
-            if(db) await deleteDoc(doc(db,"vidushi_expenses",id)); 
-        };
+        window.deleteExpense = async(id) => { if(db) await deleteDoc(doc(db,"vidushi_expenses",id)); };
+        
         window.renderContacts = () => { 
             document.getElementById('contacts-list').innerHTML = contacts.map(c=>`
                 <div class="list-item">
@@ -362,20 +364,13 @@
                 </div>
             `).join(''); 
         };
-        window.deleteContact = async(id) => { 
-            if(db) await deleteDoc(doc(db,"vidushi_contacts",id)); 
-        };
-        window.addNote=async(t)=>{
-            if(db) await addDoc(collection(db,"vidushi_notes"),{text:t,timestamp:Date.now()}); 
-            window.speak("લખ્યું.");
-        };
+        window.deleteContact = async(id) => { if(db) await deleteDoc(doc(db,"vidushi_contacts",id)); };
+        
+        window.addNote=async(t)=>{ if(db) await addDoc(collection(db,"vidushi_notes"),{text:t,timestamp:Date.now()}); window.speak("લખ્યું."); };
+        
         window.addExpense=async(t)=>{
             let a=t.match(/\d+/); 
-            if(a&&db) await addDoc(collection(db,"vidushi_expenses"),{
-                amount:parseInt(a[0]),
-                desc:t.replace(a[0],"").trim(),
-                timestamp:Date.now()
-            }); 
+            if(a&&db) await addDoc(collection(db,"vidushi_expenses"),{ amount:parseInt(a[0]), desc:t.replace(a[0],"").trim(), timestamp:Date.now() }); 
             window.speak("લખ્યું.");
         };
         window.addContactUI=async()=>{
@@ -384,33 +379,10 @@
             if(n&&no&&db) await addDoc(collection(db,"vidushi_contacts"),{name:n,number:no});
         };
 
-        // 3D VANSHAVALI LOGIC - IMPROVED BRANCH COLORS
-        const branchColors = [
-            '#FF5733', '#33FF57', '#3357FF', '#FF33A1', 
-            '#A133FF', '#33FFF5', '#F5FF33', '#FF8C00',
-            '#00FFAA', '#AA00FF', '#FFAA00', '#00AAFF',
-            '#FF0066', '#66FF00', '#0066FF', '#FF6600'
-        ];
-        
-        // Track branch colors for consistency
-        const branchColorMap = new Map();
-        
-        function convertTreeToGraph(node, nodes=[], links=[], parent=null, branchIndex=0) {
-            // Determine color for this node
-            let color = '#FFD700'; // Default root color
-            
-            if (parent) {
-                // If parent is root, assign a new branch color
-                if (parent.group === "ROOT") {
-                    if (!branchColorMap.has(node.id)) {
-                        branchColorMap.set(node.id, branchColors[branchIndex % branchColors.length]);
-                    }
-                    color = branchColorMap.get(node.id);
-                } else {
-                    // Inherit parent's color if available
-                    color = branchColorMap.get(parent.id) || '#FFFFFF';
-                }
-            }
+        // --- 2. 3D VANSHAVALI COLOR UPDATE (PURPLE) ---
+        function convertTreeToGraph(node, nodes=[], links=[], parent=null) {
+            // કલર લોજિક: મૂળ પુરુષ (Root) = ગોલ્ડન, બાકી બધા જાંબલી (#8E44AD)
+            let color = parent ? '#8E44AD' : '#FFD700';
             
             let newNode = {
                 id: node.name, 
@@ -428,24 +400,16 @@
                 });
             }
             
-            // Process children with appropriate branch index
             if(node.children) {
-                node.children.forEach((child, childIndex) => {
-                    const childBranchIndex = parent ? branchIndex : childIndex;
-                    convertTreeToGraph(child, nodes, links, newNode, childBranchIndex);
+                node.children.forEach(child => {
+                    convertTreeToGraph(child, nodes, links, newNode);
                 });
             }
             return {nodes, links};
         }
         
         window.open3DVanshavali = () => {
-            if(!window.activeFamilyTree){
-                window.speak("ડેટા નથી."); 
-                return;
-            }
-            
-            // Reset color map
-            branchColorMap.clear();
+            if(!window.activeFamilyTree){ window.speak("ડેટા નથી."); return; }
             
             document.getElementById('settings-modal').style.display='none'; 
             document.getElementById('vanshavali-3d-modal').style.display='block';
@@ -456,46 +420,30 @@
                 .graphData(graphData)
                 .backgroundColor('#000011')
                 .nodeThreeObject(node => {
-                    // Create colored sphere
+                    // જાંબલી કલરના ગોળા (Spheres)
                     const obj = new THREE.Mesh(
-                        new THREE.SphereGeometry(5), 
-                        new THREE.MeshLambertMaterial({color: node.color})
+                        new THREE.SphereGeometry(6), 
+                        new THREE.MeshLambertMaterial({color: node.color, transparent:true, opacity:0.9})
                     );
-                    
-                    // Add text label
                     const sprite = new SpriteText(node.id);
-                    sprite.color='white'; 
-                    sprite.textHeight=8; 
-                    sprite.backgroundColor='rgba(0,0,0,0.6)'; 
-                    sprite.padding = 5;
-                    sprite.position.y=-15;
+                    sprite.color='white'; sprite.textHeight=8; sprite.backgroundColor='rgba(0,0,0,0.6)'; sprite.padding = 4;
+                    sprite.position.y=-12;
                     obj.add(sprite); 
-                    
                     return obj;
                 })
                 .linkWidth(2)
-                .linkColor(link => link.color || 'rgba(255,255,255,0.3)')
-                .linkOpacity(0.6)
+                .linkColor(link => link.color) // જાંબલી લાઈનો
+                .linkOpacity(0.7)
                 .showNavInfo(false)
                 .onNodeClick(node => {
-                    // Zoom to node
                     const distRatio = 1 + 80/Math.hypot(node.x, node.y, node.z);
-                    Graph.cameraPosition(
-                        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
-                        node, 
-                        2000
-                    );
-                    // Speak node info
+                    Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 2000);
                     const info = node.info ? `: ${node.info}` : '';
                     window.speak(`${node.id}${info}`);
                 });
             
-            // Add some initial camera movement
-            setTimeout(() => {
-                Graph.cameraPosition({ x: 0, y: 0, z: 250 }, { x: 0, y: 0, z: 0 }, 2000);
-            }, 500);
-            
-            window.speak("3D વંશાવલી તૈયાર છે. દરેક બ્રાન્ચ અલગ રંગમાં છે.");
+            setTimeout(() => { Graph.cameraPosition({ x: 0, y: 0, z: 250 }, { x: 0, y: 0, z: 0 }, 2000); }, 500);
+            window.speak("3D વંશાવલી તૈયાર છે.");
         };
         
         window.close3DVanshavali=()=>{
@@ -503,21 +451,19 @@
             document.getElementById('graph-container').innerHTML='';
         };
 
-        // AI LOGIC WITH CORRECT LOCAL TIME
+        // AI & VOICE LOGIC
         window.processCommand = async (text) => {
             if(text.trim().length<2) return;
             let cmd = text.toLowerCase();
             
-            // TIME QUERY HANDLING - FIXED FORMAT
-            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ") || cmd.includes("ટાઈમ")) {
+            // TIME QUERY - Using Deepseek Logic
+            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ")) {
                 const indianTime = getIndianTime();
-                const timeMessage = `${indianTime.timeString}, ${indianTime.dateString}.`;
-                
-                window.speak(timeMessage);
+                window.speak(`${indianTime.timeString}, ${indianTime.dateString}.`);
                 return;
             }
             
-            // VANSHAVALI ADDITION
+            // Vanshavali Addition
             if(cmd.includes("નામ") && (cmd.includes("પુત્ર") || cmd.includes("દીકરા"))) {
                 let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા)/);
                 if(parts && parts.length>=3 && window.activeFamilyTree) {
@@ -525,31 +471,20 @@
                     if(window.findParentAndAddChild(newTree, parts[2].trim(), parts[1].trim()) === "ADDED") {
                         window.activeFamilyTree = newTree; 
                         if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, {tree:newTree}); 
-                        window.speak("વંશાવલીમાં ઉમેરાઈ ગયું.");
-                    } else window.speak("ભૂલ થઈ. પિતાનું નામ શોધી શકાયું નથી.");
+                        window.speak("ઉમેરાઈ ગયું.");
+                    } else window.speak("પિતાનું નામ મળ્યું નથી.");
                     return;
                 }
             }
             
-            // MEMORY COMMANDS
             if(cmd.includes("યાદ રાખ")) { 
                 if(db) await updateDoc(userDocRef, {memories: arrayUnion(text.replace("યાદ રાખ","").trim())}); 
-                window.speak("યાદ રહ્યું."); 
-                return; 
+                window.speak("યાદ રહ્યું."); return; 
             }
             
-            // NOTES AND EXPENSES
-            if(cmd.includes("નોંધ")) { 
-                window.addNote(text.replace("નોંધ","").trim()); 
-                return; 
-            }
+            if(cmd.includes("નોંધ")) { window.addNote(text.replace("નોંધ","").trim()); return; }
+            if(cmd.includes("હિસાબ") || cmd.includes("ખર્ચ")) { window.addExpense(text); return; }
             
-            if(cmd.includes("હિસાબ") || cmd.includes("ખર્ચ")) { 
-                window.addExpense(text); 
-                return; 
-            }
-            
-            // GENERAL AI PROCESSING
             isProcessing=true; 
             document.getElementById('status-text').innerText="Thinking..."; 
             playVideo('thinking');
@@ -558,59 +493,30 @@
 
         window.askGeminiText = async (userText) => {
             let keys = geminiKeys.split(',').filter(k=>k); 
-            if(!keys.length) { 
-                window.speak("API Key નથી. સેટિંગ્સમાં જોડાવો."); 
-                isProcessing=false; 
-                return; 
-            }
+            if(!keys.length) { window.speak("API Key નથી."); isProcessing=false; return; }
             
-            // GET CURRENT INDIAN TIME
+            // System Prompt with Accurate Time
             const indianTime = getIndianTime();
-            const currentTimeStr = `${indianTime.timeString}, ${indianTime.dateString}.`;
+            const timeInfo = `${indianTime.timeString}, ${indianTime.dateString}`;
             
-            // ENHANCED SYSTEM PROMPT WITH TIME
-            const sys = `તમે વિદુષી છો. વપરાશકર્તા: ${userName}. હમેશાં ગુજરાતીમાં જ જવાબ આપજો.
+            const sys = `તમે વિદુષી છો. યુઝર: ${userName}. ભાષા: ગુજરાતી.
+            અત્યારનો સમય: ${timeInfo}.
             
-            મહત્વપૂર્ણ: વર્તમાન સમય અને તારીખ: ${currentTimeStr}
-            
-            જો વપરાશકર્તા સમય અથવા તારીખ વિશે પૂછે, તો આ સમય જણાવજો: "${currentTimeStr}"
-            
-            અન્ય માહિતી:
-            - વપરાશકર્તાની યાદગીરીઓ: ${window.permanentMemories.slice(-5).join(', ')}
-            - RAG સામગ્રી: ${window.ragContent.substring(0, 200)}...`;
+            સંદર્ભ:
+            - યાદગીરી: ${window.permanentMemories.slice(-5).join(', ')}
+            - નોંધ: ${window.ragContent.substring(0, 200)}...`;
             
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
-                    method: "POST", 
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({ 
-                        contents: [{
-                            role:"user", 
-                            parts:[{text: sys + "\n\n" + userText}]
-                        }],
-                        generationConfig: {
-                            temperature: 0.7,
-                            maxOutputTokens: 1000,
-                        }
-                    })
+                    method: "POST", headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ contents: [{ role:"user", parts:[{text: sys + "\n\n" + userText}] }] })
                 });
                 const data = await res.json();
-                if(data.error) { 
-                    window.speak("ત્રુટિ: " + data.error.message); 
-                } else if(data.candidates && data.candidates[0].content.parts[0].text) {
+                if(data.candidates && data.candidates[0].content.parts[0].text) {
                     let reply = data.candidates[0].content.parts[0].text;
-                    if(!handleGenUI(reply)) { 
-                        window.chatHistory.push({role:"user",content:userText}); 
-                        window.chatHistory.push({role:"model",content:reply}); 
-                        window.speak(reply); 
-                    }
-                } else {
-                    window.speak("કોઈ જવાબ મળ્યો નથી.");
-                }
-            } catch(e) { 
-                console.error(e);
-                window.speak("નેટવર્ક ત્રુટિ."); 
-            }
+                    window.speak(reply); 
+                } else { window.speak("જવાબ મળ્યો નથી."); }
+            } catch(e) { window.speak("નેટવર્ક એરર."); }
             isProcessing=false;
             document.getElementById('status-text').innerText="Ready";
             playVideo('smiling');
@@ -632,16 +538,10 @@
             return "NOT_FOUND";
         };
 
-        // UTILITIES
         window.speak = (t) => { 
-            if(silentMode){
-                playVideo('silent');
-                return;
-            } 
+            if(silentMode){ playVideo('silent'); return; } 
             const u = new SpeechSynthesisUtterance(t.replace(/[*#]/g,"")); 
-            u.lang = 'gu-IN'; 
-            u.rate = 1.0;
-            u.pitch = 1.0;
+            u.lang = 'gu-IN'; u.rate = 1.0;
             u.onstart = () => playVideo('talking'); 
             u.onend = () => playVideo('smiling'); 
             u.onerror = () => playVideo('smiling');
@@ -649,83 +549,25 @@
         };
         
         function playVideo(t) { 
-            const videos = {
-                silent: document.getElementById('silent-video'),
-                talking: document.getElementById('talking-video'),
-                thinking: document.getElementById('thinking-video'),
-                smiling: document.getElementById('smiling-video'),
-                angry: document.getElementById('angry-video')
-            };
-            
-            Object.values(videos).forEach(v => {
-                v.style.display = 'none';
-                v.pause();
-            });
-            
-            if(videos[t]){
-                videos[t].style.display = 'block';
-                videos[t].play().catch(()=>{});
-            }
+            const videos = { silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'), thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video') };
+            Object.values(videos).forEach(v => { v.style.display = 'none'; v.pause(); });
+            if(videos[t]){ videos[t].style.display = 'block'; videos[t].play().catch(()=>{}); }
         }
         
-        function handleGenUI(r){
-            if(r.includes(":::APP_START:::")){
-                document.getElementById('app-viewer-modal').style.display='flex'; 
-                document.getElementById('app-render-area').innerHTML = r.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; 
-                window.speak("એપ જુઓ."); 
-                return true;
-            } 
-            return false;
-        }
-        
-        // VOICE RECOGNITION SETUP
-        window.startConversation = () => {
-            try {
-                recognition.start();
-                document.getElementById('status-text').innerText = "Listening...";
-            } catch(e) {
-                window.speak("માઇક્રોફોન શરૂ કરવામાં ત્રુટિ.");
-            }
-        }; 
-        
-        window.stopConversation = () => {
-            recognition.stop();
-            window.speechSynthesis.cancel();
-            document.getElementById('status-text').innerText = "Ready";
-            playVideo('smiling');
-        };
+        // VOICE RECOGNITION
+        window.startConversation = () => { try { recognition.start(); } catch(e) { window.speak("એરર."); } }; 
+        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('smiling'); };
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition){
-            recognition = new SpeechRecognition();
-            recognition.lang = 'gu-IN';
-            recognition.continuous = false;
-            recognition.interimResults = false;
-            
-            recognition.onstart = () => {
-                document.getElementById('mic-btn').classList.add('listening');
-                playVideo('thinking');
-            };
-            
-            recognition.onend = () => {
-                document.getElementById('mic-btn').classList.remove('listening');
-                if(!isProcessing) playVideo('smiling');
-            };
-            
+            recognition = new SpeechRecognition(); recognition.lang = 'gu-IN'; recognition.interimResults = false;
+            recognition.onstart = () => { document.getElementById('mic-btn').classList.add('listening'); playVideo('thinking'); };
+            recognition.onend = () => { document.getElementById('mic-btn').classList.remove('listening'); if(!isProcessing) playVideo('smiling'); };
             recognition.onresult = (e) => {
                 const transcript = e.results[0][0].transcript;
-                document.getElementById('status-text').innerText = `Processing: ${transcript.substring(0, 30)}...`;
+                document.getElementById('status-text').innerText = transcript;
                 window.processCommand(transcript);
             };
-            
-            recognition.onerror = (e) => {
-                console.error("Speech recognition error:", e.error);
-                window.speak("આવાજ ઓળખવામાં ત્રુટિ.");
-                document.getElementById('mic-btn').classList.remove('listening');
-                playVideo('smiling');
-            };
-        } else {
-            window.speak("આ બ્રાઉઝરમાં વૉઇસ રેકગ્નિશન સપોર્ટ નથી.");
         }
     </script>
 </body>
