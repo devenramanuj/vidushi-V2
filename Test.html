@@ -182,9 +182,17 @@
                 <div class="section-title">API Keys</div><textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2..."></textarea>
             </div>
             <div id="groq-settings" style="display:none;">
-                <div class="section-title">Select Groq Model</div><select id="groqModelSelect"><option value="llama-3.1-8b-instant">Llama 8B</option></select>
-                <div class="section-title">Groq Key</div><input type="password" id="groqKeyInput" placeholder="gsk_...">
-            </div>
+    <div class="section-title">Select Groq Model</div>
+    <select id="groqModelSelect">
+        <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fast)</option>
+        <option value="llama-3.1-70b-versatile">Llama 3.1 70B (Smart - 7.11 version)</option>
+        <option value="llama3-70b-8192">Llama 3 70B (Powerful)</option>
+        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+    </select>
+    <div class="section-title">Groq Key</div>
+    <input type="password" id="groqKeyInput" placeholder="gsk_...">
+</div>
+
             <div class="section-title">Firebase Database</div>
             <label>Firebase API Key:</label><input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE (SYNC)</button>
