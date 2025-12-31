@@ -193,6 +193,45 @@
         let notes=[], expenses=[], contacts=[], currentCameraMode="user";
         let recognition, isProcessing=false, visionStream=null;
 
+        // HELPER FUNCTION TO GET INDIAN TIME
+        function getIndianTime() {
+            const now = new Date();
+            
+            // Get UTC time and add 5 hours 30 minutes for IST
+            const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+            const indiaTime = new Date(utcTime + (5.5 * 60 * 60000));
+            
+            // Extract components
+            let hours = indiaTime.getHours();
+            const minutes = indiaTime.getMinutes();
+            const seconds = indiaTime.getSeconds();
+            
+            // Convert to 12-hour format
+            const ampm = hours >= 12 ? 'પીએમ' : 'એએમ';
+            hours = hours % 12;
+            hours = hours ? hours : 12; // 0 should be 12
+            
+            // Format minutes with leading zero if needed
+            const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+            
+            // Get date components
+            const day = indiaTime.getDate();
+            const month = indiaTime.getMonth() + 1; // Months are 0-indexed
+            const year = indiaTime.getFullYear();
+            
+            return {
+                hours: hours,
+                minutes: formattedMinutes,
+                seconds: seconds,
+                ampm: ampm,
+                day: day,
+                month: month,
+                year: year,
+                timeString: `અત્યારે ${hours} ${formattedMinutes} વાગ્યા છે`,
+                dateString: `તારીખ ${day}, ${month}, ${year} થઈ છે`
+            };
+        }
+
         // INIT FIREBASE
         try {
             if (!firebaseConfig.apiKey) { console.warn("Key Missing"); } else {
@@ -464,28 +503,15 @@
             document.getElementById('graph-container').innerHTML='';
         };
 
-        // AI LOGIC WITH CORRECT TIME - FIXED TIME FORMAT
+        // AI LOGIC WITH CORRECT LOCAL TIME
         window.processCommand = async (text) => {
             if(text.trim().length<2) return;
             let cmd = text.toLowerCase();
             
             // TIME QUERY HANDLING - FIXED FORMAT
-            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ")) {
-                const now = new Date();
-                
-                // Get Gujarati time in 12-hour format
-                const hour = now.getHours() % 12 || 12;
-                const minute = now.getMinutes();
-                const second = now.getSeconds();
-                const ampm = now.getHours() >= 12 ? "પીએમ" : "એએમ";
-                
-                // Get Gujarati date
-                const day = now.getDate();
-                const month = now.getMonth() + 1; // 1-12
-                const year = now.getFullYear();
-                
-                // Format time properly
-                const timeMessage = `અત્યારે ${hour} ${minute} વાગ્યા છે, અને તારીખ ${day}, ${month}, ${year} થઈ છે.`;
+            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ") || cmd.includes("ટાઈમ")) {
+                const indianTime = getIndianTime();
+                const timeMessage = `${indianTime.timeString}, ${indianTime.dateString}.`;
                 
                 window.speak(timeMessage);
                 return;
@@ -538,17 +564,9 @@
                 return; 
             }
             
-            // GET CURRENT TIME WITH PROPER FORMATTING
-            const now = new Date();
-            const hour = now.getHours() % 12 || 12;
-            const minute = now.getMinutes();
-            const second = now.getSeconds();
-            const ampm = now.getHours() >= 12 ? "પીએમ" : "એએમ";
-            const day = now.getDate();
-            const month = now.getMonth() + 1;
-            const year = now.getFullYear();
-            
-            const currentTimeStr = `અત્યારે ${hour} ${minute} વાગ્યા છે, અને તારીખ ${day}, ${month}, ${year} થઈ છે.`;
+            // GET CURRENT INDIAN TIME
+            const indianTime = getIndianTime();
+            const currentTimeStr = `${indianTime.timeString}, ${indianTime.dateString}.`;
             
             // ENHANCED SYSTEM PROMPT WITH TIME
             const sys = `તમે વિદુષી છો. વપરાશકર્તા: ${userName}. હમેશાં ગુજરાતીમાં જ જવાબ આપજો.
