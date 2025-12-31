@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vidushi AI - Ultimate RAG (Fixed Groq)</title>
+    <title>Vidushi AI - Ultimate RAG (Fixed Save)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -236,6 +236,7 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
+        // FIXED: Default to 70B so user sees correct model initially
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-versatile"; 
         
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
@@ -366,7 +367,6 @@
         
         window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
         
-        // FIXED LOGIC
         window.toggleProviderSettings = () => { 
             const provider = document.getElementById('providerSelect').value;
             if (provider === 'gemini') {
@@ -381,25 +381,38 @@
             }
         };
         
+        // FIXED: Safe saving to prevent crash if cloud fails
         window.saveSettings = async () => { 
-            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
-            aiProvider = document.getElementById('providerSelect').value; 
-            geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
-            geminiModel = document.getElementById('geminiModelSelect').value; 
-            groqKey = document.getElementById('groqKeyInput').value.trim(); 
-            groqModel = document.getElementById('groqModelSelect').value; 
-            continuousMode = document.getElementById('continuousModeCheck').checked; 
-            silentMode = document.getElementById('silentModeCheck').checked; 
-            currentMood = document.getElementById('moodSelect').value; 
-            
-            localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
-            localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
-            localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel);
-            localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
-            localStorage.setItem('vidushi_mood', currentMood);
-            await saveToCloud();
-            document.getElementById('settings-modal').style.display = 'none'; 
-            if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
+            try {
+                userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
+                aiProvider = document.getElementById('providerSelect').value; 
+                geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
+                geminiModel = document.getElementById('geminiModelSelect').value; 
+                groqKey = document.getElementById('groqKeyInput').value.trim(); 
+                groqModel = document.getElementById('groqModelSelect').value; 
+                continuousMode = document.getElementById('continuousModeCheck').checked; 
+                silentMode = document.getElementById('silentModeCheck').checked; 
+                currentMood = document.getElementById('moodSelect').value; 
+                
+                localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
+                localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
+                localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel);
+                localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
+                localStorage.setItem('vidushi_mood', currentMood);
+                
+                // Try saving to cloud, but don't crash if it fails
+                try {
+                    await saveToCloud();
+                } catch(e) {
+                    console.warn("Cloud save failed, but local saved.");
+                }
+                
+                document.getElementById('settings-modal').style.display = 'none'; 
+                if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
+            } catch (e) {
+                console.error("Save Error:", e);
+                alert("Error saving settings");
+            }
         };
 
         window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
