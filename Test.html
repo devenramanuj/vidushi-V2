@@ -575,9 +575,13 @@
         };
 
 
-                function getSystemPrompt(memories, contextData) { 
-            // 🔥 સુધારો: અત્યારનો સાચો સમય અને તારીખ (ભારત માટે)
-            const now = new Date().toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', hour12: true, dateStyle: 'full', timeStyle: 'short' });
+                        function getSystemPrompt(memories, contextData) { 
+            // 🔥 સુધારો: ગણિતનો ઉપયોગ કરીને ફરજિયાત ભારતનો સમય (UTC + 5.5)
+            // આનાથી તમારા કોમ્પ્યુટરનો ટાઈમ ઝોન ખોટો હશે તો પણ ટાઈમ સાચો જ આવશે.
+            const d = new Date();
+            const utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+            const nd = new Date(utc + (3600000 * 5.5)); // 5.5 કલાક ઉમેર્યા
+            const now = nd.toLocaleString('gu-IN', { hour12: true, dateStyle: 'full', timeStyle: 'short' });
             
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
