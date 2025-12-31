@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Vidushi AI - Ultimate RAG (Time Fix)</title>
+    <title>Vidushi AI - Ultimate RAG (Groq Update)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -176,8 +176,18 @@
                 </select>
                 <label>Gemini Keys (comma sep):</label><textarea id="geminiKeyInput" rows="2"></textarea>
             </div>
+            
+            <!-- UPDATED GROQ SETTINGS -->
             <div id="groq-settings" style="display:none;">
                 <label>Groq Key:</label><input type="password" id="groqKeyInput" placeholder="gsk_...">
+                
+                <label>Groq Model:</label>
+                <select id="groqModelSelect">
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Versatile)</option>
+                    <option value="llama-3.1-8b-instant">Llama 3.1 8B (Instant)</option>
+                    <option value="llama-3.3-70b-specdec">Llama 3.3 70B (Speculative)</option>
+                    <option value="mixtral-8x7b-32768">Mixtral 8x7b</option>
+                </select>
             </div>
 
             <button class="save-btn" onclick="window.saveSettings()">SAVE & SYNC</button>
@@ -226,6 +236,9 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
+        // NEW VARIABLE FOR GROQ MODEL
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-versatile"; 
+        
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let silentMode = localStorage.getItem('vidushi_silent') === 'true';
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
@@ -254,6 +267,8 @@
                     if(data.mood) currentMood = data.mood;
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
+                    // LOAD GROQ MODEL FROM CLOUD
+                    if(data.groqModel) groqModel = data.groqModel;
                     
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
@@ -261,6 +276,7 @@
                     localStorage.setItem('vidushi_mood', currentMood);
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
+                    localStorage.setItem('vidushi_groq_model', groqModel);
                     document.getElementById('status-text').innerText = "Ready";
                 }
             } catch (e) { console.error("Sync Error", e); }
@@ -277,7 +293,7 @@
 
         async function saveToCloud() {
             if(!db) return;
-            const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel };
+            const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, groqModel: groqModel };
             await setDoc(settingsDocRef, settingsData, { merge: true });
         }
 
@@ -343,6 +359,7 @@
             document.getElementById('geminiKeyInput').value = geminiKeys; 
             document.getElementById('geminiModelSelect').value = geminiModel; 
             document.getElementById('groqKeyInput').value = groqKey; 
+            document.getElementById('groqModelSelect').value = groqModel; // SET VALUE FOR GROQ SELECT
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('silentModeCheck').checked = silentMode; 
             document.getElementById('moodSelect').value = currentMood; 
@@ -361,13 +378,14 @@
             geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
             geminiModel = document.getElementById('geminiModelSelect').value; 
             groqKey = document.getElementById('groqKeyInput').value.trim(); 
+            groqModel = document.getElementById('groqModelSelect').value; // SAVE GROQ MODEL VALUE
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value; 
             
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
-            localStorage.setItem('vidushi_groq_key', groqKey); 
+            localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel);
             localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
             localStorage.setItem('vidushi_mood', currentMood);
             await saveToCloud();
@@ -390,7 +408,7 @@
         window.closeReport = () => { document.getElementById('report-modal').style.display='none'; playVideo('silent'); isProcessing = false; };
         window.copyReport = () => { document.getElementById("report-content-area").select(); document.execCommand("copy"); window.speak("કોપી થઈ."); };
         window.saveReportToFile = () => { const text = document.getElementById("report-content-area").value; const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([text], { type: "text/plain;charset=utf-8" })); link.download = `Vidushi_Report_${Date.now()}.txt`; link.click(); window.speak("સેવ થઈ."); };
-        window.downloadSelfie = () => { const link = document.createElement('a'); link.href = document.getElementById('generated-image').src; link.download = `Vidushi_Capture.jpg`; link.click(); window.speak("સેવ થઈ!"); window.closeImage(); };
+        window.downloadSelfie = () => { const link = document.createElement('a'); link.href = document.getElementById('generated-image').src; link.download = `Vidushi_Capture.jpg`; link.click(); window.speak("સેવ થૈ!"); window.closeImage(); };
 
         window.handleRAGUpload = async (input) => {
             const file = input.files[0]; if (!file) return;
@@ -565,8 +583,9 @@
 
             let messages = [{ role: "system", content: systemInstruction }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; 
             try { 
+                // UPDATED TO USE DYNAMIC MODEL VARIABLE
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: "llama-3.1-8b-instant", messages: messages, temperature: 0.7, max_tokens: 1000 }) 
+                    method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages, temperature: 0.7, max_tokens: 1000 }) 
                 }); 
                 const data = await res.json(); 
                 if(data.choices) { 
