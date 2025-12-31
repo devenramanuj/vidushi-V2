@@ -245,134 +245,477 @@
         };
 
         // UI FUNCS
-        window.openSettings = () => { document.getElementById('settings-modal').style.display='flex'; document.getElementById('userNameInput').value=userName; document.getElementById('geminiKeyInput').value=geminiKeys; document.getElementById('geminiModelSelect').value=geminiModel; document.getElementById('firebaseApiKeyInput').value=firebaseApiKey; window.toggleProviderSettings(); };
+        window.openSettings = () => { 
+            document.getElementById('settings-modal').style.display='flex'; 
+            document.getElementById('userNameInput').value=userName; 
+            document.getElementById('geminiKeyInput').value=geminiKeys; 
+            document.getElementById('geminiModelSelect').value=geminiModel; 
+            document.getElementById('firebaseApiKeyInput').value=firebaseApiKey; 
+            document.getElementById('silentModeCheck').checked = silentMode;
+            window.toggleProviderSettings(); 
+        };
         window.saveSettings = async () => {
             userName = document.getElementById('userNameInput').value.trim();
             geminiKeys = document.getElementById('geminiKeyInput').value.trim();
             geminiModel = document.getElementById('geminiModelSelect').value;
             firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
             aiProvider = document.getElementById('providerSelect').value;
-            localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_gemini_key', geminiKeys);
-            localStorage.setItem('vidushi_gemini_model', geminiModel); localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
+            silentMode = document.getElementById('silentModeCheck').checked;
+            
+            localStorage.setItem('vidushi_username', userName); 
+            localStorage.setItem('vidushi_gemini_key', geminiKeys);
+            localStorage.setItem('vidushi_gemini_model', geminiModel); 
+            localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
+            localStorage.setItem('vidushi_silent', silentMode);
+            
             await saveToCloud();
             if (firebaseApiKey && !app) location.reload();
-            document.getElementById('settings-modal').style.display='none'; window.speak("સેવ થઈ ગયું.");
+            document.getElementById('settings-modal').style.display='none'; 
+            window.speak("સેવ થઈ ગયું.");
         };
         window.toggleProviderSettings = () => { 
             document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; 
         };
-        window.toggleModal = (t) => { const m=document.getElementById(t+'-modal'); m.style.display=m.style.display==='flex'?'none':'flex'; if(t==='notes')window.renderNotes(); if(t==='expense')window.renderExpenses(); if(t==='contacts')window.renderContacts(); };
-        window.openFeature = (t) => { document.getElementById('settings-modal').style.display='none'; window.toggleModal(t); };
+        window.toggleModal = (t) => { 
+            const m=document.getElementById(t+'-modal'); 
+            m.style.display=m.style.display==='flex'?'none':'flex'; 
+            if(t==='notes')window.renderNotes(); 
+            if(t==='expense')window.renderExpenses(); 
+            if(t==='contacts')window.renderContacts(); 
+        };
+        window.openFeature = (t) => { 
+            document.getElementById('settings-modal').style.display='none'; 
+            window.toggleModal(t); 
+        };
         
         // STANDARD FEATURES
         window.formatDate = (ts) => new Date(ts).toLocaleDateString('gu-IN');
-        window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map(n=>`<div class="list-item"><span>${n.text}</span><span style="color:red" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
-        window.deleteNote = async(id) => { if(db) await deleteDoc(doc(db,"vidushi_notes",id)); };
-        window.renderExpenses = () => { let t=0; document.getElementById('expense-list').innerHTML = expenses.map(n=>{t+=n.amount; return `<div class="list-item"><span>₹${n.amount} - ${n.desc}</span><span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span></div>`}).join(''); document.getElementById('total-expense').innerText=t; };
-        window.deleteExpense = async(id) => { if(db) await deleteDoc(doc(db,"vidushi_expenses",id)); };
-        window.renderContacts = () => { document.getElementById('contacts-list').innerHTML = contacts.map(c=>`<div class="list-item"><span>${c.name}<br><small>${c.number}</small></span><span style="color:red" onclick="window.deleteContact('${c.id}')">x</span></div>`).join(''); };
-        window.deleteContact = async(id) => { if(db) await deleteDoc(doc(db,"vidushi_contacts",id)); };
-        window.addNote=async(t)=>{if(db)await addDoc(collection(db,"vidushi_notes"),{text:t,timestamp:Date.now()}); window.speak("લખ્યું.");};
-        window.addExpense=async(t)=>{let a=t.match(/\d+/); if(a&&db)await addDoc(collection(db,"vidushi_expenses"),{amount:parseInt(a[0]),desc:t.replace(a[0],"").trim(),timestamp:Date.now()}); window.speak("લખ્યું.");};
-        window.addContactUI=async()=>{let n=document.getElementById('contactName').value; let no=document.getElementById('contactNumber').value; if(n&&no&&db)await addDoc(collection(db,"vidushi_contacts"),{name:n,number:no});};
+        window.renderNotes = () => { 
+            document.getElementById('notes-list').innerHTML = notes.map(n=>`
+                <div class="list-item">
+                    <span>${n.text}</span>
+                    <span style="color:red" onclick="window.deleteNote('${n.id}')">x</span>
+                </div>
+            `).join(''); 
+        };
+        window.deleteNote = async(id) => { 
+            if(db) await deleteDoc(doc(db,"vidushi_notes",id)); 
+        };
+        window.renderExpenses = () => { 
+            let t=0; 
+            document.getElementById('expense-list').innerHTML = expenses.map(n=>{
+                t+=n.amount; 
+                return `<div class="list-item">
+                    <span>₹${n.amount} - ${n.desc}</span>
+                    <span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span>
+                </div>`
+            }).join(''); 
+            document.getElementById('total-expense').innerText=t; 
+        };
+        window.deleteExpense = async(id) => { 
+            if(db) await deleteDoc(doc(db,"vidushi_expenses",id)); 
+        };
+        window.renderContacts = () => { 
+            document.getElementById('contacts-list').innerHTML = contacts.map(c=>`
+                <div class="list-item">
+                    <span>${c.name}<br><small>${c.number}</small></span>
+                    <span style="color:red" onclick="window.deleteContact('${c.id}')">x</span>
+                </div>
+            `).join(''); 
+        };
+        window.deleteContact = async(id) => { 
+            if(db) await deleteDoc(doc(db,"vidushi_contacts",id)); 
+        };
+        window.addNote=async(t)=>{
+            if(db) await addDoc(collection(db,"vidushi_notes"),{text:t,timestamp:Date.now()}); 
+            window.speak("લખ્યું.");
+        };
+        window.addExpense=async(t)=>{
+            let a=t.match(/\d+/); 
+            if(a&&db) await addDoc(collection(db,"vidushi_expenses"),{
+                amount:parseInt(a[0]),
+                desc:t.replace(a[0],"").trim(),
+                timestamp:Date.now()
+            }); 
+            window.speak("લખ્યું.");
+        };
+        window.addContactUI=async()=>{
+            let n=document.getElementById('contactName').value; 
+            let no=document.getElementById('contactNumber').value; 
+            if(n&&no&&db) await addDoc(collection(db,"vidushi_contacts"),{name:n,number:no});
+        };
 
-        // 3D VANSHAVALI LOGIC
-        const branchColors = ['#FF5733', '#33FF57', '#3357FF', '#FF33A1', '#A133FF', '#33FFF5', '#F5FF33', '#FF8C00'];
-        function convertTreeToGraph(node, nodes=[], links=[], parent=null, myColor=null) {
-            let color = myColor;
-            if(!parent) color='#FFD700'; else if(parent.group==="ROOT") color=branchColors[nodes.length%branchColors.length];
-            let newNode = {id:node.name, group:parent?parent.group:"ROOT", color:color, info:node.info};
+        // 3D VANSHAVALI LOGIC - IMPROVED BRANCH COLORS
+        const branchColors = [
+            '#FF5733', '#33FF57', '#3357FF', '#FF33A1', 
+            '#A133FF', '#33FFF5', '#F5FF33', '#FF8C00',
+            '#00FFAA', '#AA00FF', '#FFAA00', '#00AAFF',
+            '#FF0066', '#66FF00', '#0066FF', '#FF6600'
+        ];
+        
+        // Track branch colors for consistency
+        const branchColorMap = new Map();
+        
+        function convertTreeToGraph(node, nodes=[], links=[], parent=null, branchIndex=0) {
+            // Determine color for this node
+            let color = '#FFD700'; // Default root color
+            
+            if (parent) {
+                // If parent is root, assign a new branch color
+                if (parent.group === "ROOT") {
+                    if (!branchColorMap.has(node.id)) {
+                        branchColorMap.set(node.id, branchColors[branchIndex % branchColors.length]);
+                    }
+                    color = branchColorMap.get(node.id);
+                } else {
+                    // Inherit parent's color if available
+                    color = branchColorMap.get(parent.id) || '#FFFFFF';
+                }
+            }
+            
+            let newNode = {
+                id: node.name, 
+                group: parent ? parent.group : "ROOT", 
+                color: color, 
+                info: node.info
+            };
             nodes.push(newNode);
-            if(parent) links.push({source:parent.name, target:node.name});
-            if(node.children) node.children.forEach(c=>convertTreeToGraph(c, nodes, links, newNode, color));
+            
+            if(parent) {
+                links.push({
+                    source: parent.name, 
+                    target: node.name,
+                    color: color
+                });
+            }
+            
+            // Process children with appropriate branch index
+            if(node.children) {
+                node.children.forEach((child, childIndex) => {
+                    const childBranchIndex = parent ? branchIndex : childIndex;
+                    convertTreeToGraph(child, nodes, links, newNode, childBranchIndex);
+                });
+            }
             return {nodes, links};
         }
+        
         window.open3DVanshavali = () => {
-            if(!window.activeFamilyTree){window.speak("ડેટા નથી."); return;}
-            document.getElementById('settings-modal').style.display='none'; document.getElementById('vanshavali-3d-modal').style.display='block';
-            const Graph = ForceGraph3D()(document.getElementById('graph-container')).graphData(convertTreeToGraph(window.activeFamilyTree))
+            if(!window.activeFamilyTree){
+                window.speak("ડેટા નથી."); 
+                return;
+            }
+            
+            // Reset color map
+            branchColorMap.clear();
+            
+            document.getElementById('settings-modal').style.display='none'; 
+            document.getElementById('vanshavali-3d-modal').style.display='block';
+            
+            const graphData = convertTreeToGraph(window.activeFamilyTree);
+            
+            const Graph = ForceGraph3D()(document.getElementById('graph-container'))
+                .graphData(graphData)
                 .backgroundColor('#000011')
                 .nodeThreeObject(node => {
-                    const obj = new THREE.Mesh(new THREE.SphereGeometry(5), new THREE.MeshLambertMaterial({color:node.color}));
+                    // Create colored sphere
+                    const obj = new THREE.Mesh(
+                        new THREE.SphereGeometry(5), 
+                        new THREE.MeshLambertMaterial({color: node.color})
+                    );
+                    
+                    // Add text label
                     const sprite = new SpriteText(node.id);
-                    sprite.color='white'; sprite.textHeight=10; sprite.backgroundColor='rgba(0,0,0,0.6)'; sprite.position.y=-12;
-                    obj.add(sprite); return obj;
+                    sprite.color='white'; 
+                    sprite.textHeight=8; 
+                    sprite.backgroundColor='rgba(0,0,0,0.6)'; 
+                    sprite.padding = 5;
+                    sprite.position.y=-15;
+                    obj.add(sprite); 
+                    
+                    return obj;
                 })
-                .linkWidth(1.5).linkColor(()=>'rgba(255,255,255,0.2)').showNavInfo(false)
+                .linkWidth(2)
+                .linkColor(link => link.color || 'rgba(255,255,255,0.3)')
+                .linkOpacity(0.6)
+                .showNavInfo(false)
                 .onNodeClick(node => {
+                    // Zoom to node
                     const distRatio = 1 + 80/Math.hypot(node.x, node.y, node.z);
-                    Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000);
-                    window.speak(node.id);
+                    Graph.cameraPosition(
+                        { x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, 
+                        node, 
+                        2000
+                    );
+                    // Speak node info
+                    const info = node.info ? `: ${node.info}` : '';
+                    window.speak(`${node.id}${info}`);
                 });
-            window.speak("3D તૈયાર.");
+            
+            // Add some initial camera movement
+            setTimeout(() => {
+                Graph.cameraPosition({ x: 0, y: 0, z: 250 }, { x: 0, y: 0, z: 0 }, 2000);
+            }, 500);
+            
+            window.speak("3D વંશાવલી તૈયાર છે. દરેક બ્રાન્ચ અલગ રંગમાં છે.");
         };
-        window.close3DVanshavali=()=>{document.getElementById('vanshavali-3d-modal').style.display='none'; document.getElementById('graph-container').innerHTML='';};
+        
+        window.close3DVanshavali=()=>{
+            document.getElementById('vanshavali-3d-modal').style.display='none'; 
+            document.getElementById('graph-container').innerHTML='';
+        };
 
-        // AI LOGIC
+        // AI LOGIC WITH CORRECT TIME
         window.processCommand = async (text) => {
             if(text.trim().length<2) return;
             let cmd = text.toLowerCase();
+            
+            // TIME QUERY HANDLING - FIXED
+            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા")) {
+                const now = new Date();
+                const options = { 
+                    timeZone: 'Asia/Kolkata', 
+                    hour12: true, 
+                    hour: 'numeric', 
+                    minute: 'numeric',
+                    second: 'numeric'
+                };
+                const gujaratiTime = now.toLocaleTimeString('gu-IN', options);
+                const gujaratiDate = now.toLocaleDateString('gu-IN', { 
+                    timeZone: 'Asia/Kolkata',
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const timeMessage = `હમણાંનો સમય ${gujaratiTime} છે. તારીખ ${gujaratiDate} છે.`;
+                window.speak(timeMessage);
+                return;
+            }
+            
+            // VANSHAVALI ADDITION
             if(cmd.includes("નામ") && (cmd.includes("પુત્ર") || cmd.includes("દીકરા"))) {
                 let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા)/);
                 if(parts && parts.length>=3 && window.activeFamilyTree) {
                     let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree));
                     if(window.findParentAndAddChild(newTree, parts[2].trim(), parts[1].trim()) === "ADDED") {
-                        window.activeFamilyTree = newTree; if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, {tree:newTree}); window.speak("ઉમેરાઈ ગયું.");
-                    } else window.speak("ભૂલ થઈ.");
+                        window.activeFamilyTree = newTree; 
+                        if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, {tree:newTree}); 
+                        window.speak("વંશાવલીમાં ઉમેરાઈ ગયું.");
+                    } else window.speak("ભૂલ થઈ. પિતાનું નામ શોધી શકાયું નથી.");
                     return;
                 }
             }
-            if(cmd.includes("યાદ રાખ")) { if(db) await updateDoc(userDocRef, {memories: arrayUnion(text.replace("યાદ રાખ","").trim())}); window.speak("યાદ રહ્યું."); return; }
-            if(cmd.includes("નોંધ")) { window.addNote(text.replace("નોંધ","")); return; }
-            if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             
-            isProcessing=true; document.getElementById('status-text').innerText="Thinking..."; playVideo('thinking');
+            // MEMORY COMMANDS
+            if(cmd.includes("યાદ રાખ")) { 
+                if(db) await updateDoc(userDocRef, {memories: arrayUnion(text.replace("યાદ રાખ","").trim())}); 
+                window.speak("યાદ રહ્યું."); 
+                return; 
+            }
+            
+            // NOTES AND EXPENSES
+            if(cmd.includes("નોંધ")) { 
+                window.addNote(text.replace("નોંધ","").trim()); 
+                return; 
+            }
+            
+            if(cmd.includes("હિસાબ") || cmd.includes("ખર્ચ")) { 
+                window.addExpense(text); 
+                return; 
+            }
+            
+            // GENERAL AI PROCESSING
+            isProcessing=true; 
+            document.getElementById('status-text').innerText="Thinking..."; 
+            playVideo('thinking');
             await window.askGeminiText(text);
         };
 
         window.askGeminiText = async (userText) => {
-            let keys = geminiKeys.split(',').filter(k=>k); if(!keys.length) { window.speak("API Key નથી."); isProcessing=false; return; }
+            let keys = geminiKeys.split(',').filter(k=>k); 
+            if(!keys.length) { 
+                window.speak("API Key નથી. સેટિંગ્સમાં જોડાવો."); 
+                isProcessing=false; 
+                return; 
+            }
             
-            // 🔥 TIME INJECTION
-            const now = new Date().toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', hour12: true });
-            const queryWithTime = `${userText} \n\n[System Note: The exact current time is: ${now}. Answer using this.]`;
-            const sys = `You are Vidushi. User: ${userName}. Always answer in Gujarati.`;
-
+            // GET CURRENT TIME WITH PROPER FORMATTING
+            const now = new Date();
+            const timeOptions = { 
+                timeZone: 'Asia/Kolkata', 
+                hour12: true, 
+                hour: 'numeric', 
+                minute: 'numeric',
+                second: 'numeric',
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            };
+            const currentTimeStr = now.toLocaleString('gu-IN', timeOptions);
+            
+            // ENHANCED SYSTEM PROMPT WITH TIME
+            const sys = `તમે વિદુષી છો. વપરાશકર્તા: ${userName}. હમેશાં ગુજરાતીમાં જ જવાબ આપજો.
+            
+            મહત્વપૂર્ણ: વર્તમાન સમય અને તારીખ: ${currentTimeStr}
+            
+            જો વપરાશકર્તા સમય અથવા તારીખ વિશે પૂછે, તો ઉપરોક્ત સમયનો ઉપયોગ કરીને જવાબ આપજો.
+            
+            અન્ય માહિતી:
+            - વપરાશકર્તાની યાદગીરીઓ: ${window.permanentMemories.slice(-5).join(', ')}
+            - RAG સામગ્રી: ${window.ragContent.substring(0, 200)}...`;
+            
+            const queryWithTime = `${userText}`;
+            
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
-                    method: "POST", headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({ contents: [{role:"user", parts:[{text: sys + "\n" + queryWithTime}]}] })
+                    method: "POST", 
+                    headers: {"Content-Type": "application/json"},
+                    body: JSON.stringify({ 
+                        contents: [{
+                            role:"user", 
+                            parts:[{text: sys + "\n\n" + queryWithTime}]
+                        }],
+                        generationConfig: {
+                            temperature: 0.7,
+                            maxOutputTokens: 1000,
+                        }
+                    })
                 });
                 const data = await res.json();
-                if(data.error) { window.speak("Error: " + data.error.message); }
-                else if(data.candidates) {
+                if(data.error) { 
+                    window.speak("ત્રુટિ: " + data.error.message); 
+                } else if(data.candidates && data.candidates[0].content.parts[0].text) {
                     let reply = data.candidates[0].content.parts[0].text;
-                    if(!handleGenUI(reply)) { window.chatHistory.push({role:"user",content:userText}); window.chatHistory.push({role:"model",content:reply}); window.speak(reply); }
+                    if(!handleGenUI(reply)) { 
+                        window.chatHistory.push({role:"user",content:userText}); 
+                        window.chatHistory.push({role:"model",content:reply}); 
+                        window.speak(reply); 
+                    }
+                } else {
+                    window.speak("કોઈ જવાબ મળ્યો નથી.");
                 }
-            } catch(e) { window.speak("Net Error"); }
+            } catch(e) { 
+                console.error(e);
+                window.speak("નેટવર્ક ત્રુટિ."); 
+            }
             isProcessing=false;
+            document.getElementById('status-text').innerText="Ready";
+            playVideo('smiling');
         };
 
         window.findParentAndAddChild = (node, pName, cName) => {
             if(node.name.trim()===pName) { 
                 if(!node.children) node.children=[]; 
                 if(node.children.find(c=>c.name===cName)) return "EXISTS"; 
-                node.children.push({name:cName, children:[]}); return "ADDED"; 
+                node.children.push({name:cName, children:[], info: "નવા ઉમેરેલ"}); 
+                return "ADDED"; 
             }
-            if(node.children) for(let c of node.children) { if(window.findParentAndAddChild(c, pName, cName)!=="NOT_FOUND") return "ADDED"; }
+            if(node.children) {
+                for(let c of node.children) { 
+                    const result = window.findParentAndAddChild(c, pName, cName);
+                    if(result !== "NOT_FOUND") return result;
+                }
+            }
             return "NOT_FOUND";
         };
 
-        // UTILS
-        window.speak = (t) => { if(silentMode){playVideo('silent');return;} const u=new SpeechSynthesisUtterance(t.replace(/[*#]/g,"")); u.lang='gu-IN'; u.onstart=()=>playVideo('talking'); u.onend=()=>playVideo('smiling'); window.speechSynthesis.speak(u); };
-        function playVideo(t) { Object.values(videos).forEach(v=>{v.style.display='none';v.pause();}); if(videos[t]){videos[t].style.display='block';videos[t].play().catch(()=>{});} }
-        const videos = {silent:document.getElementById('silent-video'), talking:document.getElementById('talking-video'), thinking:document.getElementById('thinking-video'), smiling:document.getElementById('smiling-video')};
-        function handleGenUI(r){if(r.includes(":::APP_START:::")){document.getElementById('app-viewer-modal').style.display='flex'; document.getElementById('app-render-area').innerHTML=r.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; window.speak("એપ જુઓ."); return true;} return false;}
+        // UTILITIES
+        window.speak = (t) => { 
+            if(silentMode){
+                playVideo('silent');
+                return;
+            } 
+            const u = new SpeechSynthesisUtterance(t.replace(/[*#]/g,"")); 
+            u.lang = 'gu-IN'; 
+            u.rate = 1.0;
+            u.pitch = 1.0;
+            u.onstart = () => playVideo('talking'); 
+            u.onend = () => playVideo('smiling'); 
+            u.onerror = () => playVideo('smiling');
+            window.speechSynthesis.speak(u); 
+        };
         
-        // STARTUP
-        window.startConversation=()=>{try{recognition.start()}catch(e){}}; window.stopConversation=()=>{recognition.stop();window.speechSynthesis.cancel();};
+        function playVideo(t) { 
+            const videos = {
+                silent: document.getElementById('silent-video'),
+                talking: document.getElementById('talking-video'),
+                thinking: document.getElementById('thinking-video'),
+                smiling: document.getElementById('smiling-video'),
+                angry: document.getElementById('angry-video')
+            };
+            
+            Object.values(videos).forEach(v => {
+                v.style.display = 'none';
+                v.pause();
+            });
+            
+            if(videos[t]){
+                videos[t].style.display = 'block';
+                videos[t].play().catch(()=>{});
+            }
+        }
+        
+        function handleGenUI(r){
+            if(r.includes(":::APP_START:::")){
+                document.getElementById('app-viewer-modal').style.display='flex'; 
+                document.getElementById('app-render-area').innerHTML = r.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; 
+                window.speak("એપ જુઓ."); 
+                return true;
+            } 
+            return false;
+        }
+        
+        // VOICE RECOGNITION SETUP
+        window.startConversation = () => {
+            try {
+                recognition.start();
+                document.getElementById('status-text').innerText = "Listening...";
+            } catch(e) {
+                window.speak("માઇક્રોફોન શરૂ કરવામાં ત્રુટિ.");
+            }
+        }; 
+        
+        window.stopConversation = () => {
+            recognition.stop();
+            window.speechSynthesis.cancel();
+            document.getElementById('status-text').innerText = "Ready";
+            playVideo('smiling');
+        };
+        
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if(SpeechRecognition){recognition=new SpeechRecognition(); recognition.lang='gu-IN'; recognition.onstart=()=>document.getElementById('mic-btn').classList.add('listening'); recognition.onend=()=>document.getElementById('mic-btn').classList.remove('listening'); recognition.onresult=(e)=>window.processCommand(e.results[0][0].transcript);}
+        if(SpeechRecognition){
+            recognition = new SpeechRecognition();
+            recognition.lang = 'gu-IN';
+            recognition.continuous = false;
+            recognition.interimResults = false;
+            
+            recognition.onstart = () => {
+                document.getElementById('mic-btn').classList.add('listening');
+                playVideo('thinking');
+            };
+            
+            recognition.onend = () => {
+                document.getElementById('mic-btn').classList.remove('listening');
+                if(!isProcessing) playVideo('smiling');
+            };
+            
+            recognition.onresult = (e) => {
+                const transcript = e.results[0][0].transcript;
+                document.getElementById('status-text').innerText = `Processing: ${transcript.substring(0, 30)}...`;
+                window.processCommand(transcript);
+            };
+            
+            recognition.onerror = (e) => {
+                console.error("Speech recognition error:", e.error);
+                window.speak("આવાજ ઓળખવામાં ત્રુટિ.");
+                document.getElementById('mic-btn').classList.remove('listening');
+                playVideo('smiling');
+            };
+        } else {
+            window.speak("આ બ્રાઉઝરમાં વૉઇસ રેકગ્નિશન સપોર્ટ નથી.");
+        }
     </script>
 </body>
 </html>
