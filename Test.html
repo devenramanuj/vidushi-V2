@@ -194,48 +194,45 @@
         let notes=[], expenses=[], contacts=[], currentCameraMode="user";
         let recognition, isProcessing=false;
 
-        // --- 1. DEEPSEEK TIME LOGIC (UTC + 5.5 Hours) ---
-        function getIndianTime() {
-            const now = new Date();
-            
-            // IST Offset: 5.5 hours in milliseconds
-            const istOffset = 5.5 * 60 * 60 * 1000; 
-            
-            // Calculate IST using UTC + Offset
-            const istTime = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + istOffset);
+        // --- 1. NEW & FINAL ACCURATE INDIAN TIME (No Math, Pure Zone Logic) ---
+function getIndianTime() {
+    // વર્તમાન સમય
+    const now = new Date();
 
-            let hours = istTime.getHours();
-            let minutes = istTime.getMinutes();
-            let seconds = istTime.getSeconds();
-            
-            // AM/PM Logic
-            const ampm = hours >= 12 ? 'પીએમ' : 'એએમ';
-            
-            // 12-Hour Format
-            let displayHours = hours % 12;
-            displayHours = displayHours ? displayHours : 12; 
-            
-            // Leading Zero for Minutes
-            const formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
-            
-            // Date Components
-            const day = istTime.getDate();
-            const month = istTime.getMonth() + 1; 
-            const year = istTime.getFullYear();
-            
-            return {
-                hours: displayHours,
-                minutes: formattedMinutes,
-                seconds: seconds,
-                ampm: ampm,
-                day: day,
-                month: month,
-                year: year,
-                // બોલવા માટે વાક્ય રચના
-                timeString: `અત્યારે ${displayHours} વાગીને ${formattedMinutes} મિનિટ થઈ છે`,
-                dateString: `આજે તારીખ ${day}, ${month}, ${year} છે`
-            };
-        }
+    // બ્રાઉઝરને સીધું કહીએ છીએ કે અમને "Asia/Kolkata" નો જ ટાઈમ આપો
+    const options = { timeZone: 'Asia/Kolkata', hour12: false, hour: 'numeric', minute: 'numeric', day: 'numeric', month: 'long', year: 'numeric' };
+    
+    // આનાથી અમને ભારતનો સચોટ સમય સ્ટ્રિંગ ફોર્મેટમાં મળશે
+    const formatter = new Intl.DateTimeFormat('en-US', options);
+    const parts = formatter.formatToParts(now);
+
+    // સ્ટ્રિંગમાંથી કલાકો અને મિનિટ્સ છૂટા પાડીએ
+    let hours = parseInt(parts.find(p => p.type === 'hour').value);
+    let minutes = parseInt(parts.find(p => p.type === 'minute').value);
+    
+    // તારીખ
+    const day = parts.find(p => p.type === 'day').value;
+    const month = parts.find(p => p.type === 'month').value;
+    const year = parts.find(p => p.type === 'year').value;
+
+    // AM/PM Logic
+    const ampm = hours >= 12 ? 'પીએમ' : 'એએમ';
+    
+    // 12-Hour Format Convert
+    let displayHours = hours % 12;
+    displayHours = displayHours ? displayHours : 12; 
+    
+    // Leading Zero (05 minute)
+    let formattedMinutes = minutes < 10 ? '0' + minutes : minutes;
+
+    return {
+        hours: displayHours,
+        minutes: formattedMinutes,
+        ampm: ampm,
+        timeString: `અત્યારે ${displayHours} વાગીને ${formattedMinutes} મિનિટ થઈ છે`,
+        dateString: `આજે તારીખ ${day} ${month}, ${year} છે`
+    };
+}
 
         // INIT FIREBASE
         try {
