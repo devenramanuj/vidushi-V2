@@ -504,12 +504,53 @@
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
         
-                 window.processCommand = async (text) => {
+                         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
             
-            // અહીથી સમય વાળું બધું લોજિક કાઢી નાખ્યું છે. હવે AI (Gemini) જવાબ આપશે.
+            // 🔥🔥🔥 ફાઈનલ સુધારો: AI ને પૂછ્યા વગર સીધો જવાબ 🔥🔥🔥
+            // આ કોડ ઇન્ટરનેટ વગર પણ સાચો જ જવાબ આપશે
+            if(cmd.includes("કેટલા વાગ્યા") || cmd.includes("સમય") || cmd.includes("ટાઈમ")) {
+                
+                // 1. ભારતનો સમય કાઢવાની સૌથી પાક્કી રીત (Intl API)
+                const options = { 
+                    timeZone: 'Asia/Kolkata', 
+                    hour: 'numeric', 
+                    minute: 'numeric', 
+                    hour12: false // 24 કલાક ફોર્મેટ રાખીએ ગણતરી માટે
+                };
+                
+                // આ આપણને "23:15" જેવો પાક્કો ટાઈમ આપશે
+                const formatter = new Intl.DateTimeFormat('en-US', options);
+                const parts = formatter.formatToParts(new Date());
+                
+                const hour = parseInt(parts.find(p => p.type === 'hour').value);
+                const minute = parseInt(parts.find(p => p.type === 'minute').value);
+
+                // 2. હવે તેને ગુજરાતીમાં બોલાવીએ
+                let pahar = "સવારના";
+                if(hour >= 12 && hour < 17) pahar = "બપોરના";
+                else if(hour >= 17 && hour < 20) pahar = "સાંજના";
+                else if(hour >= 20 || hour < 4) pahar = "રાતના";
+
+                let speakHour = hour % 12;
+                if(speakHour === 0) speakHour = 12;
+
+                window.speak(`અત્યારે ${pahar} ${speakHour} વાગીને ${minute} મિનિટ થઈ છે.`);
+                
+                // અહીંથી જ return થઈ જશે, Gemini પાસે જશે જ નહીં
+                return; 
+            }
+
+            // --- તારીખ માટે પણ સેમ લોજિક ---
+            if(cmd.includes("તારીખ") || cmd.includes("વાર")) {
+                const dateOptions = { timeZone: 'Asia/Kolkata', weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+                const dateStr = new Intl.DateTimeFormat('gu-IN', dateOptions).format(new Date());
+                window.speak("આજે " + dateStr + " છે.");
+                return;
+            }
+            // ------------------------------------------------
 
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { try { let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); if (parts && parts.length >= 3) { let childName = parts[1].trim(); let parentName = parts[2].trim(); if (!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા મળ્યો નથી."); return; } let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree)); let result = findParentAndAddChild(newTree, parentName, childName); if (result === "ADDED") { window.activeFamilyTree = newTree; if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, { tree: newTree }); window.speak(`${childName} નું નામ ઉમેરાઈ ગયું.`); } else if (result === "EXISTS") { window.speak("નામ પહેલેથી છે."); } else { window.speak("પિતાનું નામ મળ્યું નહીં."); } return; } } catch(e) { window.speak("ભૂલ થઈ."); } }
@@ -526,6 +567,7 @@
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
+
 
             if(cmd.includes("તારીખ") || cmd.includes("વાર")) {
                  const date = new Date().toLocaleDateString('gu-IN', { 
