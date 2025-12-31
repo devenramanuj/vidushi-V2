@@ -435,16 +435,29 @@ function getIndianTime() {
         };
 
         // AI & VOICE LOGIC
-        window.processCommand = async (text) => {
-            if(text.trim().length<2) return;
-            let cmd = text.toLowerCase();
-            
-            // TIME QUERY - Using Deepseek Logic
-            if(cmd.includes("સમય") || cmd.includes("કેટલા વાગ્યા") || cmd.includes("time") || cmd.includes("વાગ્યા") || cmd.includes("તારીખ")) {
-                const indianTime = getIndianTime();
-                window.speak(`${indianTime.timeString}, ${indianTime.dateString}.`);
-                return;
-            }
+        function getIndianTime() {
+    const now = new Date();
+    // કોમ્પ્યુટરની ગણતરી છોડો, સીધો ભારતનો ટાઈમ સ્ટ્રિંગમાં માંગો
+    const indianTimeStr = now.toLocaleString("en-US", {timeZone: "Asia/Kolkata"});
+    const istDate = new Date(indianTimeStr);
+
+    let hours = istDate.getHours();
+    let minutes = istDate.getMinutes();
+    
+    // સવાર/બપોર/સાંજ
+    let period = "સવારના";
+    if (hours >= 12) period = "બપોરના";
+    if (hours >= 17) period = "સાંજના";
+    if (hours >= 20 || hours < 4) period = "રાતના";
+
+    // 12 કલાક ફોર્મેટ
+    hours = hours % 12;
+    hours = hours ? hours : 12; 
+
+    // વાક્ય
+    return `અત્યારે ${period} ${hours} વાગીને ${minutes} મિનિટ થઈ છે.`;
+}
+
             
             // Vanshavali Addition
             if(cmd.includes("નામ") && (cmd.includes("પુત્ર") || cmd.includes("દીકરા"))) {
