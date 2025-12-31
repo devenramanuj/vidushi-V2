@@ -504,10 +504,45 @@
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
         
-        window.processCommand = async (text) => {
+                window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
+            
+            // --- ૧. ભારતનો ચોક્કસ સમય (Indian Standard Time Calculation) ---
+            if(cmd.includes("કેટલા વાગ્યા") || cmd.includes("સમય") || cmd.includes("ટાઈમ")) {
+                // UTC સમય મેળવો અને તેમાં 5 કલાક 30 મિનિટ ઉમેરો (India Time)
+                let d = new Date();
+                let utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+                let nd = new Date(utc + (3600000 * 5.5));
+                
+                let h = nd.getHours();
+                let m = nd.getMinutes();
+                let ampm = h >= 12 ? "સાંજના" : "સવારના";
+                
+                // થોડું વધુ નેચરલ બોલાવવા માટે
+                if(h >= 12 && h < 17) ampm = "બપોરના";
+                if(h >= 17 && h < 20) ampm = "સાંજના";
+                if(h >= 20 || h < 4) ampm = "રાતના";
+
+                h = h % 12;
+                h = h ? h : 12; // 0 ને 12 કરવા માટે
+                let mStr = m < 10 ? '0'+m : m;
+
+                window.speak(`અત્યારે ${ampm} ${h} વાગીને ${mStr} મિનિટ થઈ છે.`);
+                return;
+            }
+
+            if(cmd.includes("તારીખ") || cmd.includes("વાર")) {
+                let d = new Date();
+                let utc = d.getTime() + (d.getTimezoneOffset() * 60000);
+                let nd = new Date(utc + (3600000 * 5.5));
+                const date = nd.toLocaleDateString('gu-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                window.speak("આજે " + date + " છે.");
+                return;
+            }
+            // ------------------------------------------------
+
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { try { let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); if (parts && parts.length >= 3) { let childName = parts[1].trim(); let parentName = parts[2].trim(); if (!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા મળ્યો નથી."); return; } let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree)); let result = findParentAndAddChild(newTree, parentName, childName); if (result === "ADDED") { window.activeFamilyTree = newTree; if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, { tree: newTree }); window.speak(`${childName} નું નામ ઉમેરાઈ ગયું.`); } else if (result === "EXISTS") { window.speak("નામ પહેલેથી છે."); } else { window.speak("પિતાનું નામ મળ્યું નહીં."); } return; } } catch(e) { window.speak("ભૂલ થઈ."); } }
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim(); if(memoryText && db) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; } }
@@ -519,9 +554,11 @@
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
             if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { currentVisionPrompt = visionPrompts['object']; window.captureAndAnalyze("environment"); return; }
+            
             isProcessing = true; statusText.innerText = "વિચારું છું..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
+
 
         function getSystemPrompt(memories, contextData) { 
             // 🔥 Time fix applied here
