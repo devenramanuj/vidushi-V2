@@ -12,7 +12,6 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <script src="vanshavali_data.js"></script>
     <style>
         /* ============ CORE STYLES ============ */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
@@ -28,6 +27,9 @@
 
         /* Emotional Status Panel */
         #emotion-panel { display: none; position: fixed; top: 10px; right: 80px; background: rgba(0,0,0,0.7); color: white; padding: 8px 15px; border-radius: 20px; font-size: 12px; z-index: 50; backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.1); }
+        
+        /* Memory Status Panel */
+        #memory-panel { display: none; position: fixed; top: 50px; right: 20px; background: rgba(0,100,0,0.7); color: white; padding: 5px 10px; border-radius: 10px; font-size: 10px; z-index: 50; backdrop-filter: blur(5px); border: 1px solid rgba(0,255,0,0.3); }
         
         /* UI Elements */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.3); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); transition: 0.3s; }
@@ -82,11 +84,29 @@
         .emotion-angry { background: rgba(255,69,0,0.2); color: #FF4500; border: 1px solid rgba(255,69,0,0.5); }
         .emotion-excited { background: rgba(0,255,255,0.2); color: #00ffff; border: 1px solid rgba(0,255,255,0.5); }
         .emotion-neutral { background: rgba(255,255,255,0.1); color: #aaa; border: 1px solid rgba(255,255,255,0.2); }
+        
+        /* Memory UI */
+        .memory-badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 10px;
+            margin-left: 5px;
+            background: rgba(0,255,0,0.2);
+            color: #0f0;
+            border: 1px solid rgba(0,255,0,0.5);
+        }
 
         @keyframes pulse {
             0% { transform: scale(1); }
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
+        }
+        
+        @keyframes memoryGlow {
+            0% { box-shadow: 0 0 5px #0f0; }
+            50% { box-shadow: 0 0 15px #0f0; }
+            100% { box-shadow: 0 0 5px #0f0; }
         }
 
         /* SMART LENS */
@@ -116,6 +136,10 @@
         .eq-meter { display: inline-block; margin-left: 10px; }
         .eq-bar { display: inline-block; width: 40px; height: 6px; background: #333; border-radius: 3px; margin-left: 5px; vertical-align: middle; }
         .eq-fill { height: 100%; background: linear-gradient(90deg, #00ff00, #ffff00); border-radius: 3px; transition: width 0.3s ease; }
+        
+        /* Memory Dashboard */
+        .memory-progress { width: 100%; height: 6px; background: #333; border-radius: 3px; margin: 5px 0; }
+        .memory-progress-fill { height: 100%; background: linear-gradient(90deg, #00ff00, #00ff88); border-radius: 3px; transition: width 0.5s ease; }
     </style>
 </head>
 <body>
@@ -131,6 +155,11 @@
             </div>
             <span id="eq-score" style="color: #0ff; margin-left: 5px; font-weight: bold;">70</span>
         </div>
+    </div>
+    
+    <!-- Memory Status Panel -->
+    <div id="memory-panel">
+        <span>💾 <span id="memory-count">0</span> યાદો</span>
     </div>
     
     <div id="video-container">
@@ -196,6 +225,7 @@
                 <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-eye" style="color:#d4af37;"></i> Smart Lens</div>
                 <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid #d4af37;"><i class="fas fa-globe" style="color:#d4af37;"></i> 🌌 3D વંશાવલી</div>
                 <div class="menu-btn" onclick="window.openEmotionalDashboard()" style="grid-column: span 2; border: 1px solid #ff4081;"><i class="fas fa-heart" style="color:#ff4081;"></i> ભાવના ડેશબોર્ડ</div>
+                <div class="menu-btn" onclick="window.openMemoryDashboard()" style="grid-column: span 2; border: 1px solid #00ff00;"><i class="fas fa-brain" style="color:#00ff00;"></i> મેમરી ડેશબોર્ડ</div>
             </div>
 
             <div class="section-title">Personal Info</div>
@@ -251,6 +281,17 @@
             
             <div class="section-title">Firebase Database</div>
             <label>Firebase API Key:</label><input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
+            
+            <div class="section-title">Memory Settings</div>
+            <label class="checkbox-container">
+                <span>💾 સ્થિર મેમરી સક્રિય (Persistent Memory)</span>
+                <input type="checkbox" id="persistentMemoryEnabled" checked>
+            </label>
+            <label class="checkbox-container">
+                <span>🔄 આપમેળે પુનરાવર્તન (Auto Reinforcement)</span>
+                <input type="checkbox" id="autoReinforcementEnabled" checked>
+            </label>
+            
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE (SYNC)</button>
         </div>
     </div>
@@ -309,6 +350,78 @@
         </button>
     </div>
 
+    <!-- Memory Dashboard Modal -->
+    <div id="memory-dashboard-modal" class="modal">
+        <div class="notes-header">
+            <span>💾 મેમરી ડેશબોર્ડ</span>
+            <span onclick="window.toggleModal('memory-dashboard')" style="cursor:pointer">✖</span>
+        </div>
+        
+        <div style="width: 100%; text-align: center; margin: 20px 0;">
+            <div style="font-size: 48px; margin-bottom: 10px;">💾</div>
+            <div style="font-size: 24px; color: #00ff00; margin-bottom: 5px;">કુલ યાદો: <span id="total-memories-count">0</span></div>
+            <div style="color: #aaa; font-size: 14px;">સ્થિર મેમરી સિસ્ટમ</div>
+        </div>
+        
+        <div style="width: 100%; padding: 20px; background: #222; border-radius: 10px; margin-bottom: 20px;">
+            <h4 style="color: #00ff00; margin-bottom: 15px;">📊 મેમરી સ્ટેટસ</h4>
+            <div style="color: #ddd; font-size: 14px; line-height: 1.6;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span>સ્થિર યાદો (Long-term):</span>
+                    <span id="long-term-count">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span>અલ્પકાલિન યાદો (Short-term):</span>
+                    <span id="short-term-count">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+                    <span>પુનરાવર્તન જરૂરી:</span>
+                    <span id="due-recall-count">0</span>
+                </div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span>મેમરી ક્ષમતા:</span>
+                    <span id="memory-capacity">0%</span>
+                </div>
+            </div>
+            <div class="memory-progress">
+                <div id="memory-capacity-bar" class="memory-progress-fill" style="width: 0%"></div>
+            </div>
+        </div>
+        
+        <div style="width: 100%; margin-bottom: 20px;">
+            <h4 style="color: #00bcd4; margin-bottom: 10px;">🔍 તાજેતરની યાદો</h4>
+            <div id="recent-memories-list" style="max-height: 200px; overflow-y: auto;">
+                <!-- Recent memories will be inserted here -->
+            </div>
+        </div>
+        
+        <div style="width: 100%; margin-bottom: 20px;">
+            <h4 style="color: #ff9800; margin-bottom: 10px;">⚡ મેમરી ક્રિયાઓ</h4>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="save-btn" onclick="window.consolidateAllMemories()" style="flex: 1; background: #2196f3; font-size: 12px;">
+                    🔄 બધી યાદો સ્થિર કરો
+                </button>
+                <button class="save-btn" onclick="window.reinforceAllMemories()" style="flex: 1; background: #4caf50; font-size: 12px;">
+                    📚 બધું પુનરાવર્તિત કરો
+                </button>
+            </div>
+        </div>
+        
+        <div style="width: 100%;">
+            <h4 style="color: #ff4081; margin-bottom: 10px;">⚠️ સાવચેતી</h4>
+            <div id="memory-warnings" style="background: #333; padding: 15px; border-radius: 8px; color: #ddd; font-size: 14px;">
+                તમારી યાદો સલામત છે. નિયમિત પુનરાવર્તન થઈ રહ્યું છે.
+            </div>
+        </div>
+        
+        <button class="save-btn" onclick="window.backupMemories()" style="margin-top: 20px; background: #00ff00; color: black;">
+            💾 બેકઅપ લો
+        </button>
+        <button class="save-btn" onclick="window.clearAllMemories()" style="margin-top: 10px; background: #ff0000;">
+            🗑️ બધી યાદો સાફ કરો
+        </button>
+    </div>
+
     <div id="report-modal" class="modal">
         <div class="notes-header"><span>📜 રિપોર્ટ (Report)</span><span onclick="window.closeReport()" style="cursor:pointer">✖</span></div>
         <textarea id="report-content-area" readonly></textarea>
@@ -361,6 +474,8 @@
         let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
         let emotionalVoiceEnabled = localStorage.getItem('vidushi_emotional_voice') !== 'false';
         let naturalVoiceEnabled = localStorage.getItem('vidushi_natural_voice') !== 'false';
+        let persistentMemoryEnabled = localStorage.getItem('vidushi_persistent_memory') !== 'false';
+        let autoReinforcementEnabled = localStorage.getItem('vidushi_auto_reinforcement') !== 'false';
 
         // 🔥 RAG MEMORY STORAGE
         window.ragContent = ""; 
@@ -373,7 +488,6 @@
             vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
             console.log("✅ Firebase initialized successfully");
             loadCloudSettings();
-            loadVanshavaliFromCloud(); 
         } catch (err) { document.getElementById('status-text').innerText = "DB Error: " + err.message; }
 
         async function loadCloudSettings() {
@@ -397,18 +511,8 @@
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
                     localStorage.setItem('vidushi_groq_model', groqModel);
-                    if(!silentMode) window.speak(`સિસ્ટમ તૈયાર છે, ${userName}!`);
                 } else { await saveToCloud(); }
             } catch (e) { console.error("Sync Error", e); }
-        }
-
-        async function loadVanshavaliFromCloud() {
-            if(!db) return;
-            try {
-                const docSnap = await getDoc(vanshavaliDocRef);
-                if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
-                else { if(window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
-            } catch(e) { console.error("Vanshavali Error", e); }
         }
 
         async function saveToCloud() {
@@ -421,6 +525,8 @@
                 provider: aiProvider, 
                 geminiModel: geminiModel,
                 groqModel: groqModel,
+                persistentMemoryEnabled,
+                autoReinforcementEnabled,
                 lastUpdated: new Date() 
             };
             await setDoc(settingsDocRef, settingsData, { merge: true });
@@ -436,275 +542,153 @@
             return date.toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
         };
 
-        if (userDocRef) {
-            onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    window.permanentMemories = docSnap.data().memories || [];
-                    document.getElementById('status-text').innerText = "માઈક દબાવો (Ready)";
-                } else { setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે.", "હું દેવેન્દ્રભાઈ દ્વારા બનાવવામાં આવી છું."] }); }
-            }, (err) => { document.getElementById('status-text').innerText = "ઓફલાઈન (Net Fail)"; });
-        }
-
-        if (db) {
-            onSnapshot(query(collection(db, "vidushi_notes"), orderBy("timestamp", "desc")), (s) => { notes = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes(); });
-            onSnapshot(query(collection(db, "vidushi_expenses"), orderBy("timestamp", "desc")), (s) => { expenses = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('expense-modal').style.display === 'flex') window.renderExpenses(); });
-            onSnapshot(query(collection(db, "vidushi_contacts"), orderBy("name")), (s) => { contacts = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts(); });
-        }
-
-        const visionPrompts = {
-            'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
-            'math': `Analyze this image for math problems. Solve the problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
-            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
-            'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
-            'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
-        };
-
-        let currentVisionPrompt = visionPrompts['history'];
-        let selectedLensMode = 'history';
-        let isSilentListening = false;
-        let conversationBuffer = "";
-
-        const statusText = document.getElementById('status-text');
-        const micBtn = document.getElementById('mic-btn');
-        const selfieVideo = document.getElementById('selfie-video');
-        const canvas = document.getElementById('canvas-capture');
-        const imageOverlay = document.getElementById('image-overlay');
-        const generatedImage = document.getElementById('generated-image');
-        const imageLoadingText = document.getElementById('image-loading-text');
-        
-        const videos = {
-            silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'),
-            thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video')
-        };
-
-        let recognition, isProcessing = false, isAiSpeaking = false, visionMode = false, visionStream = null, wakeLock = null;
-
-        window.requestWakeLock = async () => { try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {} };
-
-        // ==================== EMOTIONAL INTELLIGENCE SYSTEM ====================
-        class EmotionalIntelligence {
+        // ==================== PERSISTENT MEMORY SYSTEM ====================
+        class PersistentMemory {
             constructor() {
-                this.userEmotion = 'neutral';
-                this.vidushiEmotion = 'happy';
-                this.emotionHistory = [];
-                this.eqScore = localStorage.getItem('vidushi_eq_score') ? parseInt(localStorage.getItem('vidushi_eq_score')) : 50;
+                this.longTermMemories = [];
+                this.shortTermMemories = [];
+                this.memoryIndex = new Map();
+                this.loadFromStorage();
                 
-                // Gujarati emotion keywords
-                this.gujaratiEmotionKeywords = {
-                    happy: ['ખુશ', 'સારું', 'મજા', 'હસવું', 'આનંદ', 'પ્રેમ', 'આભાર', 'શાભાશ', 'વાહ', 'અદ્ભુત', 'સુંદર', 'સુખ', 'મજામાં', 'આનંદમય'],
-                    sad: ['દુઃખ', 'રડવું', 'ઉદાસ', 'ચિંતા', 'તણાવ', 'પીડા', 'વેદના', 'અફસોસ', 'નિરાશ', 'હતાશ', 'ઉદાસી', 'દુખદ', 'દુખ', 'રડ્યા'],
-                    angry: ['ગુસ્સો', 'ક્રોધ', 'ખીજ', 'રોષ', 'નારાજ', 'ગુસ્સે', 'કોપ', 'ચીડ', 'ખિજાવવું', 'નાખુશ', 'ગુસ્સાવાર', 'ચીઢ'],
-                    excited: ['ઉત્સાહ', 'ઉત્તેજના', 'ઉમંગ', 'આતુર', 'બેચેન', 'ઉત્સુક', 'ઉત્કંઠા', 'ઉત્સાહિત', 'ઉમંગી', 'આતુરતા'],
-                    grateful: ['આભાર', 'કૃતજ્ઞ', 'ધન્યવાદ', 'શુક્રિયા', 'મેહરબાની', 'આભારી', 'કૃતાર્થ'],
-                    calm: ['શાંત', 'સ્થિર', 'ધીરજ', 'સમતોલ', 'શાંતિ', 'ધીરગંભીર', 'શમ', 'શાંતિપૂર્ણ']
-                };
+                // Memory consolidation timer (every 2 hours)
+                setInterval(() => this.consolidateMemories(), 2 * 60 * 60 * 1000);
+                
+                // Reinforcement timer (every 30 minutes for important memories)
+                setInterval(() => this.reinforceImportantMemories(), 30 * 60 * 1000);
+                
+                // Update memory panel every minute
+                setInterval(() => this.updateMemoryPanel(), 60 * 1000);
             }
-
-            detectEmotionFromText(text) {
-                if (!text || text.trim().length < 2) return 'neutral';
-                
-                let emotionScores = {
-                    happy: 0, sad: 0, angry: 0, excited: 0, grateful: 0, calm: 0, neutral: 1
-                };
-
-                const lowerText = text.toLowerCase();
-                
-                // Check for keywords
-                for (const [emotion, keywords] of Object.entries(this.gujaratiEmotionKeywords)) {
+            
+            loadFromStorage() {
+                try {
+                    const saved = localStorage.getItem('vidushi_long_term_memories');
+                    if (saved) {
+                        this.longTermMemories = JSON.parse(saved);
+                        this.buildIndex();
+                        console.log(`📚 Loaded ${this.longTermMemories.length} long-term memories`);
+                    }
+                } catch(e) {
+                    console.error("Memory load error:", e);
+                    this.longTermMemories = [];
+                }
+            }
+            
+            saveToStorage() {
+                try {
+                    localStorage.setItem('vidushi_long_term_memories', 
+                        JSON.stringify(this.longTermMemories));
+                } catch(e) {
+                    console.error("Memory save error:", e);
+                }
+            }
+            
+            buildIndex() {
+                this.memoryIndex.clear();
+                this.longTermMemories.forEach((memory, index) => {
+                    const keywords = this.extractKeywords(memory.text);
                     keywords.forEach(keyword => {
-                        if (lowerText.includes(keyword.toLowerCase())) {
-                            emotionScores[emotion] += 2;
+                        if (!this.memoryIndex.has(keyword)) {
+                            this.memoryIndex.set(keyword, []);
                         }
+                        this.memoryIndex.get(keyword).push(index);
                     });
-                }
-
-                // Punctuation analysis
-                if ((text.match(/!/g) || []).length >= 2) emotionScores.excited += 3;
-                if ((text.match(/\?/g) || []).length >= 2) emotionScores.neutral += 1;
-                if (text.includes('...') || text.includes('…')) emotionScores.sad += 2;
-                if ((text.match(/\./g) || []).length >= 3) emotionScores.calm += 1;
-
-                // Word length analysis (shorter sentences might be more emotional)
-                const wordCount = text.split(' ').length;
-                if (wordCount < 5) emotionScores.excited += 1;
-
-                // Find dominant emotion
-                let dominantEmotion = 'neutral';
-                let maxScore = 0;
-                
-                for (const [emotion, score] of Object.entries(emotionScores)) {
-                    if (score > maxScore) {
-                        maxScore = score;
-                        dominantEmotion = emotion;
-                    }
-                }
-
-                this.userEmotion = dominantEmotion;
-                this.emotionHistory.push({
-                    emotion: dominantEmotion,
-                    text: text.substring(0, 50) + (text.length > 50 ? '...' : ''),
-                    timestamp: new Date()
                 });
-
-                // Keep only last 20 emotions
-                if (this.emotionHistory.length > 20) {
-                    this.emotionHistory.shift();
+            }
+            
+            extractKeywords(text) {
+                const words = text.toLowerCase()
+                    .replace(/[^\u0A80-\u0AFF\s]/g, '')
+                    .split(/\s+/)
+                    .filter(word => word.length > 2);
+                
+                const stopWords = new Set(['અને', 'એ', 'આ', 'તે', 'ના', 'ની', 'ને', 'માં', 'થી', 'પણ', 'કે']);
+                
+                return words.filter(word => !stopWords.has(word));
+            }
+            
+            addMemory(text, category = 'general', importance = 3) {
+                if (!persistentMemoryEnabled) return null;
+                
+                const memory = {
+                    id: Date.now().toString(36) + Math.random().toString(36).substr(2),
+                    text: text,
+                    category: category,
+                    importance: Math.min(5, Math.max(1, importance)),
+                    createdAt: new Date(),
+                    lastRecalled: new Date(),
+                    recallCount: 0,
+                    nextRecallDue: this.calculateNextRecall(importance),
+                    reinforced: false
+                };
+                
+                // Check if similar memory exists
+                const similar = this.findSimilarMemories(text);
+                if (similar.length > 0) {
+                    // Update existing memory
+                    const existing = this.longTermMemories[similar[0]];
+                    existing.recallCount++;
+                    existing.lastRecalled = new Date();
+                    existing.nextRecallDue = this.calculateNextRecall(existing.importance);
+                    existing.reinforced = true;
+                    this.saveToStorage();
+                    
+                    // Show memory recall notification
+                    this.showMemoryNotification("🔄 યાદ તાજી કરી", `"${text.substring(0, 50)}..."`);
+                    
+                    return existing.id;
                 }
-
-                // Update EQ score
-                this.updateEQBasedOnEmotion(dominantEmotion);
-
-                return dominantEmotion;
-            }
-
-            updateEQBasedOnEmotion(emotion) {
-                const eqChanges = {
-                    happy: 1,
-                    grateful: 2,
-                    calm: 1,
-                    excited: 0,
-                    neutral: 0,
-                    sad: -1,
-                    angry: -2
-                };
                 
-                this.eqScore = Math.min(100, Math.max(0, 
-                    this.eqScore + (eqChanges[emotion] || 0)
-                ));
+                this.shortTermMemories.push(memory);
                 
-                localStorage.setItem('vidushi_eq_score', this.eqScore);
-                return this.eqScore;
-            }
-
-            getVidushiVideoForEmotion(emotion) {
-                const emotionToVideo = {
-                    happy: 'smiling',
-                    sad: 'thinking',
-                    angry: 'angry',
-                    excited: 'talking',
-                    grateful: 'smiling',
-                    calm: 'silent',
-                    neutral: 'silent'
-                };
-                return emotionToVideo[emotion] || 'silent';
-            }
-
-            getEmotionIcon(emotion) {
-                const icons = {
-                    happy: '😊',
-                    sad: '😢',
-                    angry: '😠',
-                    excited: '🎉',
-                    grateful: '🙏',
-                    calm: '😌',
-                    neutral: '😐'
-                };
-                return icons[emotion] || '😐';
-            }
-
-            getEmotionDisplayName(emotion) {
-                const names = {
-                    happy: 'ખુશ',
-                    sad: 'દુઃખી',
-                    angry: 'ગુસ્સે',
-                    excited: 'ઉત્સાહિત',
-                    grateful: 'કૃતજ્ઞ',
-                    calm: 'શાંત',
-                    neutral: 'સામાન્ય'
-                };
-                return names[emotion] || 'સામાન્ય';
-            }
-
-            getRecentEmotions(count = 5) {
-                return this.emotionHistory.slice(-count);
-            }
-
-            getEmotionTrend() {
-                if (this.emotionHistory.length < 3) return 'stable';
+                // If high importance, immediately move to long-term
+                if (importance >= 4) {
+                    this.moveToLongTerm(memory);
+                }
                 
-                const recent = this.emotionHistory.slice(-3);
-                const positiveCount = recent.filter(e => ['happy', 'excited', 'grateful'].includes(e.emotion)).length;
-                const negativeCount = recent.filter(e => ['sad', 'angry'].includes(e.emotion)).length;
-                
-                if (positiveCount >= 2) return 'improving';
-                if (negativeCount >= 2) return 'declining';
-                return 'stable';
-            }
-        }
-
-        window.emotionalAI = new EmotionalIntelligence();
-
-        // ==================== NATURAL VOICE SYSTEM ====================
-        class NaturalVoiceSystem {
-            constructor() {
-                this.voices = [];
-                this.gujaratiVoice = null;
-                this.currentVoiceIndex = 0;
-                this.loadVoices();
-            }
-
-            loadVoices() {
-                // Wait for voices to be loaded
-                setTimeout(() => {
-                    this.voices = window.speechSynthesis.getVoices();
-                    this.gujaratiVoice = this.voices.find(v => v.lang === 'gu-IN');
-                    
-                    if (!this.gujaratiVoice) {
-                        // Try to find Hindi voice as fallback
-                        this.gujaratiVoice = this.voices.find(v => v.lang.startsWith('hi-'));
-                    }
-                    
-                    if (!this.gujaratiVoice && this.voices.length > 0) {
-                        // Use any available voice
-                        this.gujaratiVoice = this.voices[0];
-                    }
-                    
-                    console.log('Loaded voice:', this.gujaratiVoice ? this.gujaratiVoice.name : 'No Gujarati voice found');
-                }, 1000);
-            }
-
-            getEmotionSpeechSettings(emotion) {
-                // Natural sounding parameters based on emotion
+                // Show memory added notification
+                this.showMemoryNotification
+getEmotionSpeechSettings(emotion) {
                 const settings = {
                     happy: { 
-                        rate: 1.18,  // Slightly faster for enthusiasm
-                        pitch: 1.22,  // Higher pitch for happiness
+                        rate: 1.18,
+                        pitch: 1.22,
                         volume: 1.0,
-                        pauseLength: 0.3, // Short pauses
+                        pauseLength: 0.3,
                         wordSpacing: 1.0
                     },
                     sad: { 
-                        rate: 0.88,   // Slower for sadness
-                        pitch: 0.88,   // Lower pitch
-                        volume: 0.85,  // Softer
-                        pauseLength: 0.6, // Longer pauses
+                        rate: 0.88,
+                        pitch: 0.88,
+                        volume: 0.85,
+                        pauseLength: 0.6,
                         wordSpacing: 1.1
                     },
                     angry: { 
-                        rate: 1.10,   // Fast but controlled
-                        pitch: 1.08,   // Slightly higher
-                        volume: 1.08,  // Louder
-                        pauseLength: 0.2, // Short, sharp pauses
+                        rate: 1.10,
+                        pitch: 1.08,
+                        volume: 1.08,
+                        pauseLength: 0.2,
                         wordSpacing: 0.9
                     },
                     excited: { 
-                        rate: 1.28,   // Fast
-                        pitch: 1.32,   // High pitch
-                        volume: 1.12,  // Loud
+                        rate: 1.28,
+                        pitch: 1.32,
+                        volume: 1.12,
                         pauseLength: 0.25,
                         wordSpacing: 0.85
                     },
                     grateful: { 
-                        rate: 1.05,   // Moderate
-                        pitch: 1.15,   // Warm pitch
+                        rate: 1.05,
+                        pitch: 1.15,
                         volume: 1.0,
                         pauseLength: 0.4,
                         wordSpacing: 1.05
                     },
                     calm: { 
-                        rate: 0.95,   // Slow and steady
-                        pitch: 1.0,    // Neutral pitch
-                        volume: 0.9,   // Soft
+                        rate: 0.95,
+                        pitch: 1.0,
+                        volume: 0.9,
                         pauseLength: 0.5,
                         wordSpacing: 1.15
                     },
@@ -717,7 +701,6 @@
                     }
                 };
 
-                // Add natural variation (±8%)
                 const variation = 0.92 + Math.random() * 0.16;
                 
                 const baseSettings = settings[emotion] || settings.neutral;
@@ -736,13 +719,11 @@
                 const settings = this.getEmotionSpeechSettings(emotion);
                 let processedText = text;
                 
-                // Add natural pauses at punctuation
                 processedText = processedText
                     .replace(/([.!?])\s+/g, `$1 <pause strength="medium">`)
                     .replace(/,/g, ', <pause strength="weak">')
                     .replace(/;/g, '; <pause strength="medium">');
                 
-                // Add emphasis on important words for certain emotions
                 if (emotion === 'excited' || emotion === 'happy') {
                     const importantWords = ['ખુશ', 'સારું', 'વાહ', 'અદ્ભુત', 'શાભાશ'];
                     importantWords.forEach(word => {
@@ -762,11 +743,9 @@
                         return;
                     }
 
-                    // Process text for natural speech
                     const processedText = this.processTextForNaturalSpeech(text, emotion);
                     const settings = this.getEmotionSpeechSettings(emotion);
                     
-                    // Split into sentences for more natural pacing
                     const sentences = processedText.split(/(?<=[.!?])\s+/).filter(s => s.trim());
                     
                     let currentIndex = 0;
@@ -789,18 +768,15 @@
                         const utterance = new SpeechSynthesisUtterance(sentence.replace(/<[^>]*>/g, ''));
                         utterance.lang = 'gu-IN';
                         
-                        // Use Gujarati voice if available
                         if (this.gujaratiVoice) {
                             utterance.voice = this.gujaratiVoice;
                         }
                         
-                        // Apply emotion-based settings with slight variation per sentence
                         const sentenceVariation = 0.95 + Math.random() * 0.1;
                         utterance.rate = settings.rate * sentenceVariation;
                         utterance.pitch = settings.pitch * (0.98 + Math.random() * 0.04);
                         utterance.volume = settings.volume;
                         
-                        // First sentence callback
                         if (currentIndex === 0 && onStart) {
                             utterance.onstart = onStart;
                         }
@@ -808,7 +784,6 @@
                         utterance.onend = () => {
                             currentIndex++;
                             
-                            // Add natural pause between sentences
                             const pauseTime = settings.pauseLength * 1000 * (0.8 + Math.random() * 0.4);
                             setTimeout(speakNext, pauseTime);
                         };
@@ -823,7 +798,6 @@
                     
                     speakNext();
                     
-                    // Return cancel function
                     return () => {
                         isCancelled = true;
                         window.speechSynthesis.cancel();
@@ -837,14 +811,30 @@
         // ==================== MAIN FUNCTIONS ====================
         window.onload = () => {
             playVideo('smiling');
-            window.speechSynthesis.getVoices(); // Initialize voices
+            window.speechSynthesis.getVoices();
             
             setTimeout(() => {
-                if(!silentMode) window.speak(`જય શ્રી કૃષ્ણ ${userName}! હું ભાવનાત્મક બુદ્ધિશાળી વિદુષી તમારી સેવામાં હાજર છું.`);
+                if(!silentMode) {
+                    const welcomeMessage = `જય શ્રી કૃષ્ણ ${userName}! હું ભાવનાત્મક બુદ્ધિશાળી વિદુષી તમારી સેવામાં હાજર છું. `;
+                    
+                    // Add welcome memory
+                    if (persistentMemoryEnabled) {
+                        window.persistentMemory.addMemory(
+                            `વપરાશકર્તા ${userName} ને વેલકમ મેસેજ આપ્યો.`,
+                            'system',
+                            5
+                        );
+                    }
+                    
+                    window.speak(welcomeMessage, false, 'happy');
+                }
             }, 1000);
             
             window.requestWakeLock();
             if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
+            
+            // Initialize memory panel
+            window.persistentMemory.updateMemoryPanel();
         };
 
         function playVideo(type) {
@@ -853,7 +843,6 @@
             if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
         }
 
-        // Update emotion UI
         function updateEmotionUI(emotion) {
             const emotionPanel = document.getElementById('emotion-panel');
             const emotionText = document.getElementById('current-emotion');
@@ -863,21 +852,18 @@
             emotionText.innerHTML = `${window.emotionalAI.getEmotionIcon(emotion)} ${window.emotionalAI.getEmotionDisplayName(emotion)}`;
             emotionText.className = `emotion-indicator emotion-${emotion}`;
             
-            // Update EQ score
             const eq = window.emotionalAI.eqScore;
             eqBar.style.width = `${eq}%`;
             eqScore.textContent = eq;
             
-            // Change EQ bar color based on score
             if(eq > 70) eqBar.style.background = 'linear-gradient(90deg, #00ff00, #00ff88)';
             else if(eq > 40) eqBar.style.background = 'linear-gradient(90deg, #ffff00, #ffaa00)';
             else eqBar.style.background = 'linear-gradient(90deg, #ff0000, #ff5500)';
             
-            // Show panel
             emotionPanel.style.display = 'block';
         }
 
-        // Main speak function
+        // Enhanced speak function with memory integration
         window.speak = async (text, forceSpeak = false, emotion = 'neutral') => { 
             if(silentMode && !forceSpeak) { 
                 statusText.innerText = "મૌન (Silent)..."; 
@@ -887,12 +873,10 @@
                 return; 
             }
             
-            // Detect emotion from text if not provided
             if (!emotion || emotion === 'neutral') {
                 emotion = window.emotionalAI.detectEmotionFromText(text);
             }
             
-            // Get empathetic response for emotional AI
             let responseText = text;
             if (emotionalVoiceEnabled && window.emotionalAI) {
                 const empatheticResponses = {
@@ -919,32 +903,31 @@
                 }
             }
             
-            // Update UI
             updateEmotionUI(emotion);
             
-            // Set video based on emotion
             const videoType = window.emotionalAI.getVidushiVideoForEmotion(emotion);
             
-            // Speak with natural voice
             await window.naturalVoice.speak(
                 responseText,
                 emotion,
                 () => {
-                    // onStart callback
                     statusText.innerHTML = `બોલું છું <span class="emotion-indicator emotion-${emotion}">${emotion}</span>`;
                     isAiSpeaking = true;
                     playVideo(videoType);
                 },
                 () => {
-                    // onEnd callback
                     playVideo('smiling');
                     isAiSpeaking = false;
                     isProcessing = false;
                     
-                    // Update EQ for positive interactions
                     if (emotion === 'happy' || emotion === 'grateful') {
                         window.emotionalAI.updateEQBasedOnEmotion(emotion);
                         updateEmotionUI(emotion);
+                    }
+                    
+                    // Memory reinforcement on speech end
+                    if (persistentMemoryEnabled && autoReinforcementEnabled) {
+                        setTimeout(() => window.persistentMemory.reinforceImportantMemories(), 1000);
                     }
                     
                     if (continuousMode) { 
@@ -956,24 +939,106 @@
             );
         };
 
-        // Process command with emotional intelligence
+        // Enhanced command processing with memory system
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; 
             if(ignore.includes(text.trim().toLowerCase())) return;
             
-            // Detect emotion from user input
             const userEmotion = window.emotionalAI.detectEmotionFromText(text);
-            
-            // Update emotion UI
             updateEmotionUI(userEmotion);
             
             let cmd = text.toLowerCase();
             
+            // ==================== MEMORY COMMANDS ====================
+            if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { 
+                let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim();
+                
+                if(memoryText) {
+                    let importance = 4; // Default high importance for explicit memories
+                    
+                    // Check for importance indicators
+                    if (cmd.includes("ખૂબ") || cmd.includes("જરૂરી") || cmd.includes("મહત્વનું")) {
+                        importance = 5;
+                    } else if (cmd.includes("થોડું") || cmd.includes("સામાન્ય")) {
+                        importance = 3;
+                    }
+                    
+                    if(persistentMemoryEnabled) {
+                        const memoryId = window.persistentMemory.addMemory(memoryText, 'user_command', importance);
+                        
+                        if (db) {
+                            await updateDoc(userDocRef, { memories: arrayUnion(memoryText) });
+                        }
+                        
+                        window.speak(`યાદ રાખી લીધું "${memoryText.substring(0, 30)}..."`, false, 'happy');
+                    } else {
+                        window.speak("મેમરી સિસ્ટમ બંધ છે. સેટિંગમાં સક્રિય કરો.", false, 'sad');
+                    }
+                } 
+                return; 
+            }
+            
+            if(cmd.includes("યાદ છે") || cmd.includes("યાદ કરાવ")) {
+                if (persistentMemoryEnabled) {
+                    const query = text.replace(/યાદ છે|યાદ કરાવ|કે/g, "").trim();
+                    const relevantMemories = window.persistentMemory.getRelevantMemories(query, 3);
+                    
+                    if (relevantMemories.length > 0) {
+                        let response = "હા, મને યાદ છે:\n";
+                        relevantMemories.forEach((memory, index) => {
+                            response += `${index + 1}. ${memory.text}\n`;
+                        });
+                        window.speak(response, false, 'happy');
+                    } else {
+                        window.speak("મને આ વિશે યાદ નથી. કૃપા કરીને પૂછો 'યાદ રાખ' કહીને.", false, 'sad');
+                    }
+                } else {
+                    window.speak("મેમરી સિસ્ટમ બંધ છે.", false, 'sad');
+                }
+                return;
+            }
+            
+            if(cmd.includes("યાદ સાફ") || cmd.includes("ભૂલી જા")) {
+                if (persistentMemoryEnabled) {
+                    const query = text.replace(/યાદ સાફ|ભૂલી જા|કે/g, "").trim();
+                    const relevantMemories = window.persistentMemory.getRelevantMemories(query, 5);
+                    
+                    if (relevantMemories.length > 0) {
+                        let deleted = 0;
+                        relevantMemories.forEach(memory => {
+                            if (window.persistentMemory.deleteMemory(memory.id)) {
+                                deleted++;
+                            }
+                        });
+                        window.speak(`${deleted} યાદો ભૂલી ગયી.`, false, 'calm');
+                    } else {
+                        window.speak("આ વિશે કોઈ યાદ નથી.", false, 'neutral');
+                    }
+                }
+                return;
+            }
+            
+            if(cmd.includes("કેટલી યાદ") || cmd.includes("મેમરી કેટલી")) {
+                if (persistentMemoryEnabled) {
+                    const counts = window.persistentMemory.getMemoryCounts();
+                    window.speak(`મારી પાસે ${counts.total} યાદો છે: ${counts.longTerm} સ્થિર અને ${counts.shortTerm} અલ્પકાલિન.`, false, 'happy');
+                } else {
+                    window.speak("મેમરી સિસ્ટમ બંધ છે.", false, 'sad');
+                }
+                return;
+            }
+            
             if(isSilentListening) { 
                 if(cmd.includes("પૂરી") || cmd.includes("stop")) { 
                     isSilentListening = false; 
-                    if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); 
+                    if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) });
+                    
+                    // Also save to persistent memory
+                    if (persistentMemoryEnabled && conversationBuffer.trim()) {
+                        window.persistentMemory.addMemory(conversationBuffer, 'conversation', 3);
+                    }
+                    
                     conversationBuffer=""; 
                     window.speak("યાદ રાખી લીધું.", false, 'happy'); 
                 } else { 
@@ -982,7 +1047,7 @@
                 return; 
             }
             
-            // Handle commands based on emotion
+            // Handle emotions
             if(cmd.includes("ખુશ") || cmd.includes("મજા")) {
                 window.emotionalAI.updateEQBasedOnEmotion('happy');
                 updateEmotionUI('happy');
@@ -993,30 +1058,25 @@
                 updateEmotionUI('sad');
             }
             
-            // Existing command processing...
+            // Existing command processing (shortened for brevity)
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { 
                 try { 
                     let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); 
                     if (parts && parts.length >= 3) { 
                         let childName = parts[1].trim(); 
                         let parentName = parts[2].trim(); 
-                        if (!window.activeFamilyTree) { 
-                            window.speak("વંશાવલી ડેટા મળ્યો નથી.", false, 'sad'); 
-                            return; 
-                        } 
-                        // ... existing family tree code ...
+                        
+                        // Save to memory
+                        if (persistentMemoryEnabled) {
+                            const memoryText = `${childName} એ ${parentName} ના પુત્ર/સંતાન છે.`;
+                            window.persistentMemory.addMemory(memoryText, 'family', 5);
+                        }
+                        
+                        window.speak(`${childName} નું નામ ${parentName} ના પુત્ર તરીકે યાદ રાખ્યું.`, false, 'happy'); 
+                        return; 
                     } 
                 } catch(e) { 
                     window.speak("ભૂલ થઈ.", false, 'sad'); 
-                } 
-            }
-            
-            if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { 
-                let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim(); 
-                if(memoryText && db) { 
-                    await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); 
-                    window.speak("નોંધી લીધું.", false, 'happy'); 
-                    return; 
                 } 
             }
             
@@ -1061,74 +1121,339 @@
                 return; 
             }
             
+            // ==================== AI PROCESSING WITH MEMORY ====================
             isProcessing = true; 
             statusText.innerText = "વિચારું છું..."; 
             playVideo('thinking');
             
-            // Use appropriate emotion for AI response
             const responseEmotion = userEmotion === 'sad' ? 'calm' : 
                                   userEmotion === 'angry' ? 'calm' : 
                                   userEmotion;
             
+            // Get relevant memories for context
+            let memoryContext = "";
+            if (persistentMemoryEnabled) {
+                const relevantMemories = window.persistentMemory.getRelevantMemories(text, 3);
+                if (relevantMemories.length > 0) {
+                    memoryContext = "\n[પુરાણી યાદો]:\n";
+                    relevantMemories.forEach((memory, idx) => {
+                        memoryContext += `${idx + 1}. ${memory.text}\n`;
+                    });
+                }
+            }
+            
+            // Save user query to memory (if it seems important)
+            if (persistentMemoryEnabled) {
+                const questionWords = ['કેવું', 'કેમ', 'ક્યાં', 'કોણ', 'શું', 'કેટલું', 'ક્યારે'];
+                const hasQuestionWord = questionWords.some(word => text.includes(word));
+                
+                if (hasQuestionWord || text.length > 15) {
+                    window.persistentMemory.addMemory(`પૂછ્યું: ${text}`, 'question', 2);
+                }
+            }
+            
             if(aiProvider === 'gemini') { 
-                await window.askGeminiText(text, responseEmotion); 
+                await window.askGeminiText(text, responseEmotion, memoryContext); 
             } else { 
-                await window.askGroqText(text, responseEmotion); 
+                await window.askGroqText(text, responseEmotion, memoryContext); 
             }
         };
 
-        // Emotional Dashboard Functions
-        window.openEmotionalDashboard = function() {
+        // Enhanced AI functions with memory context
+        function getSystemPrompt(memories, contextData, emotion = 'neutral', memoryContext = "") { 
+            let moodPrompt = "You are a helpful assistant."; 
+            if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
+            
+            let familyDataString = ""; 
+            try { 
+                if (window.activeFamilyTree) { 
+                    familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; 
+                } 
+            } catch (e) {} 
+            
+            let ragContext = "";
+            if(window.ragContent && window.ragContent.length > 0) {
+                const safeContent = window.ragContent.substring(0, 500000); 
+                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer the user's question accurately.)\n`;
+            }
+
+            let emotionalContext = "";
+            if (emotionalVoiceEnabled) {
+                const emotionalGuidance = {
+                    happy: "The user is happy. Respond with enthusiasm and positive energy.",
+                    sad: "The user is sad. Respond with empathy, comfort and gentle understanding.",
+                    angry: "The user is angry. Respond calmly, avoid confrontation, and try to de-escalate.",
+                    excited: "The user is excited. Match their energy with positive enthusiasm.",
+                    grateful: "The user is expressing gratitude. Acknowledge and respond with warmth.",
+                    calm: "The user is calm. Respond with peaceful and balanced tone."
+                };
+                emotionalContext = `[User's current emotion: ${emotion}]. ${emotionalGuidance[emotion] || "Respond naturally."} `;
+            }
+
+            // Include memory context
+            let memoryPrompt = "";
+            if (memoryContext && persistentMemoryEnabled) {
+                memoryPrompt = `\n[RELEVANT MEMORIES FROM PAST CONVERSATIONS]:\n${memoryContext}\n(Use these memories to provide personalized and consistent responses.)`;
+            }
+
+            return `${emotionalContext}${memoryPrompt}IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Permanent Memory]: ${memories} Question: "${contextData}"`; 
+        }
+
+        window.askGeminiText = async (userText, userEmotion = 'neutral', memoryContext = "") => { 
+            let keys = geminiKeys.split(',').filter(k => k); 
+            if (!keys.length) { 
+                window.speak("API Key નથી. સેટિંગમાં નાખો.", false, 'sad'); 
+                isProcessing = false; 
+                return; 
+            } 
+            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion, memoryContext); 
+            let contents = window.chatHistory.slice(-10).map(msg => ({ 
+                role: msg.role === "user" ? "user" : "model", 
+                parts: [{ text: msg.content }] 
+            })); 
+            contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
+            try { 
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
+                    method: "POST", 
+                    headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ contents: contents }) 
+                }); 
+                const data = await response.json(); 
+                if(data.candidates) { 
+                    let reply = data.candidates[0].content.parts[0].text; 
+                    window.chatHistory.push({ role: "user", content: userText }); 
+                    window.chatHistory.push({ role: "assistant", content: reply }); 
+                    
+                    // Save important responses to memory
+                    if (persistentMemoryEnabled && reply.length > 20) {
+                        const isImportant = reply.includes('મહત્વ') || reply.includes('જરૂરી') || reply.length > 100;
+                        if (isImportant) {
+                            window.persistentMemory.addMemory(
+                                `પૂછ્યું: ${userText.substring(0, 50)}... જવાબ: ${reply.substring(0, 100)}...`,
+                                'ai_response',
+                                isImportant ? 4 : 2
+                            );
+                        }
+                    }
+                    
+                    window.speak(reply, false, userEmotion);
+                } else { 
+                    window.speak("કાંઈ સમજાયું નહીં.", false, 'sad'); 
+                } 
+            } catch (e) { 
+                window.speak("ઇન્ટરનેટ એરર.", false, 'sad'); 
+                isProcessing = false; 
+            } 
+        };
+        
+        window.askGroqText = async (userText, userEmotion = 'neutral', memoryContext = "") => { 
+            if(!groqKey) { 
+                window.speak("Groq Key નથી. સેટિંગમાં જઈને API Key નાખો.", false, 'sad'); 
+                isProcessing=false; 
+                return; 
+            } 
+            
+            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion, memoryContext);
+            
+            let messages = [
+                { role: "system", content: systemInstruction },
+                ...window.chatHistory.slice(-6).map(m => ({ 
+                    role: m.role === "assistant" ? "assistant" : "user", 
+                    content: m.content 
+                })),
+                { role: "user", content: userText }
+            ];
+            
+            try { 
+                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
+                    method: "POST", 
+                    headers: { 
+                        "Authorization": `Bearer ${groqKey}`, 
+                        "Content-Type": "application/json" 
+                    }, 
+                    body: JSON.stringify({ 
+                        model: groqModel, 
+                        messages: messages, 
+                        temperature: 0.7, 
+                        max_tokens: 1000 
+                    }) 
+                }); 
+                
+                const data = await res.json();
+                
+                if(data.choices && data.choices[0]) { 
+                    let reply = data.choices[0].message.content; 
+                    window.chatHistory.push({ role: "user", content: userText }); 
+                    window.chatHistory.push({ role: "assistant", content: reply }); 
+                    
+                    // Save important responses to memory
+                    if (persistentMemoryEnabled && reply.length > 20) {
+                        const isImportant = reply.includes('important') || reply.includes('crucial') || reply.length > 100;
+                        if (isImportant) {
+                            window.persistentMemory.addMemory(
+                                `Q: ${userText.substring(0, 50)}... A: ${reply.substring(0, 100)}...`,
+                                'ai_response',
+                                isImportant ? 4 : 2
+                            );
+                        }
+                    }
+                    
+                    window.speak(reply, false, userEmotion);
+                } else { 
+                    console.error("Groq API Error:", data);
+                    window.speak("જવાબ નથી મળ્યો. કૃપા કરીને API Key ચેક કરો.", false, 'sad'); 
+                } 
+            } catch(e) { 
+                console.error("Groq Connection Error:", e);
+                window.speak("Groq કનેક્શન એરર. ઇન્ટરનેટ ચેક કરો.", false, 'sad'); 
+                isProcessing=false; 
+            } 
+        };
+        
+        // Helper function for family tree
+        function formatVanshavaliTree(node, parentName = "મૂળ પુરુષ") {
+            let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
+            if(node.info) text += ` [માહિતી: ${node.info}]`;
+            text += "\n";
+            
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    text += formatVanshavaliTree(child, node.name);
+                });
+            }
+            return text;
+        }
+
+        // ==================== MEMORY DASHBOARD FUNCTIONS ====================
+        window.openMemoryDashboard = function() {
             document.getElementById('settings-modal').style.display = 'none';
-            document.getElementById('emotional-dashboard-modal').style.display = 'flex';
-            window.renderEmotionalDashboard();
+            document.getElementById('memory-dashboard-modal').style.display = 'flex';
+            window.renderMemoryDashboard();
         };
 
-        window.renderEmotionalDashboard = function() {
-            if (!window.emotionalAI) return;
+        window.renderMemoryDashboard = function() {
+            if (!window.persistentMemory) return;
             
-            // Update EQ score
-            document.getElementById('dashboard-eq-score').textContent = window.emotionalAI.eqScore;
+            const counts = window.persistentMemory.getMemoryCounts();
             
-            // Render recent emotions
-            const recentEmotions = window.emotionalAI.getRecentEmotions(6);
-            const container = document.getElementById('recent-emotions');
+            // Update counts
+            document.getElementById('total-memories-count').textContent = counts.total;
+            document.getElementById('long-term-count').textContent = counts.longTerm;
+            document.getElementById('short-term-count').textContent = counts.shortTerm;
+            document.getElementById('due-recall-count').textContent = counts.dueForRecall;
+            
+            // Update memory capacity bar
+            const capacityPercent = Math.min(100, Math.round((counts.total / 500) * 100));
+            document.getElementById('memory-capacity').textContent = `${capacityPercent}%`;
+            document.getElementById('memory-capacity-bar').style.width = `${capacityPercent}%`;
+            
+            // Update capacity bar color
+            const capacityBar = document.getElementById('memory-capacity-bar');
+            if (capacityPercent > 80) {
+                capacityBar.style.background = 'linear-gradient(90deg, #ff0000, #ff5500)';
+            } else if (capacityPercent > 50) {
+                capacityBar.style.background = 'linear-gradient(90deg, #ffff00, #ffaa00)';
+            } else {
+                capacityBar.style.background = 'linear-gradient(90deg, #00ff00, #00ff88)';
+            }
+            
+            // Render recent memories
+            const recentMemories = window.persistentMemory.getRecentMemories(5);
+            const container = document.getElementById('recent-memories-list');
             container.innerHTML = '';
             
-            recentEmotions.forEach(item => {
-                const emotionDiv = document.createElement('div');
-                emotionDiv.className = `emotion-indicator emotion-${item.emotion}`;
-                emotionDiv.style.margin = '5px';
-                emotionDiv.style.padding = '8px 12px';
-                emotionDiv.style.fontSize = '12px';
-                emotionDiv.innerHTML = `
-                    ${window.emotionalAI.getEmotionIcon(item.emotion)}
-                    <div style="font-size: 10px; margin-top: 5px;">
-                        ${new Date(item.timestamp).getHours()}:${new Date(item.timestamp).getMinutes().toString().padStart(2, '0')}
-                    </div>
-                `;
-                container.appendChild(emotionDiv);
-            });
-            
-            // Generate insights
-            const insights = document.getElementById('emotional-insights');
-            const trend = window.emotionalAI.getEmotionTrend();
-            
-            if (trend === 'improving') {
-                insights.innerHTML = "🌟 તમારી ભાવનાત્મક સ્થિતિ સુધરી રહી છે! તમે વધુ સકારાત્મક અને ઉર્જાસભર બની રહ્યાં છો.";
-            } else if (trend === 'declining') {
-                insights.innerHTML = "🌧️ તમે થોડા દુઃખી લાગો છો. યાદ રાખો: આ પણ ગશે. હું તમારી સાથે છું.";
+            if (recentMemories.length === 0) {
+                container.innerHTML = '<div style="color: #aaa; text-align: center; padding: 20px;">કોઈ યાદો નથી</div>';
             } else {
-                insights.innerHTML = "⚖️ તમારી ભાવનાત્મક સ્થિતિ સ્થિર છે. તમે સંતુલન જાળવી રાખો છો.";
+                recentMemories.forEach(memory => {
+                    const memoryDiv = document.createElement('div');
+                    memoryDiv.className = 'list-item';
+                    memoryDiv.style.marginBottom = '8px';
+                    memoryDiv.style.padding = '10px';
+                    memoryDiv.style.fontSize = '12px';
+                    
+                    const importanceStars = '★'.repeat(memory.importance) + '☆'.repeat(5 - memory.importance);
+                    const date = new Date(memory.lastRecalled || memory.createdAt).toLocaleTimeString('gu-IN', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        hour12: true 
+                    });
+                    
+                    memoryDiv.innerHTML = `
+                        <div>
+                            <div style="color: #ddd;">${memory.text.substring(0, 60)}${memory.text.length > 60 ? '...' : ''}</div>
+                            <div style="font-size: 10px; color: #888; margin-top: 5px;">
+                                <span style="color: #ff0;">${importanceStars}</span> | 
+                                <span>${memory.category}</span> | 
+                                <span>${memory.recallCount} વાર યાદ</span> | 
+                                <span>${date}</span>
+                            </div>
+                        </div>
+                        <button onclick="window.deleteSingleMemory('${memory.id}')" style="background: red; color: white; border: none; border-radius: 5px; padding: 3px 8px; font-size: 10px; cursor: pointer;">
+                            ×
+                        </button>
+                    `;
+                    
+                    container.appendChild(memoryDiv);
+                });
+            }
+            
+            // Update warnings
+            const warnings = document.getElementById('memory-warnings');
+            if (counts.dueForRecall > 10) {
+                warnings.innerHTML = "⚠️ ઘણી યાદો પુનરાવર્તન માટે બાકી છે! કૃપા કરીને 'બધું પુનરાવર્તિત કરો' બટન દબાવો.";
+                warnings.style.background = 'rgba(255,100,0,0.3)';
+                warnings.style.border = '1px solid #ff5500';
+            } else if (counts.total > 400) {
+                warnings.innerHTML = "💾 મેમરી ક્ષમતા 80% થી વધુ છે. જૂની યાદો સાફ કરવાનો વિચાર કરો.";
+                warnings.style.background = 'rgba(255,200,0,0.3)';
+                warnings.style.border = '1px solid #ffaa00';
+            } else {
+                warnings.innerHTML = "✅ તમારી યાદો સલામત છે. નિયમિત પુનરાવર્તન થઈ રહ્યું છે.";
+                warnings.style.background = 'rgba(0,100,0,0.3)';
+                warnings.style.border = '1px solid #00aa00';
             }
         };
 
-        window.resetEmotionalData = function() {
-            if (confirm("શું તમે તમારો ભાવનાત્મક ડેટા રીસેટ કરવા માંગો છો?")) {
-                window.emotionalAI = new EmotionalIntelligence();
-                localStorage.removeItem('vidushi_eq_score');
-                window.renderEmotionalDashboard();
-                window.speak("ભાવનાત્મક ડેટા રીસેટ થઈ ગયો છે. નવી શરૂઆત!", false, 'happy');
+        window.deleteSingleMemory = function(memoryId) {
+            if (window.persistentMemory.deleteMemory(memoryId)) {
+                window.renderMemoryDashboard();
+                window.speak("યાદ ભૂલી ગયો.", false, 'calm');
+            }
+        };
+
+        window.consolidateAllMemories = function() {
+            if (!window.persistentMemory) return;
+            
+            const shortTermCount = window.persistentMemory.shortTermMemories.length;
+            window.persistentMemory.consolidateMemories();
+            window.renderMemoryDashboard();
+            
+            window.speak(`${shortTermCount} યાદો સ્થિર કરી દીધી.`, false, 'happy');
+        };
+
+        window.reinforceAllMemories = function() {
+            if (!window.persistentMemory) return;
+            
+            window.persistentMemory.reinforceImportantMemories();
+            window.renderMemoryDashboard();
+            
+            window.speak("બધી યાદો પુનરાવર્તિત કરી દીધી.", false, 'happy');
+        };
+
+        window.backupMemories = function() {
+            if (!window.persistentMemory) return;
+            
+            const filename = window.persistentMemory.backupMemories();
+            window.speak(`મેમરી બેકઅપ ${filename} સેવ થયો.`, false, 'happy');
+        };
+
+        window.clearAllMemories = function() {
+            if (confirm("શું તમે ખરેખર બધી યાદો સાફ કરવા માંગો છો? આ ક્રિયા પૂર્વવત્ થશે નહીં.")) {
+                if (window.persistentMemory.clearAllMemories()) {
+                    window.renderMemoryDashboard();
+                    window.speak("બધી યાદો સાફ કરી દીધી.", false, 'calm');
+                }
             }
         };
 
@@ -1147,6 +1472,8 @@
             document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
             document.getElementById('emotionalVoiceEnabled').checked = emotionalVoiceEnabled;
             document.getElementById('naturalVoiceEnabled').checked = naturalVoiceEnabled;
+            document.getElementById('persistentMemoryEnabled').checked = persistentMemoryEnabled;
+            document.getElementById('autoReinforcementEnabled').checked = autoReinforcementEnabled;
             window.toggleProviderSettings(); 
         };
         
@@ -1169,6 +1496,8 @@
             firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
             emotionalVoiceEnabled = document.getElementById('emotionalVoiceEnabled').checked;
             naturalVoiceEnabled = document.getElementById('naturalVoiceEnabled').checked;
+            persistentMemoryEnabled = document.getElementById('persistentMemoryEnabled').checked;
+            autoReinforcementEnabled = document.getElementById('autoReinforcementEnabled').checked;
             
             localStorage.setItem('vidushi_username', userName); 
             localStorage.setItem('vidushi_provider', aiProvider); 
@@ -1182,15 +1511,73 @@
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
             localStorage.setItem('vidushi_emotional_voice', emotionalVoiceEnabled);
             localStorage.setItem('vidushi_natural_voice', naturalVoiceEnabled);
+            localStorage.setItem('vidushi_persistent_memory', persistentMemoryEnabled);
+            localStorage.setItem('vidushi_auto_reinforcement', autoReinforcementEnabled);
             
             await saveToCloud();
             document.getElementById('settings-modal').style.display = 'none'; 
+            
+            // Update memory system
+            if (window.persistentMemory) {
+                window.persistentMemory.updateMemoryPanel();
+            }
+            
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા.", false, 'happy'); 
         };
 
+        // Emotional Dashboard Functions
+        window.openEmotionalDashboard = function() {
+            document.getElementById('settings-modal').style.display = 'none';
+            document.getElementById('emotional-dashboard-modal').style.display = 'flex';
+            window.renderEmotionalDashboard();
+        };
+
+        window.renderEmotionalDashboard = function() {
+            if (!window.emotionalAI) return;
+            
+            document.getElementById('dashboard-eq-score').textContent = window.emotionalAI.eqScore;
+            
+            const recentEmotions = window.emotionalAI.getRecentEmotions(6);
+            const container = document.getElementById('recent-emotions');
+            container.innerHTML = '';
+            
+            recentEmotions.forEach(item => {
+                const emotionDiv = document.createElement('div');
+                emotionDiv.className = `emotion-indicator emotion-${item.emotion}`;
+                emotionDiv.style.margin = '5px';
+                emotionDiv.style.padding = '8px 12px';
+                emotionDiv.style.fontSize = '12px';
+                emotionDiv.innerHTML = `
+                    ${window.emotionalAI.getEmotionIcon(item.emotion)}
+                    <div style="font-size: 10px; margin-top: 5px;">
+                        ${new Date(item.timestamp).getHours()}:${new Date(item.timestamp).getMinutes().toString().padStart(2, '0')}
+                    </div>
+                `;
+                container.appendChild(emotionDiv);
+            });
+            
+            const insights = document.getElementById('emotional-insights');
+            const trend = window.emotionalAI.getEmotionTrend();
+            
+            if (trend === 'improving') {
+                insights.innerHTML = "🌟 તમારી ભાવનાત્મક સ્થિતિ સુધરી રહી છે! તમે વધુ સકારાત્મક અને ઉર્જાસભર બની રહ્યાં છો.";
+            } else if (trend === 'declining') {
+                insights.innerHTML = "🌧️ તમે થોડા દુઃખી લાગો છો. યાદ રાખો: આ પણ ગશે. હું તમારી સાથે છું.";
+            } else {
+                insights.innerHTML = "⚖️ તમારી ભાવનાત્મક સ્થિતિ સ્થિર છે. તમે સંતુલન જાળવી રાખો છો.";
+            }
+        };
+
+        window.resetEmotionalData = function() {
+            if (confirm("શું તમે તમારો ભાવનાત્મક ડેટા રીસેટ કરવા માંગો છો?")) {
+                window.emotionalAI = new EmotionalIntelligence();
+                localStorage.removeItem('vidushi_eq_score');
+                window.renderEmotionalDashboard();
+                window.speak("ભાવનાત્મક ડેટા રીસેટ થઈ ગયો છે. નવી શરૂઆત!", false, 'happy');
+            }
+        };
+
         // ==================== EXISTING FUNCTIONS (Shortened) ====================
-        // [Note: Keeping your existing functions but adding emotional intelligence]
-        
         window.openFeature = (type) => { 
             document.getElementById('settings-modal').style.display = 'none'; 
             window.toggleModal(type); 
@@ -1207,6 +1594,12 @@
         window.addNote = async (text) => { 
             if(!db) return; 
             await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); 
+            
+            // Also save to persistent memory
+            if (persistentMemoryEnabled) {
+                window.persistentMemory.addMemory(`નોંધ: ${text}`, 'note', 3);
+            }
+            
             window.speak("લખ્યું.", false, 'happy'); 
         };
         
@@ -1232,6 +1625,12 @@
                     desc:d||"પરચુરણ", 
                     timestamp: Date.now()
                 }); 
+                
+                // Save to memory
+                if (persistentMemoryEnabled) {
+                    window.persistentMemory.addMemory(`ખર્ચ: ₹${amt[0]} - ${d}`, 'expense', 2);
+                }
+                
                 window.speak(`${amt[0]} લખ્યા.`, false, 'happy'); 
             } 
         };
@@ -1273,140 +1672,6 @@
             document.getElementById('download-btn').style.display = 'none'; 
         };
         
-        // AI Functions with emotional context
-        function getSystemPrompt(memories, contextData, emotion = 'neutral') { 
-            let moodPrompt = "You are a helpful assistant."; 
-            if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
-            
-            let familyDataString = ""; 
-            try { 
-                if (window.activeFamilyTree) { 
-                    familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; 
-                } 
-            } catch (e) {} 
-            
-            let ragContext = "";
-            if(window.ragContent && window.ragContent.length > 0) {
-                const safeContent = window.ragContent.substring(0, 500000); 
-                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer the user's question accurately.)\n`;
-            }
-
-            // Add emotional context
-            let emotionalContext = "";
-            if (emotionalVoiceEnabled) {
-                const emotionalGuidance = {
-                    happy: "The user is happy. Respond with enthusiasm and positive energy.",
-                    sad: "The user is sad. Respond with empathy, comfort and gentle understanding.",
-                    angry: "The user is angry. Respond calmly, avoid confrontation, and try to de-escalate.",
-                    excited: "The user is excited. Match their energy with positive enthusiasm.",
-                    grateful: "The user is expressing gratitude. Acknowledge and respond with warmth.",
-                    calm: "The user is calm. Respond with peaceful and balanced tone."
-                };
-                emotionalContext = `[User's current emotion: ${emotion}]. ${emotionalGuidance[emotion] || "Respond naturally."} `;
-            }
-
-            return `${emotionalContext}IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}"`; 
-        }
-
-        window.askGeminiText = async (userText, userEmotion = 'neutral') => { 
-            let keys = geminiKeys.split(',').filter(k => k); 
-            if (!keys.length) { 
-                window.speak("API Key નથી. સેટિંગમાં નાખો.", false, 'sad'); 
-                isProcessing = false; 
-                return; 
-            } 
-            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion); 
-            let contents = window.chatHistory.slice(-10).map(msg => ({ 
-                role: msg.role === "user" ? "user" : "model", 
-                parts: [{ text: msg.content }] 
-            })); 
-            contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
-            try { 
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ contents: contents }) 
-                }); 
-                const data = await response.json(); 
-                if(data.candidates) { 
-                    let reply = data.candidates[0].content.parts[0].text; 
-                    window.chatHistory.push({ role: "user", content: userText }); 
-                    window.chatHistory.push({ role: "assistant", content: reply }); 
-                    window.speak(reply, false, userEmotion);
-                } else { 
-                    window.speak("કાંઈ સમજાયું નહીં.", false, 'sad'); 
-                } 
-            } catch (e) { 
-                window.speak("ઇન્ટરનેટ એરર.", false, 'sad'); 
-                isProcessing = false; 
-            } 
-        };
-        
-        window.askGroqText = async (userText, userEmotion = 'neutral') => { 
-            if(!groqKey) { 
-                window.speak("Groq Key નથી. સેટિંગમાં જઈને API Key નાખો.", false, 'sad'); 
-                isProcessing=false; 
-                return; 
-            } 
-            
-            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion);
-            
-            let messages = [
-                { role: "system", content: systemInstruction },
-                ...window.chatHistory.slice(-6).map(m => ({ 
-                    role: m.role === "assistant" ? "assistant" : "user", 
-                    content: m.content 
-                })),
-                { role: "user", content: userText }
-            ];
-            
-            try { 
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", 
-                    headers: { 
-                        "Authorization": `Bearer ${groqKey}`, 
-                        "Content-Type": "application/json" 
-                    }, 
-                    body: JSON.stringify({ 
-                        model: groqModel, 
-                        messages: messages, 
-                        temperature: 0.7, 
-                        max_tokens: 1000 
-                    }) 
-                }); 
-                
-                const data = await res.json();
-                
-                if(data.choices && data.choices[0]) { 
-                    let reply = data.choices[0].message.content; 
-                    window.chatHistory.push({ role: "user", content: userText }); 
-                    window.chatHistory.push({ role: "assistant", content: reply }); 
-                    window.speak(reply, false, userEmotion);
-                } else { 
-                    console.error("Groq API Error:", data);
-                    window.speak("જવાબ નથી મળ્યો. કૃપા કરીને API Key ચેક કરો.", false, 'sad'); 
-                } 
-            } catch(e) { 
-                console.error("Groq Connection Error:", e);
-                window.speak("Groq કનેક્શન એરર. ઇન્ટરનેટ ચેક કરો.", false, 'sad'); 
-                isProcessing=false; 
-            } 
-        };
-        
-        // Helper function for family tree
-        function formatVanshavaliTree(node, parentName = "મૂળ પુરુષ") {
-            let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
-            if(node.info) text += ` [માહિતી: ${node.info}]`;
-            text += "\n";
-            
-            if (node.children && node.children.length > 0) {
-                node.children.forEach(child => {
-                    text += formatVanshavaliTree(child, node.name);
-                });
-            }
-            return text;
-        }
-
         // Speech recognition setup
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
@@ -1429,6 +1694,12 @@
             recognition.onresult = (e) => { 
                 let text = e.results[0][0].transcript; 
                 console.log("🎤:", text); 
+                
+                // Save conversation to memory if it's significant
+                if (persistentMemoryEnabled && text.length > 20) {
+                    window.persistentMemory.addMemory(`વપરાશકર્તાએ કહ્યું: ${text}`, 'conversation', 1);
+                }
+                
                 if(text.trim()) window.processCommand(text); 
             }; 
         }
@@ -1443,7 +1714,7 @@
         };
         
         window.stopConversation = () => { 
-            recognition.stop(); 
+            if (recognition) recognition.stop(); 
             window.speechSynthesis.cancel(); 
             playVideo('silent'); 
             window.stopVisionCamera(); 
@@ -1452,13 +1723,51 @@
             isSilentListening = false; 
         };
         
-        // [Keep your existing camera, vision, and other functions here]
-        // They remain mostly the same, just add emotional parameters to speak() calls
-        
+        // Add CSS animations for memory notifications
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            
+            @keyframes fadeOut {
+                from { opacity: 1; }
+                to { opacity: 0; }
+            }
+            
+            @keyframes memoryGlow {
+                0% { box-shadow: 0 0 5px #0f0; }
+                50% { box-shadow: 0 0 15px #0f0; }
+                100% { box-shadow: 0 0 5px #0f0; }
+            }
+            
+            .memory-saved {
+                animation: memoryGlow 2s ease-in-out;
+            }
+        `;
+        document.head.appendChild(style);
+
         // Initialize voices on page load
         window.speechSynthesis.onvoiceschanged = () => {
             window.naturalVoice.loadVoices();
         };
+
+        // Regular memory consolidation check
+        setInterval(() => {
+            if (window.persistentMemory && autoReinforcementEnabled) {
+                window.persistentMemory.consolidateMemories();
+            }
+        }, 30 * 60 * 1000); // Every 30 minutes
+
+        // Auto-save memories every 10 minutes
+        setInterval(() => {
+            if (window.persistentMemory) {
+                window.persistentMemory.saveToStorage();
+            }
+        }, 10 * 60 * 1000);
+
+        console.log("✅ Vidushi AI with Persistent Memory System loaded successfully!");
     </script>
 </body>
 </html>
