@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+    <<!DOCTYPE html>
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
@@ -11,8 +11,8 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-    <!-- તમારા HTML હેડમાં ઉમેરો: -->
-<script src="vanshavali_data.js"></script>
+
+    <script src="vanshavali_data.js"></script>
 
     <style>
         /* ============ CORE STYLES ============ */
@@ -707,6 +707,33 @@
                 opacity: 0; 
             }
         }
+        
+        /* Family Tree Styles */
+        .tree-node {
+            padding: 10px;
+            margin: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            border-left: 4px solid #d4af37;
+        }
+        
+        .tree-node-name {
+            color: #00ff00;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        
+        .tree-node-info {
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        
+        .tree-children {
+            margin-left: 30px;
+            border-left: 1px solid #555;
+            padding-left: 15px;
+        }
     </style>
 </head>
 <body>
@@ -1063,7 +1090,7 @@
         </div>
     </div>
 
-<script type="module">
+        script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { 
             getFirestore, 
@@ -1093,7 +1120,7 @@
         };
 
         // Global Variables
-        let app, db, userDocRef, settingsDocRef;
+        let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -1115,6 +1142,7 @@
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
             settingsDocRef = doc(db, "vidushi_db", "settings");
+            vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
             console.log("✅ Firebase initialized successfully");
             loadCloudSettings();
         } catch (err) { 
@@ -1162,6 +1190,198 @@
             smiling: document.getElementById('smiling-video'), 
             angry: document.getElementById('angry-video')
         };
+
+        // ==================== VANSHAVALI FUNCTIONS ====================
+        async function loadVanshavaliFromCloud() {
+            if (!db) {
+                console.log("No database, loading from local");
+                loadVanshavaliFromLocal();
+                return;
+            }
+            
+            try {
+                const docSnap = await getDoc(vanshavaliDocRef);
+                
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    window.activeFamilyTree = data.tree || data;
+                    console.log("✅ Vanshavali loaded from Firebase");
+                    console.log("Tree structure:", window.activeFamilyTree);
+                    
+                    // If tree is empty but we have local data, use local
+                    if (!window.activeFamilyTree || Object.keys(window.activeFamilyTree).length === 0) {
+                        loadVanshavaliFromLocal();
+                    }
+                } else {
+                    console.log("No vanshavali in Firebase, loading from local");
+                    loadVanshavaliFromLocal();
+                    
+                    // Save local data to Firebase
+                    if (window.activeFamilyTree) {
+                        await setDoc(vanshavaliDocRef, { 
+                            tree: window.activeFamilyTree,
+                            lastUpdated: new Date()
+                        });
+                        console.log("✅ Saved local vanshavali to Firebase");
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Error loading vanshavali from Firebase:", error);
+                loadVanshavaliFromLocal();
+            }
+        }
+        
+        function loadVanshavaliFromLocal() {
+            // Check if vanshavali_data.js is loaded
+            if (typeof window.vanshavaliData !== 'undefined') {
+                window.activeFamilyTree = window.vanshavaliData;
+                console.log("✅ Vanshavali loaded from local data file");
+            } else {
+                // Create default structure
+                window.activeFamilyTree = {
+                    name: "મૂળ પુરુષ",
+                    info: "કુળના સ્થાપક",
+                    children: []
+                };
+                console.log("⚠️ Created default vanshavali structure");
+            }
+        }
+        
+        window.open3DVanshavali = function() {
+            if (!window.activeFamilyTree) {
+                window.speak("વંશાવલી ડેટા મળ્યો નથી. કૃપા કરીને ફરી પ્રયાસ કરો.", false, 'sad');
+                return;
+            }
+            
+            document.getElementById('vanshavali-3d-modal').style.display = 'block';
+            
+            // Simple 3D visualization using CSS
+            const graphContainer = document.getElementById('graph-container');
+            graphContainer.innerHTML = `
+                <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px; overflow-y:auto;">
+                    <h2 style="color:#d4af37; margin-bottom:30px; text-align:center;">🌳 વંશાવલી - પરિવાર વૃક્ષ</h2>
+                    <div style="background:rgba(255,255,255,0.1); padding:30px; border-radius:15px; max-width:800px; width:100%; border:2px solid #d4af37;">
+                        ${renderFamilyTreeHTML(window.activeFamilyTree)}
+                    </div>
+                    <div style="margin-top:20px; color:#aaa; font-size:12px; text-align:center;">
+                        કુલ સભ્યો: ${countFamilyMembers(window.activeFamilyTree)}
+                    </div>
+                </div>
+            `;
+        };
+        
+        function renderFamilyTreeHTML(node, depth = 0) {
+            if (!node) return '';
+            
+            const indent = depth * 30;
+            let html = `
+                <div class="tree-node" style="margin-left:${indent}px;">
+                    <div class="tree-node-name">👤 ${node.name}</div>`;
+            
+            if (node.info) {
+                html += `<div class="tree-node-info">📝 ${node.info}</div>`;
+            }
+            
+            html += `</div>`;
+            
+            if (node.children && node.children.length > 0) {
+                html += `<div class="tree-children" style="margin-left:${indent + 20}px;">`;
+                node.children.forEach(child => {
+                    html += renderFamilyTreeHTML(child, depth + 1);
+                });
+                html += `</div>`;
+            }
+            
+            return html;
+        }
+        
+        function countFamilyMembers(node) {
+            if (!node) return 0;
+            
+            let count = 1; // Count current node
+            
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    count += countFamilyMembers(child);
+                });
+            }
+            
+            return count;
+        }
+        
+        window.close3DVanshavali = function() {
+            document.getElementById('vanshavali-3d-modal').style.display = 'none';
+            window.speak("વંશાવલી બંધ કરી.", false, 'neutral');
+        };
+        
+        // Helper function to find person in tree
+        function findPersonInTree(tree, name) {
+            if (!tree || !name) return null;
+            
+            const lowerName = name.toLowerCase();
+            const lowerTreeName = tree.name.toLowerCase();
+            
+            if (lowerTreeName.includes(lowerName) || lowerName.includes(lowerTreeName)) {
+                let info = `${tree.name}`;
+                if (tree.info) info += ` - ${tree.info}`;
+                
+                if (tree.children && tree.children.length > 0) {
+                    const childrenNames = tree.children.map(c => c.name).join(", ");
+                    info += `. ${tree.children.length} સંતાનો: ${childrenNames}`;
+                }
+                
+                return info;
+            }
+            
+            if (tree.children) {
+                for (let child of tree.children) {
+                    const result = findPersonInTree(child, name);
+                    if (result) return result;
+                }
+            }
+            
+            return null;
+        }
+        
+        // Function to add child to parent in tree
+        function addChildToParent(tree, parentName, childData) {
+            if (!tree || !parentName) return false;
+            
+            const lowerParentName = parentName.toLowerCase();
+            const lowerTreeName = tree.name.toLowerCase();
+            
+            if (lowerTreeName.includes(lowerParentName) || lowerParentName.includes(lowerTreeName)) {
+                if (!tree.children) tree.children = [];
+                tree.children.push(childData);
+                return true;
+            }
+            
+            if (tree.children) {
+                for (let child of tree.children) {
+                    if (addChildToParent(child, parentName, childData)) {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
+        
+        async function saveVanshavaliToCloud() {
+            if (!db || !window.activeFamilyTree) return false;
+            
+            try {
+                await setDoc(vanshavaliDocRef, { 
+                    tree: window.activeFamilyTree,
+                    lastUpdated: new Date()
+                }, { merge: true });
+                console.log("✅ Vanshavali saved to Firebase");
+                return true;
+            } catch (error) {
+                console.error("❌ Error saving vanshavali:", error);
+                return false;
+            }
+        }
 
         // ==================== PERSISTENT MEMORY SYSTEM ====================
         class PersistentMemory {
@@ -1910,290 +2130,59 @@
         window.naturalVoice = new NaturalVoiceSystem();
 
         // ==================== HELPER FUNCTIONS ====================
-        // આપના કોડમાં નીચેનું ફંક્શન શોધો અને તેને સુધારો:
-
-async function loadCloudSettings() {
-    if(!db) return;
-    try {
-        const docSnap = await getDoc(settingsDocRef);
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            if(data.userName) userName = data.userName;
-            if(data.geminiKey) geminiKeys = data.geminiKey;
-            if(data.groqKey) groqKey = data.groqKey;
-            if(data.mood) currentMood = data.mood;
-            if(data.provider) aiProvider = data.provider;
-            if(data.geminiModel) geminiModel = data.geminiModel;
-            if(data.groqModel) groqModel = data.groqModel;
-            
-            localStorage.setItem('vidushi_username', userName);
-            localStorage.setItem('vidushi_gemini_key', geminiKeys);
-            localStorage.setItem('vidushi_groq_key', groqKey);
-            localStorage.setItem('vidushi_mood', currentMood);
-            localStorage.setItem('vidushi_provider', aiProvider);
-            localStorage.setItem('vidushi_gemini_model', geminiModel);
-            localStorage.setItem('vidushi_groq_model', groqModel);
-        } else { 
-            await saveToCloud(); 
-        }
-        
-        // ============ VANSHAVALI DATA LOAD ============
-        await loadVanshavaliFromCloud();
-        
-    } catch (e) { 
-        console.error("Sync Error", e); 
-    }
-}
-
-// ============ VANSHAVALI LOAD FUNCTION ============
-async function loadVanshavaliFromCloud() {
-    if (!db) return;
-    
-    try {
-        const vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
-        const docSnap = await getDoc(vanshavaliDocRef);
-        
-        if (docSnap.exists()) {
-            const data = docSnap.data();
-            window.activeFamilyTree = data.tree || data;
-            console.log("✅ Vanshavali loaded from Firebase:", window.activeFamilyTree);
-        } else {
-            // Try to load from local JavaScript file if exists
-            if (typeof window.vanshavaliData !== 'undefined') {
-                window.activeFamilyTree = window.vanshavaliData;
-                console.log("✅ Vanshavali loaded from local data");
-                
-                // Save to Firebase for future
-                await setDoc(vanshavaliDocRef, { 
-                    tree: window.vanshavaliData,
-                    lastUpdated: new Date()
-                });
-            } else {
-                console.log("⚠️ No vanshavali data found");
-                window.activeFamilyTree = null;
-            }
-        }
-    } catch (error) {
-        console.error("❌ Error loading vanshavali:", error);
-        window.activeFamilyTree = null;
-    }
-}
-
-// ============ VANSHAVALI DATA STRUCTURE ============
-// આ તમારા vanshavali_data.js ફાઇલમાં હોવું જોઈએ
-// જો ન હોય તો નીચેનું ઉમેરો:
-
-window.vanshavaliData = window.vanshavaliData || {
-    name: "મૂળ પુરુષ",
-    info: "કુળના સ્થાપક",
-    children: [
-        {
-            name: "રામભાઈ",
-            info: "વડીલ પુત્ર",
-            children: [
-                { name: "દેવેન્દ્રભાઈ", info: "તકનીકી નિષ્ણાત" },
-                { name: "રાજેશભાઈ", info: "વ્યવસાયી" }
-            ]
-        },
-        {
-            name: "હરિભાઈ",
-            info: "બીજા પુત્ર",
-            children: [
-                { name: "સુરેશભાઈ", info: "ડૉક્ટર" },
-                { name: "મહેશભાઈ", info: "શિક્ષક" }
-            ]
-        }
-    ]
-};
-
-// ============ VANSHAVALI FUNCTIONS ============
-window.open3DVanshavali = function() {
-    if (!window.activeFamilyTree) {
-        window.speak("વંશાવલી ડેટા મળ્યો નથી. કૃપા કરીને ફરી પ્રયાસ કરો.", false, 'sad');
-        return;
-    }
-    
-    document.getElementById('vanshavali-3d-modal').style.display = 'block';
-    
-    // Simple 3D visualization using CSS
-    const graphContainer = document.getElementById('graph-container');
-    graphContainer.innerHTML = `
-        <div style="width:100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; color:white; padding:20px;">
-            <h2 style="color:#d4af37; margin-bottom:30px;">🌳 વંશાવલી</h2>
-            <div style="background:rgba(255,255,255,0.1); padding:20px; border-radius:10px; max-width:600px; width:100%;">
-                ${renderFamilyTreeHTML(window.activeFamilyTree)}
-            </div>
-        </div>
-    `;
-};
-
-function renderFamilyTreeHTML(node, depth = 0) {
-    if (!node) return '';
-    
-    const indent = '&nbsp;&nbsp;&nbsp;&nbsp;'.repeat(depth);
-    let html = `<div style="margin-left:${depth * 20}px; margin-bottom:10px;">
-        <div style="color:#00ff00; font-weight:bold;">${indent}👤 ${node.name}</div>`;
-    
-    if (node.info) {
-        html += `<div style="color:#aaa; font-size:12px; margin-left:${(depth + 1) * 20}px;">📝 ${node.info}</div>`;
-    }
-    
-    if (node.children && node.children.length > 0) {
-        html += `<div style="margin-left:${(depth + 1) * 20}px; border-left:1px solid #555; padding-left:10px;">`;
-        node.children.forEach(child => {
-            html += renderFamilyTreeHTML(child, depth + 1);
-        });
-        html += `</div>`;
-    }
-    
-    html += `</div>`;
-    return html;
-}
-
-window.close3DVanshavali = function() {
-    document.getElementById('vanshavali-3d-modal').style.display = 'none';
-    window.speak("વંશાવલી બંધ કરી.", false, 'neutral');
-};
-
-// ============ FAMILY TREE COMMANDS ============
-// આ તમારા processCommand ફંક્શનમાં ઉમેરો:
-// ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) 
-// આ ભાગ નીચેના જેવો હોવો જોઈએ:
-
-if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { 
-    try { 
-        // Regex to extract names
-        const match = text.match(/(.+?)\s+(?:નું|ના)\s+નામ\s+(.+?)\s+(?:ના|ને)\s+(પુત્ર|દીકરા|સંતાન|બાળક)/);
-        
-        if (match) {
-            const childName = match[1].trim();
-            const parentName = match[2].trim();
-            const relation = match[3];
-            
-            // Initialize family tree if not exists
-            if (!window.activeFamilyTree) {
-                window.activeFamilyTree = {
-                    name: "મૂળ પુરુષ",
-                    info: "કુળના સ્થાપક",
-                    children: []
-                };
-            }
-            
-            // Function to add child to parent
-            function addChildToParent(tree, parentName, childData) {
-                if (!tree) return false;
-                
-                if (tree.name === parentName) {
-                    if (!tree.children) tree.children = [];
-                    tree.children.push(childData);
-                    return true;
+        async function loadCloudSettings() {
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(settingsDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if(data.userName) userName = data.userName;
+                    if(data.geminiKey) geminiKeys = data.geminiKey;
+                    if(data.groqKey) groqKey = data.groqKey;
+                    if(data.mood) currentMood = data.mood;
+                    if(data.provider) aiProvider = data.provider;
+                    if(data.geminiModel) geminiModel = data.geminiModel;
+                    if(data.groqModel) groqModel = data.groqModel;
+                    
+                    localStorage.setItem('vidushi_username', userName);
+                    localStorage.setItem('vidushi_gemini_key', geminiKeys);
+                    localStorage.setItem('vidushi_groq_key', groqKey);
+                    localStorage.setItem('vidushi_mood', currentMood);
+                    localStorage.setItem('vidushi_provider', aiProvider);
+                    localStorage.setItem('vidushi_gemini_model', geminiModel);
+                    localStorage.setItem('vidushi_groq_model', groqModel);
+                } else { 
+                    await saveToCloud(); 
                 }
                 
-                if (tree.children) {
-                    for (let child of tree.children) {
-                        if (addChildToParent(child, parentName, childData)) {
-                            return true;
-                        }
-                    }
-                }
+                // Load vanshavali data
+                await loadVanshavaliFromCloud();
                 
-                return false;
+            } catch (e) { 
+                console.error("Sync Error", e); 
             }
-            
-            // Create child data
-            const childData = {
-                name: childName,
-                info: `${parentName} ના ${relation}`,
-                addedOn: new Date().toISOString()
+        }
+
+        async function saveToCloud() {
+            if(!db) return;
+            const settingsData = { 
+                userName, 
+                geminiKey: geminiKeys, 
+                groqKey: groqKey, 
+                mood: currentMood, 
+                provider: aiProvider, 
+                geminiModel: geminiModel,
+                groqModel: groqModel,
+                persistentMemoryEnabled,
+                autoReinforcementEnabled,
+                lastUpdated: new Date() 
             };
-            
-            // Try to add to tree
-            const added = addChildToParent(window.activeFamilyTree, parentName, childData);
-            
-            if (added) {
-                // Save to Firebase
-                if (db) {
-                    const vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
-                    await setDoc(vanshavaliDocRef, { 
-                        tree: window.activeFamilyTree,
-                        lastUpdated: new Date()
-                    }, { merge: true });
-                }
-                
-                // Save to persistent memory
-                if (persistentMemoryEnabled && window.persistentMemory) {
-                    const memoryText = `${childName} એ ${parentName} ના ${relation} છે.`;
-                    window.persistentMemory.addMemory(memoryText, 'family', 5);
-                }
-                
-                window.speak(`${childName} નું નામ ${parentName} ના ${relation} તરીકે વંશાવલીમાં ઉમેર્યું.`, false, 'happy');
-            } else {
-                window.speak(`${parentName} નામની વ્યક્તિ વંશાવલીમાં મળી નથી.`, false, 'sad');
+            try {
+                await setDoc(settingsDocRef, settingsData, { merge: true });
+            } catch(e) {
+                console.error("Save error:", e);
             }
-        } else {
-            window.speak("મને સમજાયું નહીં. ફરી પ્રયાસ કરો: 'દેવેન્દ્રનું નામ રામભાઈના પુત્ર તરીકે'", false, 'neutral');
         }
-    } catch(e) { 
-        console.error("Family tree error:", e);
-        window.speak("ભૂલ થઈ.", false, 'sad'); 
-    } 
-    return;
-}
-
-// ============ QUERY FAMILY TREE ============
-// આપના processCommandમાં નીચેનું ઉમેરો:
-if (cmd.includes("વંશાવલી") || cmd.includes("કુટુંબ") || cmd.includes("પરિવાર")) {
-    if (cmd.includes("કોણ") || cmd.includes("શું") || cmd.includes("કહે")) {
-        // Query about specific person
-        const nameQuery = text.replace(/વંશાવલી|કુટુંબ|પરિવાર|કોણ|શું|કહે|તમે|મને/g, "").trim();
-        
-        if (nameQuery && window.activeFamilyTree) {
-            const personInfo = findPersonInTree(window.activeFamilyTree, nameQuery);
-            if (personInfo) {
-                window.speak(personInfo, false, 'happy');
-            } else {
-                window.speak(`${nameQuery} વંશાવલીમાં મળ્યા નથી.`, false, 'sad');
-            }
-        } else {
-            window.speak("કૃપા કરીને નામ પૂછો.", false, 'neutral');
-        }
-    } else {
-        // Show family tree
-        if (window.activeFamilyTree) {
-            window.speak("હું તમારી વંશાવલી દર્શાવું છું.", false, 'happy');
-            setTimeout(() => window.open3DVanshavali(), 1000);
-        } else {
-            window.speak("વંશાવલી ડેટા મળ્યો નથી.", false, 'sad');
-        }
-    }
-    return;
-}
-
-// Helper function to find person in tree
-function findPersonInTree(tree, name) {
-    if (!tree || !name) return null;
-    
-    if (tree.name.includes(name) || name.includes(tree.name)) {
-        let info = `${tree.name}`;
-        if (tree.info) info += ` - ${tree.info}`;
-        
-        if (tree.children && tree.children.length > 0) {
-            info += `. ${tree.children.length} સંતાનો: `;
-            info += tree.children.map(c => c.name).join(", ");
-        }
-        
-        return info;
-    }
-    
-    if (tree.children) {
-        for (let child of tree.children) {
-            const result = findPersonInTree(child, name);
-            if (result) return result;
-        }
-    }
-    
-    return null;
-}
 
         window.formatDate = (timestamp) => {
             if (!timestamp) return "";
@@ -2240,6 +2229,9 @@ function findPersonInTree(tree, name) {
             if (window.persistentMemory) {
                 window.persistentMemory.updateMemoryPanel();
             }
+            
+            // Log vanshavali status
+            console.log("Vanshavali status:", window.activeFamilyTree ? "Loaded" : "Not loaded");
         };
 
         function playVideo(type) {
@@ -2396,6 +2388,119 @@ function findPersonInTree(tree, name) {
                 return; 
             }
             
+            // ==================== VANSHAVALI COMMANDS ====================
+            if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { 
+                try { 
+                    // Regex to extract names - multiple patterns
+                    let childName = "", parentName = "", relation = "";
+                    
+                    // Pattern 1: "X નું નામ Y ના પુત્ર તરીકે"
+                    let match = text.match(/(.+?)\s+(?:નું|ના)\s+નામ\s+(.+?)\s+(?:ના|ને)\s+(પુત્ર|દીકરા|સંતાન|બાળક)/);
+                    
+                    // Pattern 2: "Y ના પુત્ર X"
+                    if (!match) {
+                        match = text.match(/(.+?)\s+(?:ના|ને)\s+(પુત્ર|દીકરા|સંતાન|બાળક)\s+(.+?)$/);
+                        if (match) {
+                            parentName = match[1].trim();
+                            relation = match[2];
+                            childName = match[3].trim();
+                        }
+                    } else {
+                        childName = match[1].trim();
+                        parentName = match[2].trim();
+                        relation = match[3];
+                    }
+                    
+                    if (childName && parentName && relation) {
+                        // Initialize family tree if not exists
+                        if (!window.activeFamilyTree) {
+                            window.activeFamilyTree = {
+                                name: "મૂળ પુરુષ",
+                                info: "કુળના સ્થાપક",
+                                children: []
+                            };
+                        }
+                        
+                        // Create child data
+                        const childData = {
+                            name: childName,
+                            info: `${parentName} ના ${relation}`,
+                            addedOn: new Date().toISOString()
+                        };
+                        
+                        // Try to add to tree
+                        const added = addChildToParent(window.activeFamilyTree, parentName, childData);
+                        
+                        if (added) {
+                            // Save to Firebase
+                            await saveVanshavaliToCloud();
+                            
+                            // Save to persistent memory
+                            if (persistentMemoryEnabled && window.persistentMemory) {
+                                const memoryText = `${childName} એ ${parentName} ના ${relation} છે.`;
+                                window.persistentMemory.addMemory(memoryText, 'family', 5);
+                            }
+                            
+                            window.speak(`${childName} નું નામ ${parentName} ના ${relation} તરીકે વંશાવલીમાં ઉમેર્યું.`, false, 'happy');
+                        } else {
+                            // Parent not found, add as new root
+                            window.activeFamilyTree.children = window.activeFamilyTree.children || [];
+                            window.activeFamilyTree.children.push({
+                                name: parentName,
+                                info: "નવા પરિવારના પ્રમુખ",
+                                children: [childData]
+                            });
+                            
+                            await saveVanshavaliToCloud();
+                            
+                            window.speak(`${parentName} નવા પરિવાર તરીકે ઉમેર્યા અને ${childName} નું નામ ઉમેર્યું.`, false, 'happy');
+                        }
+                    } else {
+                        window.speak("મને સમજાયું નહીં. ફરી પ્રયાસ કરો: 'દેવેન્દ્રનું નામ રામભાઈના પુત્ર તરીકે'", false, 'neutral');
+                    }
+                } catch(e) { 
+                    console.error("Family tree error:", e);
+                    window.speak("ભૂલ થઈ.", false, 'sad'); 
+                } 
+                return;
+            }
+            
+            // Query about family member
+            if (cmd.includes("વંશાવલી") || cmd.includes("કુટુંબ") || cmd.includes("પરિવાર")) {
+                if (cmd.includes("કોણ") || cmd.includes("શું") || cmd.includes("કહે")) {
+                    // Query about specific person
+                    const nameQuery = text.replace(/વંશાવલી|કુટુંબ|પરિવાર|કોણ|શું|કહે|તમે|મને|છે|ના/g, "").trim();
+                    
+                    if (nameQuery && window.activeFamilyTree) {
+                        const personInfo = findPersonInTree(window.activeFamilyTree, nameQuery);
+                        if (personInfo) {
+                            window.speak(personInfo, false, 'happy');
+                        } else {
+                            window.speak(`${nameQuery} વંશાવલીમાં મળ્યા નથી.`, false, 'sad');
+                        }
+                    } else {
+                        window.speak("કૃપા કરીને નામ પૂછો.", false, 'neutral');
+                    }
+                } else if (cmd.includes("દર્શાવ") || cmd.includes("જોવા") || cmd.includes("ખોલ")) {
+                    // Show family tree
+                    if (window.activeFamilyTree) {
+                        window.speak("હું તમારી વંશાવલી દર્શાવું છું.", false, 'happy');
+                        setTimeout(() => window.open3DVanshavali(), 1000);
+                    } else {
+                        window.speak("વંશાવલી ડેટા મળ્યો નથી.", false, 'sad');
+                    }
+                } else {
+                    // General family tree info
+                    if (window.activeFamilyTree) {
+                        const memberCount = countFamilyMembers(window.activeFamilyTree);
+                        window.speak(`તમારી વંશાવલીમાં ${memberCount} સભ્યો છે. વંશાવલી દર્શાવવા માટે 'વંશાવલી દર્શાવો' કહો.`, false, 'happy');
+                    } else {
+                        window.speak("વંશાવલી ડેટા મળ્યો નથી.", false, 'sad');
+                    }
+                }
+                return;
+            }
+            
             // ==================== MEMORY COMMANDS ====================
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { 
                 let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે|મને/g, "").trim();
@@ -2487,28 +2592,6 @@ function findPersonInTree(tree, name) {
             }
             
             // Existing command processing
-            if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { 
-                try { 
-                    let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); 
-                    if (parts && parts.length >= 3) { 
-                        let childName = parts[1].trim(); 
-                        let parentName = parts[2].trim(); 
-                        
-                        // Save to memory
-                        if (persistentMemoryEnabled && window.persistentMemory) {
-                            const memoryText = `${childName} એ ${parentName} ના પુત્ર/સંતાન છે.`;
-                            window.persistentMemory.addMemory(memoryText, 'family', 5);
-                        }
-                        
-                        window.speak(`${childName} નું નામ ${parentName} ના પુત્ર તરીકે યાદ રાખ્યું.`, false, 'happy'); 
-                        return; 
-                    } 
-                } catch(e) { 
-                    console.error("Family error:", e);
-                    window.speak("ભૂલ થઈ.", false, 'sad'); 
-                } 
-            }
-            
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { 
                 window.makeCall(text); 
                 return; 
@@ -2571,6 +2654,12 @@ function findPersonInTree(tree, name) {
                 }
             }
             
+            // Get family tree context if relevant
+            let familyContext = "";
+            if (window.activeFamilyTree && (text.includes("પરિવાર") || text.includes("કુટુંબ") || text.includes("વંશ"))) {
+                familyContext = `\n[વંશાવલી માહિતી]: ${JSON.stringify(window.activeFamilyTree).substring(0, 500)}`;
+            }
+            
             // Save user query to memory (if it seems important)
             if (persistentMemoryEnabled && window.persistentMemory) {
                 const questionWords = ['કેવું', 'કેમ', 'ક્યાં', 'કોણ', 'શું', 'કેટલું', 'ક્યારે'];
@@ -2582,23 +2671,26 @@ function findPersonInTree(tree, name) {
             }
             
             if(aiProvider === 'gemini') { 
-                await window.askGeminiText(text, responseEmotion, memoryContext); 
+                await window.askGeminiText(text, responseEmotion, memoryContext + familyContext); 
             } else { 
-                await window.askGroqText(text, responseEmotion, memoryContext); 
+                await window.askGroqText(text, responseEmotion, memoryContext + familyContext); 
             }
         };
 
         // ==================== AI FUNCTIONS ====================
-        function getSystemPrompt(memories, contextData, emotion = 'neutral', memoryContext = "") { 
+        function getSystemPrompt(memories, contextData, emotion = 'neutral', additionalContext = "") { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
             
             let familyDataString = ""; 
             try { 
                 if (window.activeFamilyTree) { 
-                    familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; 
+                    // Create a readable family tree summary
+                    familyDataString = `[વંશાવાળી માહિતી]:\n${createFamilyTreeSummary(window.activeFamilyTree)}`; 
                 } 
-            } catch (e) {} 
+            } catch (e) {
+                console.error("Error creating family tree summary:", e);
+            } 
             
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
@@ -2621,14 +2713,30 @@ function findPersonInTree(tree, name) {
 
             // Include memory context
             let memoryPrompt = "";
-            if (memoryContext && persistentMemoryEnabled) {
-                memoryPrompt = `\n[RELEVANT MEMORIES FROM PAST CONVERSATIONS]:\n${memoryContext}\n(Use these memories to provide personalized and consistent responses.)`;
+            if (additionalContext && persistentMemoryEnabled) {
+                memoryPrompt = `\n[RELEVANT CONTEXT]:\n${additionalContext}\n(Use this context to provide personalized and consistent responses.)`;
             }
 
             return `${emotionalContext}${memoryPrompt}IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Permanent Memory]: ${memories} Question: "${contextData}"`; 
         }
+        
+        function createFamilyTreeSummary(node, depth = 0) {
+            if (!node) return "";
+            
+            let summary = `${"  ".repeat(depth)}• ${node.name}`;
+            if (node.info) summary += ` (${node.info})`;
+            summary += "\n";
+            
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    summary += createFamilyTreeSummary(child, depth + 1);
+                });
+            }
+            
+            return summary;
+        }
 
-        window.askGeminiText = async (userText, userEmotion = 'neutral', memoryContext = "") => { 
+        window.askGeminiText = async (userText, userEmotion = 'neutral', additionalContext = "") => { 
             let keys = geminiKeys.split(',').filter(k => k && k.trim()); 
             if (!keys.length) { 
                 window.speak("API Key નથી. સેટિંગમાં નાખો.", false, 'sad'); 
@@ -2636,7 +2744,7 @@ function findPersonInTree(tree, name) {
                 return; 
             } 
             
-            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion, memoryContext); 
+            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion, additionalContext); 
             
             // Prepare chat history
             let contents = [];
@@ -2693,14 +2801,14 @@ function findPersonInTree(tree, name) {
             } 
         };
         
-        window.askGroqText = async (userText, userEmotion = 'neutral', memoryContext = "") => { 
+        window.askGroqText = async (userText, userEmotion = 'neutral', additionalContext = "") => { 
             if(!groqKey || groqKey.trim() === '') { 
                 window.speak("Groq Key નથી. સેટિંગમાં જઈને API Key નાખો.", false, 'sad'); 
                 isProcessing=false; 
                 return; 
             } 
             
-            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion, memoryContext);
+            const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText, userEmotion, additionalContext);
             
             let messages = [
                 { role: "system", content: systemInstruction }
@@ -2768,21 +2876,6 @@ function findPersonInTree(tree, name) {
             } 
         };
         
-        function formatVanshavaliTree(node, parentName = "મૂળ પુરુષ") {
-            if (!node || !node.name) return "";
-            
-            let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
-            if(node.info) text += ` [માહિતી: ${node.info}]`;
-            text += "\n";
-            
-            if (node.children && node.children.length > 0) {
-                node.children.forEach(child => {
-                    text += formatVanshavaliTree(child, node.name);
-                });
-            }
-            return text;
-        }
-
         // ==================== MEMORY DASHBOARD FUNCTIONS ====================
         window.openMemoryDashboard = function() {
             document.getElementById('settings-modal').style.display = 'none';
