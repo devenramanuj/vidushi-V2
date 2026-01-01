@@ -241,7 +241,6 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
-        // DEFAULT TO 70B INSTANT
         let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-instant"; 
         
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
@@ -294,6 +293,19 @@
                 if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
                 else { if(window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
             } catch(e) { console.error("Vanshavali Error", e); }
+        }
+
+        // --- NEW HELPER FOR VANSHAVALI TEXT ---
+        function formatVanshavaliTree(node, level = 0) {
+            if (!node) return "";
+            let indent = "  ".repeat(level);
+            let result = indent + "- " + node.name + (node.info ? " (" + node.info + ")" : "") + "\n";
+            if (node.children) {
+                node.children.forEach(child => {
+                    result += formatVanshavaliTree(child, level + 1);
+                });
+            }
+            return result;
         }
 
         async function saveToCloud() {
@@ -396,7 +408,6 @@
             currentMood = document.getElementById('moodSelect').value; 
             let firebaseApiKey = document.getElementById('firebaseKeyInput').value.trim();
 
-            // Save to LocalStorage
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
             localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
@@ -404,7 +415,6 @@
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
 
-            // Save to Cloud
             try {
                 const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, groqModel: groqModel, lastUpdated: new Date() };
                 await setDoc(settingsDocRef, settingsData, { merge: true });
@@ -438,23 +448,17 @@
         window.speakReportFromModal = () => { window.speak(document.getElementById("report-content-area").value, true); };
         window.downloadSelfie = () => { const link = document.createElement('a'); link.href = document.getElementById('generated-image').src; link.download = `Vidushi_Capture.jpg`; link.click(); window.speak("સેવ થઈ!"); window.closeImage(); };
 
-        // --- RAG LOGIC: READ PDF & FILES ---
         window.handleRAGUpload = async (input) => {
             const file = input.files[0];
             if (!file) return;
-
             window.speak("ફાઈલ વાંચવાનું કામ ચાલુ છે...");
             document.getElementById('rag-status').style.display = 'block';
             document.getElementById('rag-status').innerText = '⏳ Reading File...';
-
             try {
                 let extractedText = "";
-
                 if (file.type === "application/pdf") {
-                    // PDF HANDLING
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    
                     for (let i = 1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
@@ -463,17 +467,12 @@
                         document.getElementById('rag-status').innerText = `Reading Page ${i}/${pdf.numPages}...`;
                     }
                 } else {
-                    // TEXT HANDLING (txt, csv, js, py, html)
                     extractedText = await file.text();
                 }
-
-                // CLEANUP & SAVE TO GLOBAL MEMORY
                 window.ragContent = extractedText.replace(/\s+/g, " ").trim();
-                
                 document.getElementById('rag-status').innerText = '✅ RAG Ready';
                 window.speak("ફાઈલ વાંચી લીધી. હવે પૂછો.");
                 playVideo('smiling');
-
             } catch (e) {
                 console.error(e);
                 document.getElementById('rag-status').style.background = 'red';
@@ -508,13 +507,12 @@
         function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
 
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ."); };
-        function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી."); return true; } return false; }
+        function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-viewer-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી."); return true; } return false; }
         
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
-            
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { window.makeCall(text); return; }
             if(cmd.includes("મેસેજ કર")) { window.sendMessage(text); return; }
             if(cmd.includes("ચિત્ર") && cmd.includes("બનાવ")) { window.generateMagicImage(text.replace("ચિત્ર બનાવ","")); return; }
@@ -523,37 +521,35 @@
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
             if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { currentVisionPrompt = visionPrompts['object']; window.captureAndAnalyze("environment"); return; }
-            
             isProcessing = true; statusText.innerText = "Thinking..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
+        // --- UPDATED SYSTEM PROMPT LOGIC ---
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
             
+            // CONNECTING VANSHAVALI DATA
             let familyDataString = ""; 
-            try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
+            if (window.activeFamilyTree) { 
+                familyDataString = `\n[વંશાવલી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}\n`; 
+            } 
             
-            // RAG CONTENT
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
-                const safeContent = window.ragContent.substring(0, 50000); 
-                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
+                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${window.ragContent.substring(0, 50000)}\n`;
             }
 
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create tools, games, wrap with :::APP_START::: :::APP_END:::`; 
         }
 
         window.askGeminiText = async (userText) => { 
             let keys = geminiKeys.split(',').filter(k => k); 
             if (!keys.length) { window.speak("API Key નથી."); isProcessing = false; return; } 
-            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); 
-            
             let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); 
             contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
-            
             try { 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
                     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) 
@@ -566,15 +562,10 @@
                         window.chatHistory.push({ role: "assistant", content: reply }); 
                         window.speak(reply); 
                     } 
-                } else { window.speak("જવાબ મળ્યો."); } 
-            } catch (e) { 
-                window.speak("Network Error."); 
-                isProcessing = false;
-                playVideo('angry'); 
-            } 
+                } else { window.speak("જવાબ મળ્યો."); isProcessing=false; } 
+            } catch (e) { window.speak("Network Error."); isProcessing = false; playVideo('angry'); } 
         };
         
-        // --- UPDATED VISION FUNCTION FOR BETTER DEBUGGING ---
         window.askGeminiVision = async (base64Image) => { 
             let keys = geminiKeys.split(',').filter(k=>k); 
             if(!keys.length) { window.speak("API Key નથી."); return; } 
@@ -585,40 +576,21 @@
                     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
                 }); 
                 const data = await response.json(); 
-                
-                if(data.error) {
-                    console.error(data.error);
-                    document.getElementById('report-modal').style.display = 'flex';
-                    document.getElementById('report-content-area').value = "GOOGLE ERROR:\n" + data.error.message + "\n\n(કૃપા કરીને સિસ્ટમનાં જઈને Gemini Flash Latest પસંદ કરો.)";
-                    window.speak("ગુગલ એરર."); window.closeImage();
-                    return;
-                }
-
                 if(data.candidates) { 
                     const text = data.candidates[0].content.parts[0].text; 
                     document.getElementById('report-modal').style.display = 'flex'; 
                     document.getElementById('report-content-area').value = text; 
                     window.closeImage(); 
                     if(!silentMode) { window.speak("રિપોર્ટ તૈયાર."); } else { isProcessing = false; playVideo('silent'); } 
-                } else { 
-                    console.log(data); 
-                    window.speak("કંઈ જવાબ મળ્યો."); 
-                } 
-            } catch(e) { 
-                console.error(e); 
-                window.speak("Network Error."); 
-            } 
+                } else { window.speak("કંઈ જવાબ મળ્યો."); } 
+            } catch(e) { window.speak("Network Error."); } 
         };
 
-        // --- GROQ FUNCTION (UPDATED FOR 70B) ---
         window.askGroqText = async (userText) => { 
             if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } 
-            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText);
-
             let messages = [{ role: "system", content: systemInstruction }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; 
             try { 
-                // Use Groq 70B Instant (llama-3.3-70b-instant) if selected, or fallback
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
                     method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages, temperature: 0.7, max_tokens: 2048 }) 
                 }); 
@@ -628,12 +600,8 @@
                     window.chatHistory.push({ role: "user", content: userText }); 
                     window.chatHistory.push({ role: "assistant", content: reply }); 
                     window.speak(reply); 
-                } else { window.speak("જવાબ નથી મળ્યો."); } 
-            } catch(e) { 
-                window.speak("Network Error."); 
-                isProcessing = false;
-                playVideo('angry');
-            } 
+                } else { window.speak("જવાબ નથી મળ્યો."); isProcessing=false; } 
+            } catch(e) { window.speak("Network Error."); isProcessing = false; playVideo('angry'); } 
         };
         
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -647,7 +615,6 @@
             }; 
             recognition.onresult = (e) => { 
                 let text = e.results[0][0].transcript; 
-                console.log("🎤:", text); 
                 if(text.trim()) window.processCommand(text); 
             }; 
         }
@@ -655,17 +622,14 @@
         window.startConversation = () => { try{recognition.start();}catch(e){} };
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
         window.activateVision = async (mode = "user") => { 
-            try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; } catch(e) { alert("Camera Error: " + e); } 
+            try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; } catch(e) { alert("Camera Error: " + e); } 
         };
-        window.stopVisionCamera = () => { isLiveVisionActive = false; document.getElementById('canvas-capture').style.display = 'none'; const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); ctx.clearRect(0, 0, canvas.width, canvas.height); if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; visionMode = false; playVideo('silent'); };
+        window.stopVisionCamera = () => { isLiveVisionActive = false; if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; document.getElementById('video-container').style.display = 'block'; playVideo('silent'); };
 
         window.speak = (text, forceSpeak = false) => { 
             if(silentMode && !forceSpeak) { statusText.innerText = "Silent..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } 
-            const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "Speaking..."; isAiSpeaking = true; 
+            const clean = text.replace(/[*#_,.]/g, ""); statusText.innerText = "Speaking..."; isAiSpeaking = true; 
             const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; 
-            let voices = window.speechSynthesis.getVoices(); 
-            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); 
-            if(bestVoice) u.voice = bestVoice; 
             u.onstart = () => { playVideo('talking'); }; 
             u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; 
             window.speechSynthesis.speak(u); 
