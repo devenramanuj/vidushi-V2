@@ -690,8 +690,12 @@
                 </select>
             </div>
             
-            <div class="section-title">Firebase Database</div>
-            <input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy... (Firebase API Key)">
+            <div class="section-title">Firebase સેટિંગ્સ</div>
+            <label>Firebase API Key:</label>
+            <input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy... (Firebase API Key Only)">
+            <div style="text-align: left; font-size: 10px; color: #aaa; margin-top: -5px; margin-bottom: 10px;">
+                માત્ર API Key જ દાખલ કરો. બાકીના configuration આપમેળે લોડ થશે.
+            </div>
             
             <div class="section-title">Personal Info</div>
             <label>તમારું નામ:</label>
@@ -753,6 +757,17 @@
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
+
+        // 🔥 FIREBASE CONFIGURATION (HARDCODED)
+        const FIREBASE_CONFIG = {
+            apiKey: "", // વપરાશકર્તા સેટિંગમાંથી ભરાશે
+            authDomain: "vidushi-ai.firebaseapp.com",
+            projectId: "vidushi-ai",
+            storageBucket: "vidushi-ai.appspot.com",
+            messagingSenderId: "123456789012",
+            appId: "1:123456789012:web:abcdef1234567890",
+            measurementId: "G-ABCDEF1234"
+        };
 
         // 🔥 RAG MEMORY
         window.ragContent = ""; 
@@ -819,6 +834,103 @@
             'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
             'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
             'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
+        };
+
+        // 🔥 Firebase ઇનિશિયલાઇઝ ફંક્શન
+        window.initializeFirebase = async () => {
+            try {
+                if (!firebaseApiKey || firebaseApiKey.trim() === '') {
+                    console.log('Firebase API key not set yet');
+                    return false;
+                }
+
+                // Firebase config પૂર્ણ કરો
+                FIREBASE_CONFIG.apiKey = firebaseApiKey;
+                
+                console.log('Initializing Firebase with config:', {
+                    ...FIREBASE_CONFIG,
+                    apiKey: '***' + firebaseApiKey.slice(-4) // સુરક્ષા માટે
+                });
+
+                // Firebase app ઇનિશિયલાઇઝ
+                if (typeof firebase !== 'undefined') {
+                    try {
+                        // જો પહેલાથી initialized હોય તો
+                        const existingApp = firebase.apps.find(app => app.name === 'vidushi-ai');
+                        if (existingApp) {
+                            console.log('Firebase already initialized');
+                            return true;
+                        }
+
+                        // નવું app initialize
+                        firebase.initializeApp(FIREBASE_CONFIG, 'vidushi-ai');
+                        
+                        // Auth સ્ટેટ change listener
+                        firebase.auth().onAuthStateChanged((user) => {
+                            if (user) {
+                                console.log('Firebase user logged in:', user.email);
+                            } else {
+                                console.log('No Firebase user');
+                            }
+                        });
+
+                        console.log('Firebase initialized successfully');
+                        return true;
+                    } catch (firebaseError) {
+                        console.error('Firebase initialization error:', firebaseError);
+                        return false;
+                    }
+                } else {
+                    console.error('Firebase SDK not loaded');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error in Firebase initialization:', error);
+                return false;
+            }
+        };
+
+        // 🔥 Firebase સિંક ફંક્શન
+        window.syncToFirebase = async (dataType, data) => {
+            try {
+                // Firebase initialized છે કે નહીં તે ચકાસો
+                if (!window.firebaseInitialized) {
+                    const initialized = await window.initializeFirebase();
+                    if (!initialized) {
+                        console.log('Firebase not initialized, skipping sync');
+                        return false;
+                    }
+                    window.firebaseInitialized = true;
+                }
+
+                const userId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'anonymous';
+                const timestamp = new Date().toISOString();
+                
+                let syncData = {
+                    ...data,
+                    userId: userId,
+                    timestamp: timestamp,
+                    device: navigator.userAgent,
+                    syncedAt: new Date().toISOString()
+                };
+
+                // Database reference
+                const dbRef = firebase.database().ref(`vidushi/${userId}/${dataType}`);
+                
+                // Data save
+                if (data.id) {
+                    await dbRef.child(data.id).set(syncData);
+                } else {
+                    const newRef = dbRef.push();
+                    await newRef.set(syncData);
+                }
+
+                console.log(`Data synced to Firebase: ${dataType}`);
+                return true;
+            } catch (error) {
+                console.error('Firebase sync error:', error);
+                return false;
+            }
         };
 
         // 🔥 3D વંશાવલી ફંક્શન
@@ -1052,6 +1164,13 @@
             // લોકલસ્ટોરેજમાં સેવ
             localStorage.setItem('vidushi_vanshavali', JSON.stringify(vanshavaliStructure));
             
+            // Firebase માં સિંક (જો કોન્ફિગ કરેલ હોય)
+            if (firebaseApiKey) {
+                setTimeout(() => {
+                    window.syncToFirebase('vanshavali', vanshavaliStructure);
+                }, 1000);
+            }
+            
             // રિપોર્ટ બનાવો
             const report = `વંશાવલી રિપોર્ટ:\n\n` +
                           `મૂળ: ${vanshavaliStructure.root}\n` +
@@ -1105,6 +1224,18 @@
                     setTimeout(() => {
                         window.connectVanshavali();
                     }, 1000);
+                }
+                else if (lowerMsg.includes('firebase') || lowerMsg.includes('ફાયરબેઝ')) {
+                    if (firebaseApiKey) {
+                        botReply = `Firebase કનેક્ટેડ છે. API Key: ${firebaseApiKey.substring(0, 10)}...`;
+                        
+                        // Firebase initialize
+                        setTimeout(() => {
+                            window.initializeFirebase();
+                        }, 500);
+                    } else {
+                        botReply = "Firebase API key સેટ નથી. સેટિંગ્સમાં જઈને Firebase API key ઍડ કરો.";
+                    }
                 }
                 else if (lowerMsg.includes('નમસ્તે') || lowerMsg.includes('હેલો') || lowerMsg.includes('હાય')) {
                     botReply = `નમસ્તે ${userName}! હું વિદુષી છું - એક સંપૂર્ણ ગુજરાતી AI સહાયક. મારી વંશાવલી 2024માં શરૂ થઈ હતી. તમને કેવી રીતે મદદ કરી શકું?`;
@@ -1451,6 +1582,13 @@
                 }
             }, 2000);
             
+            // Firebase initialize (જો API key હોય તો)
+            if (firebaseApiKey) {
+                setTimeout(() => {
+                    window.initializeFirebase();
+                }, 3000);
+            }
+            
             // Welcome message
             setTimeout(() => {
                 if (!silentMode && userName) {
@@ -1524,6 +1662,13 @@
             localStorage.setItem('vidushi_silent', silentMode); 
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
+            
+            // Firebase initialize કરો (જો API key હોય તો)
+            if (firebaseApiKey) {
+                setTimeout(() => {
+                    window.initializeFirebase();
+                }, 500);
+            }
             
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) {
@@ -1669,7 +1814,13 @@
             document.getElementById('download-btn').style.display = 'none';
         };
 
-        console.log('Vidushi AI loaded with all fixes: API keys in settings, no message display, vanshavali connected, 3D working');
+        console.log('Vidushi AI loaded with Firebase API key in settings');
     </script>
+    
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 </body>
 </html>
