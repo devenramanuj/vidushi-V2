@@ -762,17 +762,16 @@
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
 
-        // 🔥 FIREBASE CONFIGURATION (HARDCODED)
-        const FIREBASE_CONFIG = {
-            apiKey: "", // વપરાશકર્તા સેટિંગમાંથી ભરાશે
-            authDomain: "vidushi-ai.firebaseapp.com",
+        // FIREBASE CONFIG
+        const firebaseConfig = {
+            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
-    projectId: "vidushi-ai-614cb",
-    storageBucket: "vidushi-ai-614cb.firebasestorage.app",
-    messagingSenderId: "146312927144",
-    appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
-    measurementId: "G-ZM9RS2J6SR"
-  };
+            projectId: "vidushi-ai-614cb",
+            storageBucket: "vidushi-ai-614cb.firebasestorage.app",
+            messagingSenderId: "146312927144",
+            appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
+            measurementId: "G-ZM9RS2J6SR"
+        };
         // 🔥 RAG MEMORY
         window.ragContent = ""; 
         window.permanentMemories = window.permanentMemories || [];
