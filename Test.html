@@ -12,6 +12,10 @@
     <script src="https://unpkg.com/three@0.128.0/build/three.min.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://unpkg.com/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+    
+    <!-- તમારી વંશાવલી ડેટા ફાઈલ -->
+    <script src="vanshavali_data.js"></script>
+    
     <script>
         // PDF Worker Setup
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -774,35 +778,117 @@
         window.permanentMemories = window.permanentMemories || [];
         window.chatHistory = window.chatHistory || [];
         
-        // 🔥 વંશાવલી ડેટા
-        window.vanshavaliData = {
-            name: "વિદુષી AI",
-            children: [
-                {
-                    name: "બુદ્ધિ",
-                    children: [
-                        { name: "ભાષા પ્રોસેસિંગ", value: 10 },
-                        { name: "વિઝન રેકોગ્નિશન", value: 8 },
-                        { name: "રીઝનિંગ", value: 9 }
-                    ]
-                },
-                {
-                    name: "સ્મૃતિ",
-                    children: [
-                        { name: "RAG સિસ્ટમ", value: 8 },
-                        { name: "લોન્ગ-ટર્મ મેમરી", value: 7 },
-                        { name: "કોન્ટેક્સ્ટ રિટેન્શન", value: 6 }
-                    ]
-                },
-                {
-                    name: "સેવાઓ",
-                    children: [
-                        { name: "Smart Lens", value: 9 },
-                        { name: "ડોક્યુમેન્ટ RAG", value: 8 },
-                        { name: "રિયલ-ટાઇમ વાતચીત", value: 10 }
-                    ]
+        // 🔥 તમારી વંશાવલી ડેટા (vanshavali_data.js થી લોડ થશે)
+        // જો તમારી ફાઈલમાં vanshavaliData વેરીએબલ છે તો તે વાપરો, નહીં તો default
+        window.vanshavaliData = window.vanshavaliData || {
+            name: "પરિવાર વંશાવલી",
+            root: {
+                name: "દેવેન્દ્રભાઈ પટેલ",
+                birthYear: "1950",
+                spouse: "કમલાબેન પટેલ",
+                children: []
+            }
+        };
+
+        // 🔥 વંશાવલી ઉપયોગી ફંક્શન્સ
+        window.vanshavaliUtils = {
+            // કુલ સભ્યોની ગણતરી
+            countMembers: function(node = window.vanshavaliData.root) {
+                if (!node) return 0;
+                let count = 1; // વર્તમાન નોડ
+                if (node.children && Array.isArray(node.children)) {
+                    node.children.forEach(child => {
+                        count += this.countMembers(child);
+                    });
                 }
-            ]
+                return count;
+            },
+
+            // પેઢીઓની ગણતરી
+            countGenerations: function(node = window.vanshavaliData.root) {
+                if (!node) return 0;
+                if (!node.children || node.children.length === 0) return 1;
+                
+                let maxDepth = 0;
+                node.children.forEach(child => {
+                    const depth = this.countGenerations(child);
+                    if (depth > maxDepth) maxDepth = depth;
+                });
+                return maxDepth + 1;
+            },
+
+            // નામથી સભ્ય શોધો
+            findMember: function(name, node = window.vanshavaliData.root) {
+                if (!node) return null;
+                if (node.name === name) return node;
+                
+                if (node.children && Array.isArray(node.children)) {
+                    for (let child of node.children) {
+                        const found = this.findMember(name, child);
+                        if (found) return found;
+                    }
+                }
+                return null;
+            },
+
+            // સભ્યની માહિતી ગેઠર કરો
+            getMemberInfo: function(name) {
+                const member = this.findMember(name);
+                if (!member) return `'${name}' મળ્યો નથી.`;
+                
+                let info = `નામ: ${member.name}\n`;
+                if (member.birthYear) info += `જન્મ વર્ષ: ${member.birthYear}\n`;
+                if (member.spouse) info += `પત્ની/પતિ: ${member.spouse}\n`;
+                if (member.children && member.children.length > 0) {
+                    info += `બાળકો: ${member.children.map(c => c.name).join(', ')}\n`;
+                    info += `કુલ બાળકો: ${member.children.length}\n`;
+                }
+                return info;
+            },
+
+            // વંશાવલી સારાંશ
+            getSummary: function() {
+                const totalMembers = this.countMembers();
+                const generations = this.countGenerations();
+                const rootName = window.vanshavaliData.root?.name || "મૂળ";
+                
+                return `વંશાવલી સારાંશ:\n` +
+                       `મૂળ વ્યક્તિ: ${rootName}\n` +
+                       `કુલ સભ્યો: ${totalMembers}\n` +
+                       `પેઢીઓ: ${generations}\n` +
+                       `અંતિમ સુધારા: ${new Date().toLocaleDateString('gu-IN')}`;
+            },
+
+            // 3D માટે ડેટા ફોર્મેટ કરો
+            formatFor3D: function() {
+                // વંશાવલીને 3D tree માટે ફોર્મેટ કરો
+                const convertTo3DNode = (node, depth = 0, index = 0) => {
+                    if (!node) return null;
+                    
+                    const id = `${depth}_${index}`;
+                    const children = [];
+                    
+                    if (node.children && Array.isArray(node.children)) {
+                        node.children.forEach((child, i) => {
+                            const childNode = convertTo3DNode(child, depth + 1, i);
+                            if (childNode) children.push(childNode);
+                        });
+                    }
+                    
+                    return {
+                        id: id,
+                        name: node.name,
+                        value: 5 - Math.min(depth, 4), // વર્તમાન પેઢી પ્રમાણે value
+                        children: children
+                    };
+                };
+                
+                return {
+                    name: window.vanshavaliData.root?.name || "વંશાવલી",
+                    children: window.vanshavaliData.root?.children ? 
+                        window.vanshavaliData.root.children.map((child, i) => convertTo3DNode(child, 1, i)) : []
+                };
+            }
         };
 
         let notes = [], expenses = [], contacts = [], currentCameraMode = "user"; 
@@ -836,110 +922,13 @@
             'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
         };
 
-        // 🔥 Firebase ઇનિશિયલાઇઝ ફંક્શન
-        window.initializeFirebase = async () => {
-            try {
-                if (!firebaseApiKey || firebaseApiKey.trim() === '') {
-                    console.log('Firebase API key not set yet');
-                    return false;
-                }
-
-                // Firebase config પૂર્ણ કરો
-                FIREBASE_CONFIG.apiKey = firebaseApiKey;
-                
-                console.log('Initializing Firebase with config:', {
-                    ...FIREBASE_CONFIG,
-                    apiKey: '***' + firebaseApiKey.slice(-4) // સુરક્ષા માટે
-                });
-
-                // Firebase app ઇનિશિયલાઇઝ
-                if (typeof firebase !== 'undefined') {
-                    try {
-                        // જો પહેલાથી initialized હોય તો
-                        const existingApp = firebase.apps.find(app => app.name === 'vidushi-ai');
-                        if (existingApp) {
-                            console.log('Firebase already initialized');
-                            return true;
-                        }
-
-                        // નવું app initialize
-                        firebase.initializeApp(FIREBASE_CONFIG, 'vidushi-ai');
-                        
-                        // Auth સ્ટેટ change listener
-                        firebase.auth().onAuthStateChanged((user) => {
-                            if (user) {
-                                console.log('Firebase user logged in:', user.email);
-                            } else {
-                                console.log('No Firebase user');
-                            }
-                        });
-
-                        console.log('Firebase initialized successfully');
-                        return true;
-                    } catch (firebaseError) {
-                        console.error('Firebase initialization error:', firebaseError);
-                        return false;
-                    }
-                } else {
-                    console.error('Firebase SDK not loaded');
-                    return false;
-                }
-            } catch (error) {
-                console.error('Error in Firebase initialization:', error);
-                return false;
-            }
-        };
-
-        // 🔥 Firebase સિંક ફંક્શન
-        window.syncToFirebase = async (dataType, data) => {
-            try {
-                // Firebase initialized છે કે નહીં તે ચકાસો
-                if (!window.firebaseInitialized) {
-                    const initialized = await window.initializeFirebase();
-                    if (!initialized) {
-                        console.log('Firebase not initialized, skipping sync');
-                        return false;
-                    }
-                    window.firebaseInitialized = true;
-                }
-
-                const userId = firebase.auth().currentUser ? firebase.auth().currentUser.uid : 'anonymous';
-                const timestamp = new Date().toISOString();
-                
-                let syncData = {
-                    ...data,
-                    userId: userId,
-                    timestamp: timestamp,
-                    device: navigator.userAgent,
-                    syncedAt: new Date().toISOString()
-                };
-
-                // Database reference
-                const dbRef = firebase.database().ref(`vidushi/${userId}/${dataType}`);
-                
-                // Data save
-                if (data.id) {
-                    await dbRef.child(data.id).set(syncData);
-                } else {
-                    const newRef = dbRef.push();
-                    await newRef.set(syncData);
-                }
-
-                console.log(`Data synced to Firebase: ${dataType}`);
-                return true;
-            } catch (error) {
-                console.error('Firebase sync error:', error);
-                return false;
-            }
-        };
-
         // 🔥 3D વંશાવલી ફંક્શન
         window.open3DVanshavali = () => {
             document.getElementById('settings-modal').style.display = 'none';
             document.getElementById('vanshavali-3d-modal').style.display = 'block';
             
             if (!silentMode) {
-                window.speak("3D વંશાવલી લોડ કરી રહ્યાં છીએ...");
+                window.speak("તમારી વંશાવલી 3D માં લોડ કરી રહ્યાં છીએ...");
             }
             
             setTimeout(() => {
@@ -951,7 +940,20 @@
             const container = document.getElementById('graph-container');
             container.innerHTML = '';
             
-            // સરળ 3D ટેક્સ્ટ બેઝ્ડ વંશાવલી
+            // તમારી વંશાવલી ડેટા 3D ફોર્મેટમાં લાવો
+            const treeData = window.vanshavaliUtils.formatFor3D();
+            
+            // જો ડેટા ન હોય તો
+            if (!treeData || !treeData.children || treeData.children.length === 0) {
+                container.innerHTML = `
+                    <div style="color: white; text-align: center; padding-top: 50px;">
+                        <h3>વંશાવલી ડેટા મળ્યો નથી</h3>
+                        <p>કૃપા કરીને તમારી vanshavali_data.js ફાઈલ ચેક કરો</p>
+                    </div>
+                `;
+                return;
+            }
+            
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -974,140 +976,163 @@
             
             camera.position.z = 15;
             
-            // વંશાવલી ડેટા બનાવો
-            const group = new THREE.Group();
-            
-            // કેન્દ્રમાં વિદુષી
-            const centerGeometry = new THREE.SphereGeometry(1, 32, 32);
-            const centerMaterial = new THREE.MeshPhongMaterial({ color: 0x4361ee, shininess: 100 });
-            const centerSphere = new THREE.Mesh(centerGeometry, centerMaterial);
-            centerSphere.position.set(0, 0, 0);
-            group.add(centerSphere);
-            
-            // ટેક્સ્ટ મટીરીઅલ
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.width = 512;
-            canvas.height = 256;
-            
-            context.fillStyle = '#000000';
-            context.fillRect(0, 0, canvas.width, canvas.height);
-            context.font = 'bold 40px Arial';
-            context.fillStyle = '#ffffff';
-            context.textAlign = 'center';
-            context.fillText('વિદુષી AI', canvas.width/2, canvas.height/2);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            const textMaterial = new THREE.SpriteMaterial({ map: texture });
-            const textSprite = new THREE.Sprite(textMaterial);
-            textSprite.scale.set(5, 2.5, 1);
-            textSprite.position.set(0, 2.5, 0);
-            group.add(textSprite);
-            
-            // શાખાઓ બનાવો
-            const branchPositions = [
-                { x: 5, y: 0, z: 0, name: "બુદ્ધિ", color: 0x4cc9f0 },
-                { x: -3.5, y: 4, z: 0, name: "સ્મૃતિ", color: 0xf72585 },
-                { x: -3.5, y: -4, z: 0, name: "સેવાઓ", color: 0x4CAF50 }
-            ];
-            
-            branchPositions.forEach((branch, i) => {
-                // બ્રાન્ચ લાઈન
-                const lineGeometry = new THREE.BufferGeometry().setFromPoints([
-                    new THREE.Vector3(0, 0, 0),
-                    new THREE.Vector3(branch.x * 0.8, branch.y * 0.8, branch.z * 0.8)
-                ]);
-                const lineMaterial = new THREE.LineBasicMaterial({ color: 0xffffff, opacity: 0.5, transparent: true });
-                const line = new THREE.Line(lineGeometry, lineMaterial);
-                group.add(line);
+            // વંશાવલી બનાવવાનું ફંક્શન
+            const createTreeNode = (node, x, y, z, depth, color) => {
+                const group = new THREE.Group();
                 
-                // બ્રાન્ચ નોડ
-                const nodeGeometry = new THREE.SphereGeometry(0.6, 32, 32);
-                const nodeMaterial = new THREE.MeshPhongMaterial({ color: branch.color, shininess: 100 });
-                const nodeSphere = new THREE.Mesh(nodeGeometry, nodeMaterial);
-                nodeSphere.position.set(branch.x, branch.y, branch.z);
-                group.add(nodeSphere);
+                // નોડ સ્ફીઅર
+                const sphereGeometry = new THREE.SphereGeometry(0.4 + (1 / (depth + 1)), 16, 16);
+                const sphereMaterial = new THREE.MeshPhongMaterial({ 
+                    color: color || 0x4361ee,
+                    shininess: 100,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+                sphere.position.set(0, 0, 0);
+                group.add(sphere);
                 
-                // બ્રાન્ચ ટેક્સ્ટ
-                const branchCanvas = document.createElement('canvas');
-                const branchContext = branchCanvas.getContext('2d');
-                branchCanvas.width = 256;
-                branchCanvas.height = 128;
+                // ટેક્સ્ટ સ્પ્રાઈટ
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = 256;
+                canvas.height = 64;
                 
-                branchContext.fillStyle = '#000000';
-                branchContext.fillRect(0, 0, branchCanvas.width, branchCanvas.height);
-                branchContext.font = 'bold 24px Arial';
-                branchContext.fillStyle = '#ffffff';
-                branchContext.textAlign = 'center';
-                branchContext.fillText(branch.name, branchCanvas.width/2, branchCanvas.height/2);
+                context.fillStyle = '#000000';
+                context.fillRect(0, 0, canvas.width, canvas.height);
+                context.font = 'bold 16px Arial';
+                context.fillStyle = '#ffffff';
+                context.textAlign = 'center';
                 
-                const branchTexture = new THREE.CanvasTexture(branchCanvas);
-                const branchTextMaterial = new THREE.SpriteMaterial({ map: branchTexture });
-                const branchTextSprite = new THREE.Sprite(branchTextMaterial);
-                branchTextSprite.scale.set(2.5, 1.25, 1);
-                branchTextSprite.position.set(branch.x, branch.y + 1.2, branch.z);
-                group.add(branchTextSprite);
+                // નામ ટૂંકું કરો જો જરૂરી હોય
+                const displayName = node.name.length > 12 ? node.name.substring(0, 10) + '...' : node.name;
+                context.fillText(displayName, canvas.width/2, canvas.height/2);
                 
-                // સબ-બ્રાન્ચ
-                const subBranches = window.vanshavaliData.children[i]?.children || [];
-                subBranches.forEach((subBranch, j) => {
-                    const angle = (j / subBranches.length) * Math.PI * 2;
-                    const subX = branch.x + Math.cos(angle) * 2;
-                    const subY = branch.y + Math.sin(angle) * 2;
-                    const subZ = branch.z;
+                const texture = new THREE.CanvasTexture(canvas);
+                const textMaterial = new THREE.SpriteMaterial({ map: texture });
+                const textSprite = new THREE.Sprite(textMaterial);
+                textSprite.scale.set(3, 0.75, 1);
+                textSprite.position.set(0, 1, 0);
+                group.add(textSprite);
+                
+                group.position.set(x, y, z);
+                
+                // ક્લિક ઇવેન્ટ
+                sphere.userData = { name: node.name, info: window.vanshavaliUtils.getMemberInfo(node.name) };
+                sphere.onClick = () => {
+                    if (!silentMode) {
+                        window.speak(node.name);
+                    }
+                    document.getElementById('report-content-area').value = sphere.userData.info;
+                    document.getElementById('report-modal').style.display = 'flex';
+                };
+                
+                return { group: group, sphere: sphere, node: node };
+            };
+            
+            // વંશાવલી બનાવો
+            const rootGroup = new THREE.Group();
+            const nodes = [];
+            const createdNodes = [];
+            
+            // રૂટ નોડ
+            const rootNode = createTreeNode(
+                { name: treeData.name || "વંશાવલી" }, 
+                0, 0, 0, 
+                0, 
+                0xd4af37 // સોનાનો રંગ
+            );
+            rootGroup.add(rootNode.group);
+            nodes.push({ ...rootNode, parent: null, depth: 0, index: 0 });
+            
+            // હાયરાર્કી બનાવવાનું ફંક્શન
+            const createHierarchy = (parentNode, children, depth, startAngle = 0, arcSize = Math.PI * 2) => {
+                if (!children || children.length === 0) return;
+                
+                const radius = 3 + depth * 2;
+                const angleStep = arcSize / children.length;
+                
+                children.forEach((child, index) => {
+                    const angle = startAngle + index * angleStep;
+                    const x = parentNode.group.position.x + Math.cos(angle) * radius;
+                    const y = parentNode.group.position.y - 2;
+                    const z = parentNode.group.position.z + Math.sin(angle) * radius;
                     
-                    // સબ-બ્રાન્ચ લાઈન
-                    const subLineGeometry = new THREE.BufferGeometry().setFromPoints([
-                        new THREE.Vector3(branch.x, branch.y, branch.z),
-                        new THREE.Vector3(subX, subY, subZ)
+                    // બાળક નોડ
+                    const childNode = createTreeNode(
+                        child, 
+                        x, y, z, 
+                        depth,
+                        depth === 1 ? 0x4cc9f0 : 
+                        depth === 2 ? 0xf72585 : 
+                        depth === 3 ? 0x4CAF50 : 
+                        0x888888
+                    );
+                    
+                    rootGroup.add(childNode.group);
+                    nodes.push({ ...childNode, parent: parentNode, depth: depth, index: index });
+                    
+                    // લાઈન બનાવો (પેરન્ટથી બાળક સુધી)
+                    const lineGeometry = new THREE.BufferGeometry().setFromPoints([
+                        new THREE.Vector3(
+                            parentNode.group.position.x,
+                            parentNode.group.position.y,
+                            parentNode.group.position.z
+                        ),
+                        new THREE.Vector3(x, y, z)
                     ]);
-                    const subLine = new THREE.Line(subLineGeometry, lineMaterial);
-                    group.add(subLine);
-                    
-                    // સબ-બ્રાન્ચ નોડ
-                    const subNodeGeometry = new THREE.SphereGeometry(0.3, 16, 16);
-                    const subNodeMaterial = new THREE.MeshPhongMaterial({ 
-                        color: branch.color, 
-                        transparent: true, 
-                        opacity: 0.8 
+                    const lineMaterial = new THREE.LineBasicMaterial({ 
+                        color: 0xffffff, 
+                        opacity: 0.3, 
+                        transparent: true 
                     });
-                    const subNodeSphere = new THREE.Mesh(subNodeGeometry, subNodeMaterial);
-                    subNodeSphere.position.set(subX, subY, subZ);
-                    group.add(subNodeSphere);
+                    const line = new THREE.Line(lineGeometry, lineMaterial);
+                    rootGroup.add(line);
                     
-                    // સબ-બ્રાન્ચ ટેક્સ્ટ (જો ફિટ થાય તો)
-                    if (subBranch.name.length < 15) {
-                        const subCanvas = document.createElement('canvas');
-                        const subContext = subCanvas.getContext('2d');
-                        subCanvas.width = 256;
-                        subCanvas.height = 64;
-                        
-                        subContext.fillStyle = '#000000';
-                        subContext.fillRect(0, 0, subCanvas.width, subCanvas.height);
-                        subContext.font = '16px Arial';
-                        subContext.fillStyle = '#ffffff';
-                        subContext.textAlign = 'center';
-                        subContext.fillText(subBranch.name, subCanvas.width/2, subCanvas.height/2);
-                        
-                        const subTexture = new THREE.CanvasTexture(subCanvas);
-                        const subTextMaterial = new THREE.SpriteMaterial({ map: subTexture });
-                        const subTextSprite = new THREE.Sprite(subTextMaterial);
-                        subTextSprite.scale.set(1.5, 0.75, 1);
-                        subTextSprite.position.set(subX, subY + 0.6, subZ);
-                        group.add(subTextSprite);
+                    // ગ્રાન્ડચિલ્ડ્રન
+                    if (child.children && child.children.length > 0) {
+                        createHierarchy(childNode, child.children, depth + 1, angle - angleStep/2, angleStep);
                     }
                 });
-            });
+            };
             
-            scene.add(group);
+            // વંશાવલી હાયરાર્કી બનાવો
+            createHierarchy(rootNode, treeData.children, 1);
+            
+            scene.add(rootGroup);
+            
+            // ક્લિક ઇવેન્ટ હેન્ડલર
+            const raycaster = new THREE.Raycaster();
+            const mouse = new THREE.Vector2();
+            
+            function onMouseClick(event) {
+                // માઉસ પોઝિશન નોર્માલાઇઝ
+                mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+                mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+                
+                raycaster.setFromCamera(mouse, camera);
+                
+                // નોડ્સ સાથે ઇન્ટરસેક્ટ ચેક કરો
+                const intersects = raycaster.intersectObjects(
+                    nodes.map(n => n.sphere)
+                );
+                
+                if (intersects.length > 0) {
+                    const clickedSphere = intersects[0].object;
+                    if (clickedSphere.onClick) {
+                        clickedSphere.onClick();
+                    }
+                }
+            }
+            
+            window.addEventListener('click', onMouseClick, false);
             
             // એનિમેશન લૂપ
             const animate = () => {
                 requestAnimationFrame(animate);
                 
                 // ધીમી રોટેશન
-                group.rotation.y += 0.002;
-                group.rotation.x += 0.001;
+                rootGroup.rotation.y += 0.001;
                 
                 controls.update();
                 renderer.render(scene, camera);
@@ -1122,12 +1147,27 @@
                 renderer.setSize(container.clientWidth, container.clientHeight);
             });
             
+            // સેવ રિફરન્સ ક્લિનઅપ માટે
+            window.current3DScene = {
+                scene: scene,
+                camera: camera,
+                renderer: renderer,
+                controls: controls,
+                nodes: nodes,
+                clickHandler: onMouseClick
+            };
+            
             if (!silentMode) {
-                window.speak("3D વંશાવલી તૈયાર છે. માઉસ સાથે ફેરવો અને ઝૂમ કરો.");
+                window.speak("તમારી 3D વંશાવલી તૈયાર છે. માઉસ સાથે ફેરવો, ઝૂમ કરો અને નામ પર ક્લિક કરો.");
             }
         };
 
         window.close3DVanshavali = () => {
+            // ઇવેન્ટ લિસનર સાફ કરો
+            if (window.current3DScene && window.current3DScene.clickHandler) {
+                window.removeEventListener('click', window.current3DScene.clickHandler);
+            }
+            
             document.getElementById('vanshavali-3d-modal').style.display = 'none';
             if (!silentMode) {
                 window.speak("વંશાવલી બંધ કરી રહ્યાં છીએ.");
@@ -1137,57 +1177,39 @@
         // 🔥 બોટ વંશાવલી કનેક્શન
         window.connectVanshavali = () => {
             if (!silentMode) {
-                window.speak("વિદુષી AI ની વંશાવલી કનેક્ટ કરી રહ્યાં છીએ...");
+                window.speak("તમારી વંશાવલી કનેક્ટ કરી રહ્યાં છીએ...");
             }
             
             // વંશાવલી ડેટા બનાવો
             const vanshavaliStructure = {
-                root: "વિદુષી AI",
-                creationDate: "2024",
-                creator: "દેવેન્દ્રભાઈ પટેલ",
-                version: "2.0",
-                capabilities: [
-                    "ગુજરાતી ભાષા પ્રોસેસિંગ",
-                    "રીઅલ-ટાઇમ વાતચીત",
-                    "સ્માર્ટ લેન્સ વિઝન",
-                    "ડોક્યુમેન્ટ RAG",
-                    "3D વિઝુઅલાઇઝેશન"
-                ],
-                ancestors: [
-                    { name: "AI Foundation Models", era: "2020-2023" },
-                    { name: "Machine Learning", era: "2010-2020" },
-                    { name: "Neural Networks", era: "1990-2010" },
-                    { name: "Artificial Intelligence", era: "1956-1990" }
-                ]
+                rootName: window.vanshavaliData.root?.name || "મૂળ",
+                totalMembers: window.vanshavaliUtils.countMembers(),
+                generations: window.vanshavaliUtils.countGenerations(),
+                lastUpdated: new Date().toLocaleDateString('gu-IN'),
+                dataSource: "vanshavali_data.js"
             };
             
             // લોકલસ્ટોરેજમાં સેવ
             localStorage.setItem('vidushi_vanshavali', JSON.stringify(vanshavaliStructure));
             
-            // Firebase માં સિંક (જો કોન્ફિગ કરેલ હોય)
-            if (firebaseApiKey) {
-                setTimeout(() => {
-                    window.syncToFirebase('vanshavali', vanshavaliStructure);
-                }, 1000);
-            }
-            
             // રિપોર્ટ બનાવો
             const report = `વંશાવલી રિપોર્ટ:\n\n` +
-                          `મૂળ: ${vanshavaliStructure.root}\n` +
-                          `રચના તારીખ: ${vanshavaliStructure.creationDate}\n` +
-                          `સર્જક: ${vanshavaliStructure.creator}\n` +
-                          `વર્ઝન: ${vanshavaliStructure.version}\n\n` +
-                          `ક્ષમતાઓ:\n` +
-                          vanshavaliStructure.capabilities.map(cap => `• ${cap}`).join('\n') +
-                          `\n\nપૂર્વજો:\n` +
-                          vanshavaliStructure.ancestors.map(anc => `• ${anc.name} (${anc.era})`).join('\n');
+                          `મૂળ વ્યક્તિ: ${vanshavaliStructure.rootName}\n` +
+                          `કુલ સભ્યો: ${vanshavaliStructure.totalMembers}\n` +
+                          `પેઢીઓ: ${vanshavaliStructure.generations}\n` +
+                          `અપડેટ તારીખ: ${vanshavaliStructure.lastUpdated}\n` +
+                          `ડેટા સ્રોત: ${vanshavaliStructure.dataSource}\n\n` +
+                          `વિશેષ આદેશો:\n` +
+                          `• "વંશાવલી સારાંશ" - સારાંશ મેળવો\n` +
+                          `• "નામ શોધો [નામ]" - સભ્ય શોધો\n` +
+                          `• "3D વંશાવલી" - 3D માં જુઓ`;
             
             // રિપોર્ટ દર્શાવો
             document.getElementById('report-content-area').value = report;
             document.getElementById('report-modal').style.display = 'flex';
             
             if (!silentMode) {
-                window.speak("વંશાવલી સફળતાપૂર્વક કનેક્ટ થઈ ગઈ છે.");
+                window.speak("તમારી વંશાવલી સફળતાપૂર્વક કનેક્ટ થઈ ગઈ છે.");
             }
             
             return true;
@@ -1213,38 +1235,52 @@
                 const lowerMsg = userMessage.toLowerCase();
                 
                 if (lowerMsg.includes('વંશાવલી') || lowerMsg.includes('family tree') || lowerMsg.includes('pedigree')) {
-                    botReply = `વિદુષી AI ની વંશાવલી:\n\n` +
-                              `• મૂળ: વિદુષી AI 2.0\n` +
-                              `• રચના: 2024\n` +
-                              `• સર્જક: દેવેન્દ્રભાઈ પટેલ\n` +
-                              `• શાખાઓ: બુદ્ધિ, સ્મૃતિ, સેવાઓ\n\n` +
-                              `તમે 3D વંશાવલી જોવા માટે સેટિંગ્સ મેનૂમાં "3D વંશાવલી" બટન પર ક્લિક કરો.`;
+                    botReply = window.vanshavaliUtils.getSummary();
                     
                     // ઓટો-કનેક્ટ
                     setTimeout(() => {
                         window.connectVanshavali();
                     }, 1000);
                 }
+                else if (lowerMsg.includes('નામ શોધો') || lowerMsg.includes('find')) {
+                    const nameMatch = userMessage.match(/નામ શોધો\s+(.+)/i) || 
+                                     userMessage.match(/find\s+(.+)/i);
+                    
+                    if (nameMatch && nameMatch[1]) {
+                        const name = nameMatch[1].trim();
+                        botReply = window.vanshavaliUtils.getMemberInfo(name);
+                        
+                        if (botReply.includes('મળ્યો નથી')) {
+                            botReply += "\n\nસૂચના: નામ સ્પષ્ટ અને સંપૂર્ણ લખો.";
+                        }
+                    } else {
+                        botReply = "કૃપા કરીને શોધવાનું નામ સ્પષ્ટ કરો. ઉદાહરણ: 'નામ શોધો રાજેશભાઈ'";
+                    }
+                }
+                else if (lowerMsg.includes('વંશાવલી સારાંશ') || lowerMsg.includes('summary')) {
+                    botReply = window.vanshavaliUtils.getSummary();
+                }
+                else if (lowerMsg.includes('કુલ સભ્યો') || lowerMsg.includes('total members')) {
+                    const total = window.vanshavaliUtils.countMembers();
+                    botReply = `તમારી વંશાવલીમાં કુલ ${total} સભ્યો છે.`;
+                }
+                else if (lowerMsg.includes('પેઢીઓ') || lowerMsg.includes('generations')) {
+                    const gens = window.vanshavaliUtils.countGenerations();
+                    botReply = `તમારી વંશાવલીમાં ${gens} પેઢીઓ છે.`;
+                }
                 else if (lowerMsg.includes('firebase') || lowerMsg.includes('ફાયરબેઝ')) {
                     if (firebaseApiKey) {
                         botReply = `Firebase કનેક્ટેડ છે. API Key: ${firebaseApiKey.substring(0, 10)}...`;
-                        
-                        // Firebase initialize
-                        setTimeout(() => {
-                            window.initializeFirebase();
-                        }, 500);
                     } else {
                         botReply = "Firebase API key સેટ નથી. સેટિંગ્સમાં જઈને Firebase API key ઍડ કરો.";
                     }
                 }
                 else if (lowerMsg.includes('નમસ્તે') || lowerMsg.includes('હેલો') || lowerMsg.includes('હાય')) {
-                    botReply = `નમસ્તે ${userName}! હું વિદુષી છું - એક સંપૂર્ણ ગુજરાતી AI સહાયક. મારી વંશાવલી 2024માં શરૂ થઈ હતી. તમને કેવી રીતે મદદ કરી શકું?`;
+                    const totalMembers = window.vanshavaliUtils.countMembers();
+                    botReply = `નમસ્તે ${userName}! હું વિદુષી છું. તમારી વંશાવલીમાં ${totalMembers} સભ્યો છે. તમને કેવી રીતે મદદ કરી શકું?`;
                 }
                 else if (lowerMsg.includes('તમારું નામ શું છે')) {
-                    botReply = "મારું નામ વિદુષી છે. હું વિદુષી AI કુટુંબનો ભાગ છું જે 2024માં બનાવવામાં આવ્યો હતો. હું તમને વિવિધ કાર્યોમાં મદદ કરી શકું છું.";
-                }
-                else if (lowerMsg.includes('તમે ક્યાંથી છો') || lowerMsg.includes('origin')) {
-                    botReply = "હું ગુજરાતી AI સહાયક તરીકે વિકસિત કરવામાં આવ્યો છું. મારા પૂર્વજોમાં AI ફાઉન્ડેશન મોડલ્સ, મશીન લર્નિંગ અને ન્યૂરલ નેટવર્ક્સનો સમાવેશ થાય છે.";
+                    botReply = "મારું નામ વિદુષી છે. હું તમારી વંશાવલી સાથે જોડાયેલો છું અને તમને વિવિધ કાર્યોમાં મદદ કરી શકું છું.";
                 }
                 else if (lowerMsg.includes('સમય') || lowerMsg.includes('કેટલા વાગ્યા')) {
                     const now = new Date();
@@ -1273,10 +1309,11 @@
                 else if (lowerMsg.includes('કેમ છો') || lowerMsg.includes('કેમ છે')) {
                     botReply = currentMood === 'angry' ? 
                         "મને ખીજવશો નહીં! ઝડપથી બોલો કે શું કરવું છે!" : 
-                        "હું ઠીક છું, ધન્યવાદ! મારી સંપૂર્ણ વંશાવલી સક્રિય છે. તમને કેવી રીતે મદદ કરી શકું?";
+                        "હું ઠીક છું, ધન્યવાદ! તમારી સંપૂર્ણ વંશાવલી સક્રિય છે. તમને કેવી રીતે મદદ કરી શકું?";
                 }
                 else if (lowerMsg.includes('3d') || lowerMsg.includes('ત્રિપરિમાણ')) {
-                    botReply = "તમે 3D વંશાવલી જોવા માટે સેટિંગ્સ મેનૂમાં '3D વંશાવલી' બટન પર ક્લિક કરો. તે ત્રિપરિમાણ દૃશ્યમાં મારી ક્ષમતાઓ દર્શાવે છે.";
+                    const totalMembers = window.vanshavaliUtils.countMembers();
+                    botReply = `તમે 3D વંશાવલી જોવા માટે સેટિંગ્સ મેનૂમાં '3D વંશાવલી' બટન પર ક્લિક કરો. તે તમારી ${totalMembers} સભ્યોની વંશાવલી ત્રિપરિમાણ દૃશ્યમાં દર્શાવશે.`;
                 }
                 else {
                     // AI ને પૂછવું
@@ -1291,7 +1328,7 @@
                 
                 // જો રિપ્લાય ન મળે તો
                 if (!botReply || botReply.trim() === '') {
-                    botReply = "મને સમજાયું નથી. કૃપા કરીને ફરી પૂછો અથવા વિવિધ કાર્યો માટે સેટિંગ્સ ચેક કરો.";
+                    botReply = "મને સમજાયું નથી. કૃપા કરીને ફરી પૂછો અથવા 'વંશાવલી' કહીને તમારી વંશાવલી વિશે માહિતી મેળવો.";
                 }
                 
                 return botReply;
@@ -1317,16 +1354,15 @@
                     User: ${userName}
                     Mood: ${currentMood}
                     
-                    વિદુષી AI વંશાવલી:
-                    - રચના: 2024
-                    - સર્જક: દેવેન્દ્રભાઈ પટેલ
-                    - ક્ષમતાઓ: ગુજરાતી પ્રોસેસિંગ, સ્માર્ટ લેન્સ, RAG, 3D વિઝુઅલાઇઝેશન
+                    વંશાવલી માહિતી:
+                    ${window.vanshavaliUtils.getSummary()}
                     
                     ${currentMood === 'angry' ? 'તમે ગુસ્સે છો અને ઝડપથી જવાબ આપો.' : 'તમે મદદગાર અને respectful છો.'}
                     
                     User's message: "${userMessage}"
                     
                     જવાબ ગુજરાતીમાં આપો. સરળ અને સ્પષ્ટ રહો.
+                    જો વંશાવલી વિશે પૂછાય તો ઉપરની માહિતી વાપરો.
                 `;
                 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
@@ -1373,7 +1409,7 @@
                         content: `તમે વિદુષી છો, એક ગુજરાતી AI સહાયક. 
                         User: ${userName}, 
                         Mood: ${currentMood},
-                        વંશાવલી: વિદુષી AI (2024) - ગુજરાતી AI સહાયક.
+                        વંશાવલી: ${window.vanshavaliUtils.getSummary()}.
                         ગુજરાતીમાં જવાબ આપો.`
                     },
                     {
@@ -1582,21 +1618,15 @@
                 }
             }, 2000);
             
-            // Firebase initialize (જો API key હોય તો)
-            if (firebaseApiKey) {
-                setTimeout(() => {
-                    window.initializeFirebase();
-                }, 3000);
-            }
-            
             // Welcome message
             setTimeout(() => {
                 if (!silentMode && userName) {
-                    window.speak(`જય શ્રી કૃષ્ણ ${userName}! વિદુષી AI તૈયાર છે. મારી સંપૂર્ણ વંશાવલી કનેક્ટેડ છે.`);
+                    const totalMembers = window.vanshavaliUtils.countMembers();
+                    window.speak(`જય શ્રી કૃષ્ણ ${userName}! વિદુષી AI તૈયાર છે. તમારી વંશાવલીમાં ${totalMembers} સભ્યો છે.`);
                 }
             }, 1000);
             
-            console.log('App loaded successfully');
+            console.log('App loaded with vanshavali integration');
         };
 
         // 🔥 વિડીઓ પ્લે
@@ -1662,13 +1692,6 @@
             localStorage.setItem('vidushi_silent', silentMode); 
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
-            
-            // Firebase initialize કરો (જો API key હોય તો)
-            if (firebaseApiKey) {
-                setTimeout(() => {
-                    window.initializeFirebase();
-                }, 500);
-            }
             
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) {
@@ -1814,7 +1837,7 @@
             document.getElementById('download-btn').style.display = 'none';
         };
 
-        console.log('Vidushi AI loaded with Firebase API key in settings');
+        console.log('Vidushi AI loaded with custom vanshavali integration');
     </script>
     
     <!-- Firebase SDKs -->
