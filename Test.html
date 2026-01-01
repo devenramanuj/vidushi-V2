@@ -57,8 +57,7 @@
         .round-btn { width: 60px; height: 60px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; transition: 0.2s; }
         .round-btn:active { transform: scale(0.9); }
         #mic-btn { width: 75px; height: 75px; background: #ff4500; font-size: 32px; border: 4px solid rgba(255,255,255,0.2); }
-        #vision-btn { background: #008cff; }
-        #doc-btn { background: #28a745; }
+        #doc-btn { background: #28a745; width: 50px; height: 50px; font-size: 18px; }
         #stop-btn { background: #444; width: 50px; height: 50px; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
         
@@ -679,17 +678,23 @@
         };
         
         window.takeActualPhoto = () => {
+            if (!selfieVideo || !canvas) return;
+            
             canvas.width = selfieVideo.videoWidth; 
             canvas.height = selfieVideo.videoHeight;
-            canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(selfieVideo, 0, 0);
+            
             const base64Image = canvas.toDataURL('image/jpeg');
             window.stopVisionCamera(); 
             playVideo('thinking');
+            
             generatedImage.src = base64Image; 
             generatedImage.style.display = "block"; 
             imageLoadingText.style.display = "none"; 
             document.getElementById('download-btn').style.display = "block"; 
             imageOverlay.style.display = 'flex';
+            
             window.askGeminiVision(base64Image.split(',')[1]);
         };
         
@@ -716,17 +721,25 @@
             if(!isLiveVisionActive) return; 
             const video = document.getElementById('selfie-video'); 
             const canvas = document.getElementById('canvas-capture'); 
+            
+            if (!video || !canvas || !liveModel) {
+                if (isLiveVisionActive) requestAnimationFrame(window.detectFrame);
+                return;
+            }
+            
             const ctx = canvas.getContext('2d'); 
             canvas.width = video.videoWidth; 
             canvas.height = video.videoHeight; 
             ctx.font = '20px Arial'; 
             ctx.fillStyle = 'red'; 
             ctx.fillText("SCANNING...", 20, 30); 
+            
             liveModel.detect(video).then(predictions => { 
                 ctx.clearRect(0, 0, canvas.width, canvas.height); 
                 ctx.font = '20px Arial'; 
                 ctx.fillStyle = 'red'; 
                 ctx.fillText("SCANNING...", 20, 30); 
+                
                 predictions.forEach(prediction => { 
                     ctx.beginPath(); 
                     ctx.rect(...prediction.bbox); 
@@ -735,11 +748,16 @@
                     ctx.stroke(); 
                     ctx.font = 'bold 24px Arial'; 
                     ctx.fillStyle = '#00ff00'; 
-                    ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30); 
+                    const textWidth = ctx.measureText(prediction.class.toUpperCase()).width;
+                    ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, textWidth + 10, 30); 
                     ctx.fillStyle = '#000000'; 
                     ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5); 
                 }); 
+                
                 if(isLiveVisionActive) requestAnimationFrame(window.detectFrame); 
+            }).catch(error => {
+                console.error("Detection error:", error);
+                if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
             }); 
         };
 
@@ -1076,7 +1094,6 @@
             } 
         };
         
-        // 👇 આ કોડ ગમે ત્યાં Script માં પેસ્ટ કરી દો 👇
         window.formatVanshavaliTree = (node, parentName = "મૂળ પુરુષ") => {
             let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
             if(node.info) text += ` [માહિતી: ${node.info}]`;
@@ -1190,6 +1207,7 @@
             isSilentListening = false; 
         };
         
+        // 🔥 FIXED CAMERA FUNCTIONS - REMOVED vision-btn REFERENCES 🔥
         window.activateVision = async (mode = "user") => { 
             try { 
                 visionStream = await navigator.mediaDevices.getUserMedia({ 
@@ -1205,7 +1223,6 @@
                 document.getElementById('video-container').style.display = 'none'; 
                 visionMode = true; 
                 currentCameraMode = mode; 
-                document.getElementById('vision-btn').style.background = "red"; 
             } catch(e) { 
                 alert("Camera Error: " + e); 
             } 
@@ -1215,15 +1232,18 @@
             isLiveVisionActive = false; 
             document.getElementById('canvas-capture').style.display = 'none'; 
             const canvas = document.getElementById('canvas-capture'); 
-            const ctx = canvas.getContext('2d'); 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            if (canvas) {
+                const ctx = canvas.getContext('2d'); 
+                ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            }
             if(visionStream) {
                 visionStream.getTracks().forEach(t => t.stop());
             }
-            selfieVideo.style.display = 'none'; 
+            if (selfieVideo) {
+                selfieVideo.style.display = 'none'; 
+            }
             document.getElementById('video-container').style.display = 'block'; 
             visionMode = false; 
-            document.getElementById('vision-btn').style.background = "#008cff"; 
             playVideo('silent'); 
         };
 
