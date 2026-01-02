@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - RAG Memory સાથે</title>
+    <title>Vidushi AI</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* CORE STYLES */
@@ -15,40 +15,12 @@
         video { width:100%; height:100%; object-fit:cover; position:absolute; }
         #silent-video { display:block; }
         
-        /* RAG STATUS */
-        #rag-status { 
-            position:fixed; 
-            top:10px; 
-            left:10px; 
-            background:rgba(0,140,255,0.8); 
-            color:white; 
-            padding:5px 12px; 
-            border-radius:15px; 
-            font-size:12px; 
-            z-index:10;
-            display:none;
-            backdrop-filter:blur(5px);
-        }
-        
-        /* MEMORY STATUS */
-        #memory-status { 
-            position:fixed; 
-            top:10px; 
-            left:50%; 
-            transform:translateX(-50%); 
-            background:rgba(0,100,0,0.8); 
-            color:#0f0; 
-            padding:5px 15px; 
-            border-radius:15px; 
-            font-size:12px; 
-            z-index:10;
-            display:none;
-            backdrop-filter:blur(5px);
-        }
+        /* STATUS BARS */
+        #rag-status { position:fixed; top:10px; left:10px; background:rgba(0,140,255,0.8); color:white; padding:5px 12px; border-radius:15px; font-size:12px; z-index:10; display:none; }
+        #memory-status { position:fixed; top:10px; left:50%; transform:translateX(-50%); background:rgba(0,100,0,0.8); color:#0f0; padding:5px 15px; border-radius:15px; font-size:12px; z-index:10; display:none; }
         
         /* BUTTONS */
-        .side-btn { position:fixed; top:20px; right:20px; z-index:20; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.3); width:50px; height:50px; border-radius:50%; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(5px); }
-        .side-btn:active { transform:scale(0.9); background:#ff4500; }
+        .side-btn { position:fixed; top:20px; right:20px; z-index:20; background:rgba(0,0,0,0.5); color:white; border:1px solid rgba(255,255,255,0.3); width:50px; height:50px; border-radius:50%; font-size:22px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
         
         /* MODALS */
         .modal { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:100; flex-direction:column; padding:20px; }
@@ -57,19 +29,18 @@
         .modal-title { color:#ff4500; font-size:22px; font-weight:bold; }
         .close-btn { color:white; font-size:28px; cursor:pointer; }
         
-        /* SETTINGS SPECIFIC */
+        /* SETTINGS */
         .settings-section { margin:15px 0; padding-top:15px; border-top:1px solid #333; }
         .section-title { color:#aaa; font-size:12px; margin-bottom:10px; text-transform:uppercase; }
         .checkbox { display:flex; align-items:center; justify-content:space-between; margin:10px 0; padding:10px; background:#333; border-radius:8px; }
         .checkbox input { transform:scale(1.3); }
         
-        /* MENU GRID */
+        /* MENU */
         .menu-grid { display:grid; grid-template-columns:1fr 1fr; gap:15px; margin:20px 0; }
         .menu-btn { background:#333; border:1px solid #555; color:white; padding:20px 10px; border-radius:10px; cursor:pointer; display:flex; flex-direction:column; align-items:center; gap:10px; font-size:14px; text-align:center; }
         .menu-btn i { font-size:24px; }
         
         /* SMART LENS */
-        #lens-modal { z-index:150; }
         .lens-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin:20px 0; }
         .lens-btn { background:#333; border:2px solid #555; color:#aaa; padding:15px 5px; border-radius:10px; cursor:pointer; text-align:center; font-size:13px; }
         .lens-btn.active { background:#d4af37; color:black; border-color:#ffd700; font-weight:bold; }
@@ -78,41 +49,33 @@
         
         /* MIC CONTROLS */
         #mic-container { position:fixed; bottom:40px; left:0; width:100%; display:flex; flex-direction:column; align-items:center; z-index:50; }
-        #status { background:rgba(0,0,0,0.7); color:white; padding:8px 20px; border-radius:20px; margin-bottom:15px; font-size:14px; backdrop-filter:blur(5px); }
-        #mic-btn { width:80px; height:80px; border-radius:50%; background:#ff4500; border:4px solid rgba(255,255,255,0.3); color:white; font-size:32px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        #status { background:rgba(0,0,0,0.7); color:white; padding:8px 20px; border-radius:20px; margin-bottom:15px; font-size:14px; }
+        .mic-controls { display:flex; gap:20px; align-items:center; }
+        .mic-btn { width:80px; height:80px; border-radius:50%; background:#ff4500; border:4px solid rgba(255,255,255,0.3); color:white; font-size:32px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .stop-btn { width:60px; height:60px; border-radius:50%; background:#444; border:2px solid #666; color:white; font-size:24px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .listening { animation:pulse 1.5s infinite; background:red !important; }
+        @keyframes pulse { 0% { transform:scale(1); } 50% { transform:scale(1.05); } 100% { transform:scale(1); } }
         
-        /* CAMERA */
+        /* CAMERA & IMAGE */
         #camera-video { display:none; position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:120; }
         #camera-canvas { display:none; }
-        
-        /* IMAGE VIEW */
         #image-view { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:130; flex-direction:column; justify-content:center; align-items:center; }
         #viewed-image { max-width:90%; max-height:70vh; border-radius:10px; border:3px solid #ff4500; }
         
-        /* DOCUMENT UPLOAD */
-        #document-list { max-height:200px; overflow-y:auto; margin:10px 0; }
-        .doc-item { background:#333; padding:10px; margin:5px 0; border-radius:5px; display:flex; justify-content:space-between; align-items:center; }
-        
-        /* MEMORY VIEW */
-        .memory-item { background:#1a1a1a; padding:10px; margin:5px 0; border-radius:5px; border-left:3px solid #00ff00; }
-        .memory-text { color:#ddd; font-size:14px; }
-        .memory-meta { color:#888; font-size:11px; margin-top:5px; }
-        
-        /* UTILITY */
-        .hidden { display:none !important; }
-        .center { text-align:center; }
-        .mt-20 { margin-top:20px; }
-        .mb-20 { margin-bottom:20px; }
+        /* INPUTS */
         input, select, textarea { width:100%; padding:10px; margin:5px 0; background:#333; border:1px solid #555; color:white; border-radius:5px; }
         button { cursor:pointer; }
         .btn { padding:10px 20px; background:#ff4500; color:white; border:none; border-radius:5px; font-weight:bold; }
         .btn-secondary { background:#444; }
         .btn-success { background:#28a745; }
         .btn-danger { background:#dc3545; }
+        
+        /* HIDDEN */
+        .hidden { display:none !important; }
     </style>
 </head>
 <body>
-    <!-- RAG STATUS -->
+    <!-- STATUS BARS -->
     <div id="rag-status">📄 RAG: Off</div>
     <div id="memory-status">💾 મેમરી: 0</div>
     
@@ -159,14 +122,6 @@
                     <i class="fas fa-file-alt" style="color:#ff4081;"></i>
                     <span>દસ્તાવેજો</span>
                 </div>
-                <div class="menu-btn" onclick="openModal('memory')">
-                    <i class="fas fa-brain" style="color:#00ff88;"></i>
-                    <span>મેમરી</span>
-                </div>
-                <div class="menu-btn" onclick="openModal('vanshavali')">
-                    <i class="fas fa-globe" style="color:#008cff;"></i>
-                    <span>વંશાવલી</span>
-                </div>
             </div>
             
             <div class="settings-section">
@@ -175,7 +130,43 @@
             </div>
             
             <div class="settings-section">
-                <div class="section-title">RAG મેમરી સેટિંગ્સ</div>
+                <div class="section-title">AI API સેટિંગ્સ</div>
+                <select id="ai-provider" onchange="toggleProviderSettings()">
+                    <option value="gemini">Google Gemini</option>
+                    <option value="groq">Groq</option>
+                </select>
+                
+                <div id="gemini-settings">
+                    <select id="gemini-model" style="margin-top:10px;">
+                        <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                        <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                        <option value="gemini-flash-8b">Gemini Flash 8B</option>
+                        <option value="gemini-pro">Gemini Pro</option>
+                    </select>
+                    <textarea id="gemini-key" placeholder="Gemini API Key (અલ્પવિરામથી અલગ કરો)" rows="3" style="margin-top:10px;"></textarea>
+                </div>
+                
+                <div id="groq-settings" class="hidden">
+                    <select id="groq-model" style="margin-top:10px;">
+                        <option value="llama-3.1-8b-instant">Llama 3.1 8B Instant</option>
+                        <option value="llama-3.3-70b-versatile">Llama 3.3 70B Versatile</option>
+                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                        <option value="gemma2-9b-it">Gemma2 9B</option>
+                    </select>
+                    <input type="password" id="groq-key" placeholder="Groq API Key" style="margin-top:10px;">
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <div class="section-title">Firebase સેટિંગ્સ</div>
+                <input type="password" id="firebase-key" placeholder="Firebase API Key (જરૂરી નથી)" value="AIzaSyDummyKeyForInitialLoad">
+                <div style="color:#aaa; font-size:11px; margin-top:5px;">
+                    તમે આ કી વિના પણ એપ વાપરી શકો છો. સિંક માટે જ જરૂરી.
+                </div>
+            </div>
+            
+            <div class="settings-section">
+                <div class="section-title">RAG મેમરી</div>
                 <div class="checkbox">
                     <span>📚 RAG એક્ટિવ કરો</span>
                     <input type="checkbox" id="rag-enabled" checked>
@@ -184,100 +175,26 @@
                     <span>💾 સ્થિર મેમરી</span>
                     <input type="checkbox" id="persistent-memory" checked>
                 </div>
-                <div class="checkbox">
-                    <span>🔄 ઓટો રીકોલ</span>
-                    <input type="checkbox" id="auto-recall" checked>
-                </div>
-                <div style="color:#aaa; font-size:11px; margin-top:10px;">
-                    RAG (Retrieval Augmented Generation) તમારા દસ્તાવેજો અને ચર્ચાથી શીખે છે.
-                </div>
-            </div>
-            
-            <div class="settings-section">
-                <div class="section-title">AI API</div>
-                <select id="ai-provider">
-                    <option value="gemini">Google Gemini</option>
-                    <option value="groq">Groq (Llama)</option>
-                </select>
-                <input type="password" id="api-key" placeholder="API Key" style="margin-top:10px;">
             </div>
             
             <button class="btn" onclick="saveSettings()" style="width:100%; margin-top:20px;">સેવ કરો</button>
         </div>
     </div>
     
-    <!-- DOCUMENTS MODAL (RAG) -->
+    <!-- DOCUMENTS MODAL -->
     <div id="documents" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <div class="modal-title"><i class="fas fa-file-alt"></i> RAG દસ્તાવેજો</div>
+                <div class="modal-title"><i class="fas fa-file-alt"></i> દસ્તાવેજો</div>
                 <div class="close-btn" onclick="closeModal('documents')">×</div>
             </div>
             
-            <div style="margin:15px 0;">
-                <div style="color:#0f0; margin-bottom:10px;">📊 RAG સ્ટેટસ: <span id="rag-stats">0 દસ્તાવેજો</span></div>
-                <button class="btn" onclick="document.getElementById('doc-input').click()" style="width:100%;">
-                    <i class="fas fa-upload"></i> દસ્તાવેજ અપલોડ કરો
-                </button>
-                <div style="color:#aaa; font-size:12px; margin-top:10px;">
-                    PDF, TXT, Word ફાઈલો અપલોડ કરો. AI આમાંથી જવાબો આપશે.
-                </div>
-            </div>
-            
-            <div id="document-list">
-                <!-- Documents will appear here -->
-            </div>
-            
-            <button class="btn btn-secondary" onclick="clearRAGDocuments()" style="width:100%; margin-top:15px;">
-                <i class="fas fa-trash"></i> બધા દસ્તાવેજો સાફ કરો
+            <button class="btn" onclick="document.getElementById('doc-input').click()" style="width:100%; margin-bottom:15px;">
+                <i class="fas fa-upload"></i> દસ્તાવેજ અપલોડ કરો
             </button>
-        </div>
-    </div>
-    
-    <!-- MEMORY MODAL -->
-    <div id="memory" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title"><i class="fas fa-brain"></i> મેમરી સિસ્ટમ</div>
-                <div class="close-btn" onclick="closeModal('memory')">×</div>
-            </div>
             
-            <div style="text-align:center; margin:20px 0;">
-                <div style="font-size:48px; color:#00ff00;">💾</div>
-                <div style="color:#0f0; font-size:20px;" id="memory-count">0 યાદો</div>
-                <div style="color:#aaa; font-size:14px;">RAG મેમરી સિસ્ટમ</div>
-            </div>
-            
-            <div class="settings-section">
-                <div class="section-title">મેમરી સેટિંગ્સ</div>
-                <div class="checkbox">
-                    <span>🧠 લર્નિંગ મોડ</span>
-                    <input type="checkbox" id="learning-mode" checked>
-                </div>
-                <div class="checkbox">
-                    <span>📖 કોન્ટેક્ટ સેવ</span>
-                    <input type="checkbox" id="save-context" checked>
-                </div>
-                <div class="checkbox">
-                    <span>⚡ ક્વિક રીકોલ</span>
-                    <input type="checkbox" id="quick-recall" checked>
-                </div>
-            </div>
-            
-            <div style="margin:20px 0;">
-                <div class="section-title">મેમરી એક્શન્સ</div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                    <button class="btn btn-success" onclick="backupMemory()">
-                        <i class="fas fa-save"></i> બેકઅપ
-                    </button>
-                    <button class="btn btn-danger" onclick="clearMemory()">
-                        <i class="fas fa-trash"></i> ક્લીયર
-                    </button>
-                </div>
-            </div>
-            
-            <div id="memory-view" style="max-height:200px; overflow-y:auto; margin-top:10px;">
-                <!-- Memories will appear here -->
+            <div id="document-list" style="max-height:300px; overflow-y:auto;">
+                <!-- Documents will appear here -->
             </div>
         </div>
     </div>
@@ -289,15 +206,18 @@
                 <div class="modal-title"><i class="fas fa-eye"></i> Smart Lens</div>
                 <div class="close-btn" onclick="closeModal('lens')">×</div>
             </div>
-            <div class="center mb-20">તમારે શું સ્કેન કરવું છે?</div>
+            
+            <div style="text-align:center; margin-bottom:20px;">તમારે શું સ્કેન કરવું છે?</div>
+            
             <div class="lens-grid">
                 <div class="lens-btn active" onclick="setLensMode('object', this)">🌿 ઓળખ</div>
                 <div class="lens-btn" onclick="setLensMode('text', this)">📜 ટેક્સ્ટ</div>
                 <div class="lens-btn" onclick="setLensMode('math', this)">🔢 ગણિત</div>
                 <div class="lens-btn" onclick="setLensMode('translate', this)">🌐 ભાષાંતર</div>
                 <div class="lens-btn" onclick="setLensMode('document', this)">📄 દસ્તાવેજ</div>
-                <div class="lens-btn" onclick="setLensMode('memory', this)">🧠 મેમરી</div>
+                <div class="lens-btn" onclick="setLensMode('summary', this)">📝 સારાંશ</div>
             </div>
+            
             <div class="lens-actions">
                 <div class="lens-action-btn" onclick="openCamera()">
                     <i class="fas fa-camera" style="color:#00ccff; font-size:24px;"></i>
@@ -322,8 +242,10 @@
                 <div class="modal-title"><i class="fas fa-book"></i> નોંધ</div>
                 <div class="close-btn" onclick="closeModal('notes')">×</div>
             </div>
-            <input type="text" id="note-input" placeholder="નવી નોંધ લખો..." style="width:100%; padding:12px; background:#333; border:1px solid #555; color:white; border-radius:8px; margin-bottom:15px;">
-            <button onclick="addNote()" style="width:100%; padding:12px; background:#ff4500; color:white; border:none; border-radius:8px; margin-bottom:20px; cursor:pointer;">ઉમેરો</button>
+            
+            <input type="text" id="note-input" placeholder="નવી નોંધ લખો..." style="margin-bottom:15px;">
+            <button onclick="addNote()" class="btn" style="width:100%; margin-bottom:20px;">ઉમેરો</button>
+            
             <div id="notes-list" style="max-height:300px; overflow-y:auto;"></div>
         </div>
     </div>
@@ -332,7 +254,7 @@
     <div id="image-view">
         <img id="viewed-image" src="" alt="">
         <div id="image-analysis" style="color:white; margin-top:20px; padding:15px; background:rgba(0,0,0,0.5); border-radius:10px; max-width:90%; display:none;"></div>
-        <button onclick="closeImageView()" style="margin-top:20px; padding:12px 30px; background:red; color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">
+        <button onclick="closeImageView()" class="btn btn-danger" style="margin-top:20px;">
             <i class="fas fa-times"></i> બંધ કરો
         </button>
     </div>
@@ -340,316 +262,28 @@
     <!-- MIC CONTROLS -->
     <div id="mic-container">
         <div id="status">માઈક દબાવો</div>
-        <button id="mic-btn" onclick="toggleMic()"><i class="fas fa-microphone"></i></button>
+        <div class="mic-controls">
+            <button class="stop-btn" onclick="stopSpeaking()" title="વાત બંધ કરો">
+                <i class="fas fa-stop"></i>
+            </button>
+            <button id="mic-main-btn" class="mic-btn" onclick="toggleMic()">
+                <i class="fas fa-microphone"></i>
+            </button>
+        </div>
     </div>
 
     <script>
-        // ==================== RAG MEMORY SYSTEM ====================
-        class RAGMemory {
-            constructor() {
-                this.documents = JSON.parse(localStorage.getItem('rag_documents') || '[]');
-                this.memories = JSON.parse(localStorage.getItem('rag_memories') || '[]');
-                this.settings = JSON.parse(localStorage.getItem('rag_settings') || '{"enabled":true,"persistent":true,"autoRecall":true}');
-                this.conversationHistory = JSON.parse(localStorage.getItem('rag_conversations') || '[]');
-                
-                this.updateUI();
-            }
-            
-            // Document management
-            addDocument(name, content) {
-                const doc = {
-                    id: Date.now(),
-                    name: name,
-                    content: content.substring(0, 5000), // Limit content
-                    date: new Date().toISOString(),
-                    type: this.getFileType(name)
-                };
-                
-                this.documents.push(doc);
-                this.save();
-                this.updateUI();
-                return doc.id;
-            }
-            
-            getFileType(filename) {
-                if(filename.includes('.pdf')) return 'pdf';
-                if(filename.includes('.txt')) return 'text';
-                if(filename.includes('.doc')) return 'word';
-                return 'other';
-            }
-            
-            removeDocument(id) {
-                this.documents = this.documents.filter(doc => doc.id !== id);
-                this.save();
-                this.updateUI();
-            }
-            
-            clearDocuments() {
-                this.documents = [];
-                this.save();
-                this.updateUI();
-            }
-            
-            // Memory management
-            addMemory(text, category = 'conversation', importance = 1) {
-                const memory = {
-                    id: Date.now(),
-                    text: text,
-                    category: category,
-                    importance: importance,
-                    date: new Date().toISOString(),
-                    lastRecalled: new Date().toISOString(),
-                    recallCount: 0
-                };
-                
-                this.memories.push(memory);
-                this.save();
-                this.updateUI();
-                return memory.id;
-            }
-            
-            recallMemories(query, limit = 5) {
-                if(!this.settings.autoRecall || !query) return [];
-                
-                const lowerQuery = query.toLowerCase();
-                const relevant = this.memories.filter(mem => 
-                    mem.text.toLowerCase().includes(lowerQuery) ||
-                    lowerQuery.includes(mem.text.toLowerCase())
-                );
-                
-                // Sort by importance and recency
-                return relevant
-                    .sort((a, b) => {
-                        const scoreA = a.importance * (a.recallCount + 1);
-                        const scoreB = b.importance * (b.recallCount + 1);
-                        return scoreB - scoreA;
-                    })
-                    .slice(0, limit);
-            }
-            
-            clearMemories() {
-                this.memories = [];
-                this.save();
-                this.updateUI();
-            }
-            
-            // Conversation history
-            addConversation(userText, aiResponse) {
-                this.conversationHistory.push({
-                    user: userText,
-                    ai: aiResponse,
-                    timestamp: new Date().toISOString()
-                });
-                
-                // Keep only last 50 conversations
-                if(this.conversationHistory.length > 50) {
-                    this.conversationHistory = this.conversationHistory.slice(-50);
-                }
-                
-                this.save();
-            }
-            
-            // Search in all content
-            search(query) {
-                const results = {
-                    documents: [],
-                    memories: [],
-                    conversations: []
-                };
-                
-                const lowerQuery = query.toLowerCase();
-                
-                // Search documents
-                results.documents = this.documents.filter(doc => 
-                    doc.name.toLowerCase().includes(lowerQuery) ||
-                    doc.content.toLowerCase().includes(lowerQuery)
-                );
-                
-                // Search memories
-                results.memories = this.memories.filter(mem => 
-                    mem.text.toLowerCase().includes(lowerQuery)
-                );
-                
-                // Search conversations
-                results.conversations = this.conversationHistory.filter(conv => 
-                    conv.user.toLowerCase().includes(lowerQuery) ||
-                    conv.ai.toLowerCase().includes(lowerQuery)
-                );
-                
-                return results;
-            }
-            
-            // Update settings
-            updateSettings(newSettings) {
-                this.settings = {...this.settings, ...newSettings};
-                this.save();
-                this.updateUI();
-            }
-            
-            // Save to localStorage
-            save() {
-                localStorage.setItem('rag_documents', JSON.stringify(this.documents));
-                localStorage.setItem('rag_memories', JSON.stringify(this.memories));
-                localStorage.setItem('rag_settings', JSON.stringify(this.settings));
-                localStorage.setItem('rag_conversations', JSON.stringify(this.conversationHistory));
-            }
-            
-            // Update UI
-            updateUI() {
-                // Update status indicators
-                const ragStatus = document.getElementById('rag-status');
-                const memoryStatus = document.getElementById('memory-status');
-                
-                if(this.settings.enabled) {
-                    ragStatus.textContent = `📄 RAG: ${this.documents.length} ડોક્સ`;
-                    ragStatus.style.display = 'block';
-                    ragStatus.style.background = 'rgba(0,140,255,0.8)';
-                } else {
-                    ragStatus.textContent = '📄 RAG: Off';
-                    ragStatus.style.display = 'block';
-                    ragStatus.style.background = 'rgba(255,100,0,0.8)';
-                }
-                
-                memoryStatus.textContent = `💾 મેમરી: ${this.memories.length}`;
-                memoryStatus.style.display = 'block';
-                
-                // Update memory count
-                const memoryCount = document.getElementById('memory-count');
-                if(memoryCount) {
-                    memoryCount.textContent = `${this.memories.length} યાદો`;
-                }
-                
-                // Update RAG stats
-                const ragStats = document.getElementById('rag-stats');
-                if(ragStats) {
-                    ragStats.textContent = `${this.documents.length} દસ્તાવેજો, ${this.memories.length} યાદો`;
-                }
-                
-                // Update document list
-                this.renderDocumentList();
-                
-                // Update memory view
-                this.renderMemoryView();
-            }
-            
-            renderDocumentList() {
-                const list = document.getElementById('document-list');
-                if(!list) return;
-                
-                if(this.documents.length === 0) {
-                    list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">કોઈ દસ્તાવેજો નથી</div>';
-                    return;
-                }
-                
-                list.innerHTML = this.documents.map(doc => `
-                    <div class="doc-item">
-                        <div>
-                            <div style="color:#fff;">${doc.name}</div>
-                            <div style="color:#888; font-size:11px;">${new Date(doc.date).toLocaleDateString('gu-IN')} • ${doc.type}</div>
-                        </div>
-                        <button onclick="ragMemory.removeDocument(${doc.id})" style="background:red; color:white; border:none; border-radius:5px; padding:5px 10px; cursor:pointer;">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </div>
-                `).join('');
-            }
-            
-            renderMemoryView() {
-                const view = document.getElementById('memory-view');
-                if(!view) return;
-                
-                const recentMemories = this.memories.slice(-10).reverse();
-                
-                if(recentMemories.length === 0) {
-                    view.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">કોઈ યાદો નથી</div>';
-                    return;
-                }
-                
-                view.innerHTML = recentMemories.map(mem => `
-                    <div class="memory-item">
-                        <div class="memory-text">${mem.text}</div>
-                        <div class="memory-meta">
-                            ${mem.category} • 
-                            ${'★'.repeat(mem.importance)} • 
-                            ${new Date(mem.date).toLocaleDateString('gu-IN')}
-                        </div>
-                    </div>
-                `).join('');
-            }
-            
-            // Backup memory
-            backup() {
-                const backupData = {
-                    documents: this.documents,
-                    memories: this.memories,
-                    settings: this.settings,
-                    timestamp: new Date().toISOString()
-                };
-                
-                const dataStr = JSON.stringify(backupData, null, 2);
-                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
-                
-                const link = document.createElement('a');
-                link.setAttribute('href', dataUri);
-                link.setAttribute('download', `vidushi_memory_backup_${new Date().toISOString().split('T')[0]}.json`);
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                
-                return true;
-            }
-            
-            // Get context for AI
-            getContext(query) {
-                if(!this.settings.enabled) return '';
-                
-                let context = '';
-                
-                // Add relevant documents
-                const relevantDocs = this.search(query).documents.slice(0, 2);
-                if(relevantDocs.length > 0) {
-                    context += '\n[દસ્તાવેજ માહિતી]:\n';
-                    relevantDocs.forEach(doc => {
-                        context += `• ${doc.name}: ${doc.content.substring(0, 200)}...\n`;
-                    });
-                }
-                
-                // Add relevant memories
-                const relevantMemories = this.recallMemories(query, 3);
-                if(relevantMemories.length > 0) {
-                    context += '\n[પૂર્વ ચર્ચાઓ]:\n';
-                    relevantMemories.forEach(mem => {
-                        context += `• ${mem.text}\n`;
-                        // Update recall count
-                        mem.recallCount = (mem.recallCount || 0) + 1;
-                        mem.lastRecalled = new Date().toISOString();
-                    });
-                }
-                
-                // Add recent conversations
-                if(this.conversationHistory.length > 0) {
-                    const recentConvs = this.conversationHistory.slice(-3);
-                    context += '\n[તાજેતરની વાતચીત]:\n';
-                    recentConvs.forEach(conv => {
-                        context += `• તમે: ${conv.user.substring(0, 50)}...\n`;
-                        context += `• હું: ${conv.ai.substring(0, 50)}...\n`;
-                    });
-                }
-                
-                return context;
-            }
-        }
-        
-        // Initialize RAG Memory
-        const ragMemory = new RAGMemory();
-        
         // ==================== GLOBAL VARIABLES ====================
         let currentVideo = 'silent';
-        let userName = localStorage.getItem('vidushi_username') || 'સાહેબ';
+        let userName = 'સાહેબ';
         let isListening = false;
+        let isSpeaking = false;
         let lensMode = 'object';
         let cameraStream = null;
         let ragEnabled = true;
+        let aiProvider = 'gemini';
+        let geminiModel = 'gemini-2.5-flash';
+        let groqModel = 'llama-3.1-8b-instant';
         
         // Videos
         const videos = {
@@ -677,16 +311,29 @@
         function speak(text) {
             if(!text) return;
             
+            // Stop any current speech
+            window.speechSynthesis.cancel();
+            
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.lang = 'gu-IN';
             utterance.rate = 1.0;
+            utterance.volume = 1.0;
             
             utterance.onstart = () => {
+                isSpeaking = true;
                 document.getElementById('status').textContent = 'બોલું છું...';
                 playVideo('talking');
             };
             
             utterance.onend = () => {
+                isSpeaking = false;
+                document.getElementById('status').textContent = 'તૈયાર છું';
+                playVideo('silent');
+            };
+            
+            utterance.onerror = (e) => {
+                console.error('Speech error:', e);
+                isSpeaking = false;
                 document.getElementById('status').textContent = 'તૈયાર છું';
                 playVideo('silent');
             };
@@ -694,78 +341,119 @@
             window.speechSynthesis.speak(utterance);
         }
         
+        function stopSpeaking() {
+            window.speechSynthesis.cancel();
+            isSpeaking = false;
+            document.getElementById('status').textContent = 'રોકાયું';
+            playVideo('silent');
+            speak('બંધ કર્યું.');
+        }
+        
         // ==================== MODAL FUNCTIONS ====================
         function openModal(modalId) {
             document.getElementById(modalId).style.display = 'flex';
             if(modalId === 'notes') loadNotes();
-            if(modalId === 'documents') ragMemory.renderDocumentList();
-            if(modalId === 'memory') ragMemory.renderMemoryView();
+            if(modalId === 'documents') loadDocuments();
         }
         
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
         }
         
+        function toggleProviderSettings() {
+            const provider = document.getElementById('ai-provider').value;
+            if(provider === 'gemini') {
+                document.getElementById('gemini-settings').classList.remove('hidden');
+                document.getElementById('groq-settings').classList.add('hidden');
+            } else {
+                document.getElementById('gemini-settings').classList.add('hidden');
+                document.getElementById('groq-settings').classList.remove('hidden');
+            }
+        }
+        
         function saveSettings() {
-            const name = document.getElementById('username').value;
-            if(name) {
-                userName = name;
-                localStorage.setItem('vidushi_username', name);
+            // Save personal settings
+            userName = document.getElementById('username').value || 'સાહેબ';
+            localStorage.setItem('vidushi_username', userName);
+            
+            // Save AI provider settings
+            aiProvider = document.getElementById('ai-provider').value;
+            geminiModel = document.getElementById('gemini-model').value;
+            groqModel = document.getElementById('groq-model').value;
+            
+            localStorage.setItem('vidushi_ai_provider', aiProvider);
+            localStorage.setItem('vidushi_gemini_model', geminiModel);
+            localStorage.setItem('vidushi_groq_model', groqModel);
+            
+            // Save API keys
+            const geminiKey = document.getElementById('gemini-key').value;
+            const groqKey = document.getElementById('groq-key').value;
+            const firebaseKey = document.getElementById('firebase-key').value;
+            
+            if(geminiKey) localStorage.setItem('vidushi_gemini_key', geminiKey);
+            if(groqKey) localStorage.setItem('vidushi_groq_key', groqKey);
+            if(firebaseKey && firebaseKey !== 'AIzaSyDummyKeyForInitialLoad') {
+                localStorage.setItem('vidushi_firebase_key', firebaseKey);
             }
             
             // Save RAG settings
-            const ragSettings = {
-                enabled: document.getElementById('rag-enabled').checked,
-                persistent: document.getElementById('persistent-memory').checked,
-                autoRecall: document.getElementById('auto-recall').checked
-            };
+            ragEnabled = document.getElementById('rag-enabled').checked;
+            const persistentMemory = document.getElementById('persistent-memory').checked;
             
-            ragMemory.updateSettings(ragSettings);
-            ragEnabled = ragSettings.enabled;
+            localStorage.setItem('vidushi_rag_enabled', ragEnabled);
+            localStorage.setItem('vidushi_persistent_memory', persistentMemory);
             
-            speak(`સેટિંગ્સ સેવ થયા. RAG ${ragEnabled ? 'ચાલુ' : 'બંધ'}.`);
+            speak('સેટિંગ્સ સેવ થયા.');
             closeModal('settings');
         }
         
-        // ==================== RAG DOCUMENT FUNCTIONS ====================
-        document.getElementById('doc-input').onchange = function(e) {
-            const file = e.target.files[0];
-            if(!file) return;
+        function loadSettings() {
+            // Load personal settings
+            userName = localStorage.getItem('vidushi_username') || 'સાહેબ';
+            document.getElementById('username').value = userName;
             
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const content = event.target.result.substring(0, 10000); // Limit content
-                ragMemory.addDocument(file.name, content);
-                speak(`${file.name} અપલોડ થયો. RAG મેમરીમાં સેવ થયો.`);
-            };
+            // Load AI settings
+            aiProvider = localStorage.getItem('vidushi_ai_provider') || 'gemini';
+            geminiModel = localStorage.getItem('vidushi_gemini_model') || 'gemini-2.5-flash';
+            groqModel = localStorage.getItem('vidushi_groq_model') || 'llama-3.1-8b-instant';
             
-            if(file.type.includes('text') || file.name.includes('.txt')) {
-                reader.readAsText(file);
+            document.getElementById('ai-provider').value = aiProvider;
+            document.getElementById('gemini-model').value = geminiModel;
+            document.getElementById('groq-model').value = groqModel;
+            
+            // Load API keys
+            document.getElementById('gemini-key').value = localStorage.getItem('vidushi_gemini_key') || '';
+            document.getElementById('groq-key').value = localStorage.getItem('vidushi_groq_key') || '';
+            document.getElementById('firebase-key').value = localStorage.getItem('vidushi_firebase_key') || 'AIzaSyDummyKeyForInitialLoad';
+            
+            // Load RAG settings
+            ragEnabled = localStorage.getItem('vidushi_rag_enabled') !== 'false';
+            document.getElementById('rag-enabled').checked = ragEnabled;
+            document.getElementById('persistent-memory').checked = localStorage.getItem('vidushi_persistent_memory') !== 'false';
+            
+            // Update UI
+            toggleProviderSettings();
+            updateStatusBars();
+        }
+        
+        function updateStatusBars() {
+            const ragStatus = document.getElementById('rag-status');
+            const memoryStatus = document.getElementById('memory-status');
+            
+            if(ragEnabled) {
+                ragStatus.textContent = '📄 RAG: On';
+                ragStatus.style.display = 'block';
+                ragStatus.style.background = 'rgba(0,140,255,0.8)';
             } else {
-                // For binary files, just store file info
-                ragMemory.addDocument(file.name, `ફાઈલ: ${file.name}, પ્રકાર: ${file.type}, માપ: ${file.size} bytes`);
-                speak(`${file.name} અપલોડ થયો.`);
+                ragStatus.textContent = '📄 RAG: Off';
+                ragStatus.style.display = 'block';
+                ragStatus.style.background = 'rgba(255,100,0,0.8)';
             }
-        };
-        
-        function clearRAGDocuments() {
-            if(confirm('બધા દસ્તાવેજો ડિલીટ કરવા છે?')) {
-                ragMemory.clearDocuments();
-                speak('બધા દસ્તાવેજો સાફ કર્યા.');
-            }
-        }
-        
-        function backupMemory() {
-            if(ragMemory.backup()) {
-                speak('મેમરી બેકઅપ સેવ થયો.');
-            }
-        }
-        
-        function clearMemory() {
-            if(confirm('બધી મેમરી ડિલીટ કરવા છે?')) {
-                ragMemory.clearMemories();
-                speak('બધી મેમરી સાફ કરી.');
-            }
+            
+            // Load memory count
+            const memories = JSON.parse(localStorage.getItem('vidushi_memories') || '[]');
+            memoryStatus.textContent = `💾 મેમરી: ${memories.length}`;
+            memoryStatus.style.display = 'block';
         }
         
         // ==================== NOTES FUNCTIONS ====================
@@ -773,6 +461,11 @@
             const notes = JSON.parse(localStorage.getItem('vidushi_notes') || '[]');
             const list = document.getElementById('notes-list');
             list.innerHTML = '';
+            
+            if(notes.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">કોઈ નોંધ નથી</div>';
+                return;
+            }
             
             notes.forEach((note, index) => {
                 const div = document.createElement('div');
@@ -794,9 +487,16 @@
             notes.push(text);
             localStorage.setItem('vidushi_notes', JSON.stringify(notes));
             
-            // Also add to RAG memory
+            // Add to memory if RAG enabled
             if(ragEnabled) {
-                ragMemory.addMemory(`નોંધ: ${text}`, 'note', 2);
+                const memories = JSON.parse(localStorage.getItem('vidushi_memories') || '[]');
+                memories.push({
+                    text: `નોંધ: ${text}`,
+                    type: 'note',
+                    date: new Date().toISOString()
+                });
+                localStorage.setItem('vidushi_memories', JSON.stringify(memories));
+                updateStatusBars();
             }
             
             input.value = '';
@@ -809,6 +509,62 @@
             notes.splice(index, 1);
             localStorage.setItem('vidushi_notes', JSON.stringify(notes));
             loadNotes();
+        }
+        
+        // ==================== DOCUMENT FUNCTIONS ====================
+        function loadDocuments() {
+            const docs = JSON.parse(localStorage.getItem('vidushi_documents') || '[]');
+            const list = document.getElementById('document-list');
+            list.innerHTML = '';
+            
+            if(docs.length === 0) {
+                list.innerHTML = '<div style="color:#aaa; text-align:center; padding:20px;">કોઈ દસ્તાવેજો નથી</div>';
+                return;
+            }
+            
+            docs.forEach((doc, index) => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background:#333; padding:10px; margin:5px 0; border-radius:5px; display:flex; justify-content:space-between; align-items:center;';
+                div.innerHTML = `
+                    <div>
+                        <div style="color:#fff;">${doc.name}</div>
+                        <div style="color:#888; font-size:11px;">${new Date(doc.date).toLocaleDateString('gu-IN')}</div>
+                    </div>
+                    <button onclick="deleteDocument(${index})" style="background:red; color:white; border:none; border-radius:5px; padding:5px 10px; cursor:pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                list.appendChild(div);
+            });
+        }
+        
+        document.getElementById('doc-input').onchange = function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const docs = JSON.parse(localStorage.getItem('vidushi_documents') || '[]');
+                docs.push({
+                    name: file.name,
+                    content: event.target.result.substring(0, 5000),
+                    date: new Date().toISOString(),
+                    type: file.type
+                });
+                
+                localStorage.setItem('vidushi_documents', JSON.stringify(docs));
+                loadDocuments();
+                speak(`${file.name} અપલોડ થયો.`);
+            };
+            
+            reader.readAsText(file);
+        };
+        
+        function deleteDocument(index) {
+            const docs = JSON.parse(localStorage.getItem('vidushi_documents') || '[]');
+            docs.splice(index, 1);
+            localStorage.setItem('vidushi_documents', JSON.stringify(docs));
+            loadDocuments();
         }
         
         // ==================== SMART LENS FUNCTIONS ====================
@@ -889,33 +645,28 @@
             document.getElementById('image-analysis').style.display = 'none';
         }
         
-        async function analyzeImage(dataUrl) {
+        function analyzeImage(dataUrl) {
             document.getElementById('status').textContent = 'વિશ્લેષણ કરું છું...';
             playVideo('thinking');
             
-            // Convert data URL to blob
-            const blob = await fetch(dataUrl).then(res => res.blob());
-            
-            // Get RAG context if enabled
-            let ragContext = '';
-            if(ragEnabled && lensMode === 'document') {
-                ragContext = '\n[દસ્તાવેજ મોડ]: RAG મેમરીમાંથી સંબંધિત માહિતી જોડી છે.';
-            }
-            
-            // Simulate AI analysis with RAG context
             setTimeout(() => {
-                const analysis = getMockAnalysis(lensMode) + ragContext;
+                const analysis = getMockAnalysis(lensMode);
                 document.getElementById('image-analysis').innerHTML = analysis;
                 document.getElementById('image-analysis').style.display = 'block';
                 
-                // Add to RAG memory if important
-                if(ragEnabled && lensMode !== 'object') {
-                    ragMemory.addMemory(`ચિત્ર વિશ્લેષણ (${lensMode}): ${analysis.substring(0, 100)}`, 'vision', 2);
+                // Add to memory if RAG enabled
+                if(ragEnabled && lensMode === 'document') {
+                    const memories = JSON.parse(localStorage.getItem('vidushi_memories') || '[]');
+                    memories.push({
+                        text: `ચિત્ર વિશ્લેષણ (${lensMode}): ${analysis.substring(0, 100)}`,
+                        type: 'vision',
+                        date: new Date().toISOString()
+                    });
+                    localStorage.setItem('vidushi_memories', JSON.stringify(memories));
+                    updateStatusBars();
                 }
                 
                 speak(analysis);
-                document.getElementById('status').textContent = 'તૈયાર છું';
-                playVideo('silent');
             }, 2000);
         }
         
@@ -925,8 +676,8 @@
                 text: '📜 આ ચિત્રમાં ગુજરાતી લિપિ: "જય શ્રી કૃષ્ણ".',
                 math: '🔢 આ ચિત્રમાં ગણિત: ૨ + ૨ = ૪.',
                 translate: '🌐 "Hello World" → "હેલો વર્લ્ડ".',
-                document: '📄 આ દસ્તાવેજમાં મુખ્ય મુદ્દાઓ છે. RAG મેમરી સાથે સરખાવું છું.',
-                memory: '🧠 આ ચિત્ર પહેલાની યાદો સાથે મેળ ખાય છે.'
+                document: '📄 આ દસ્તાવેજમાં મુખ્ય મુદ્દાઓ છે.',
+                summary: '📝 આ ટેક્સ્ટનો સારાંશ: મુખ્ય વિચારો સમજાવે છે.'
             };
             return analyses[mode] || 'વિશ્લેષણ મળ્યું નથી.';
         }
@@ -942,7 +693,7 @@
             recognition.onstart = () => {
                 isListening = true;
                 document.getElementById('status').textContent = 'સાંભળું છું...';
-                document.getElementById('mic-btn').style.background = 'red';
+                document.getElementById('mic-main-btn').classList.add('listening');
             };
             
             recognition.onresult = (event) => {
@@ -953,7 +704,15 @@
             
             recognition.onend = () => {
                 isListening = false;
-                document.getElementById('mic-btn').style.background = '#ff4500';
+                document.getElementById('mic-main-btn').classList.remove('listening');
+                document.getElementById('status').textContent = 'તૈયાર છું';
+            };
+            
+            recognition.onerror = (event) => {
+                console.error('Speech recognition error:', event.error);
+                isListening = false;
+                document.getElementById('mic-main-btn').classList.remove('listening');
+                document.getElementById('status').textContent = 'ભૂલ થઈ';
             };
         }
         
@@ -966,7 +725,12 @@
             if(isListening) {
                 recognition.stop();
             } else {
-                recognition.start();
+                if(isSpeaking) {
+                    stopSpeaking();
+                    setTimeout(() => recognition.start(), 500);
+                } else {
+                    recognition.start();
+                }
             }
         }
         
@@ -976,105 +740,53 @@
             
             playVideo('thinking');
             
-            // Get RAG context for AI response
-            let ragContext = '';
-            if(ragEnabled) {
-                ragContext = ragMemory.getContext(command);
-                
-                // Add conversation to memory
-                ragMemory.addMemory(`વપરાશકર્તા: ${command}`, 'user_query', 1);
-            }
-            
-            // Process command with RAG
             if(cmd.includes('નમસ્તે') || cmd.includes('હેલો')) {
-                const response = `નમસ્તે ${userName}! RAG મેમરી ${ragEnabled ? 'સક્રિય' : 'નિષ્ક્રિય'}.`;
-                speak(response);
-                if(ragEnabled) {
-                    ragMemory.addConversation(command, response);
-                    ragMemory.addMemory(response, 'greeting', 3);
-                }
-            }
-            else if(cmd.includes('તું કોણ છો')) {
-                const response = 'હું વિદુષી છું, RAG મેમરી સાથેની AI સહાયક.';
-                speak(response);
-                if(ragEnabled) ragMemory.addConversation(command, response);
+                speak(`નમસ્તે ${userName}! હું વિદુષી.`);
             }
             else if(cmd.includes('સ્માર્ટ લેન્સ') || cmd.includes('કેમેરા')) {
                 openModal('lens');
                 speak('સ્માર્ટ લેન્સ ખોલું છું.');
-                if(ragEnabled) ragMemory.addMemory('સ્માર્ટ લેન્સ ખોલ્યું', 'action', 2);
             }
             else if(cmd.includes('ફોટો લો')) {
                 openCamera();
-                if(ragEnabled) ragMemory.addMemory('કેમેરા ખોલ્યું', 'action', 2);
             }
-            else if(cmd.includes('દસ્તાવેજ') || cmd.includes('ડોક્યુમેન્ટ')) {
+            else if(cmd.includes('નોંધ')) {
+                openModal('notes');
+                speak('નોંધ ખોલું છું.');
+            }
+            else if(cmd.includes('દસ્તાવેજ')) {
                 openModal('documents');
-                speak('RAG દસ્તાવેજો ખોલું છું.');
+                speak('દસ્તાવેજો ખોલું છું.');
             }
-            else if(cmd.includes('મેમરી') || cmd.includes('યાદ')) {
-                openModal('memory');
-                speak(`RAG મેમરી: ${ragMemory.memories.length} યાદો.`);
+            else if(cmd.includes('બંધ કર') || cmd.includes('સ્ટોપ')) {
+                stopSpeaking();
             }
-            else if(cmd.includes('યાદ રાખ') || cmd.includes('રીમેમ્બર')) {
-                const text = cmd.replace(/યાદ રાખ|રીમેમ્બર|કે/g, '').trim();
-                if(text) {
-                    ragMemory.addMemory(text, 'user_command', 5);
-                    speak(`યાદ રાખી લીધું: ${text.substring(0, 50)}`);
-                }
+            else if(cmd.includes('સેટિંગ')) {
+                openModal('settings');
+                speak('સેટિંગ્સ ખોલું છું.');
             }
             else if(cmd.includes('દેવેન્દ્રભાઈનો ફોટો')) {
                 speak('દેવેન્દ્રભાઈનો ફોટો બતાવું છું.');
-                // Show a sample photo
                 showImage('https://via.placeholder.com/300x400/FFA500/000000?text=દેવેન્દ્રભાઈ');
                 setTimeout(() => {
                     document.getElementById('image-analysis').innerHTML = '👤 દેવેન્દ્રભાઈ - પરિવારના મુખ્ય';
                     document.getElementById('image-analysis').style.display = 'block';
                 }, 500);
-                
-                if(ragEnabled) {
-                    ragMemory.addMemory('દેવેન્દ્રભાઈનો ફોટો બતાવ્યો', 'action', 3);
-                }
             }
             else {
-                // Use RAG context for better response
-                let response = `તમે કહ્યું: ${command}. `;
-                if(ragContext) {
-                    response += ' RAG મેમરીમાંથી સંબંધિત માહિતી મળી છે.';
-                }
-                speak(response);
-                
-                if(ragEnabled) {
-                    ragMemory.addConversation(command, response);
-                    
-                    // Auto-learn from conversation
-                    if(command.length > 10 && !command.includes('?')) {
-                        ragMemory.addMemory(`વપરાશકર્તાનું વિધાન: ${command}`, 'learning', 1);
-                    }
-                }
+                speak(`તમે કહ્યું: ${command}. હું હજુ શીખી રહ્યો છું.`);
             }
-            
-            setTimeout(() => {
-                document.getElementById('status').textContent = 'તૈયાર છું';
-                playVideo('silent');
-            }, 2000);
         }
         
         // ==================== INITIALIZATION ====================
         window.onload = () => {
             playVideo('silent');
+            loadSettings();
             
-            // Load settings
-            document.getElementById('username').value = userName;
-            document.getElementById('rag-enabled').checked = ragMemory.settings.enabled;
-            document.getElementById('persistent-memory').checked = ragMemory.settings.persistent;
-            document.getElementById('auto-recall').checked = ragMemory.settings.autoRecall;
-            ragEnabled = ragMemory.settings.enabled;
-            
-            // Welcome message with RAG status
+            // Welcome message
             setTimeout(() => {
                 if(!localStorage.getItem('vidushi_welcomed')) {
-                    speak(`નમસ્તે ${userName}! હું વિદુષી, RAG મેમરી સાથે. ${ragMemory.documents.length} દસ્તાવેજો અને ${ragMemory.memories.length} યાદો લોડ થયા.`);
+                    speak(`નમસ્તે ${userName}! હું વિદુષી તમારી સેવામાં.`);
                     localStorage.setItem('vidushi_welcomed', 'true');
                 }
             }, 1500);
