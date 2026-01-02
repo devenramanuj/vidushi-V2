@@ -1,225 +1,308 @@
 <!DOCTYPE html>
 <html lang="gu">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Gujarati Assistant</title>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>AI Assistant</title>
 <style>
-/* ===============================
-   BASIC STYLES
-   =============================== */
-body{margin:0;font-family:sans-serif;background:#111;color:#fff;}
-#video-container, #canvas-capture, #generated-image{display:none;}
-button{padding:8px 12px;margin:4px;}
-#status-text{margin:10px 0;}
-.image-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:none;justify-content:center;align-items:center;flex-direction:column;}
+/* તમારા મૂળ CSS અહીં જ રહેશે */
 </style>
 </head>
 <body>
-
-<h1>AI Gujarati Assistant</h1>
-
-<!-- Video & Canvas -->
 <div id="video-container">
-    <video id="selfie-video" autoplay muted playsinline style="width:300px;height:200px;"></video>
+    <video id="selfie-video" autoplay muted playsinline style="display:none;"></video>
+    <canvas id="canvas-capture" style="display:none;"></canvas>
 </div>
-<canvas id="canvas-capture"></canvas>
 
-<!-- Image Overlay -->
-<div class="image-overlay" id="image-overlay">
-    <img id="generated-image" src="" style="max-width:80%; max-height:80%;"/>
+<div id="image-overlay" style="display:none;">
+    <img id="generated-image" />
     <div id="image-loading-text">વિશ્લેષણ...</div>
-    <button id="download-btn">Download</button>
+    <button id="download-btn" style="display:none;">Download</button>
 </div>
 
-<!-- Status -->
+<button id="mic-btn">🎤</button>
 <div id="status-text">માઈક દબાવો</div>
-<button onclick="startConversation()">Start Listening</button>
-<button onclick="stopConversation()">Stop Listening</button>
+<div id="rag-status"></div>
 
-<!-- Photo Upload -->
-<input type="file" accept="image/*" onchange="handleGalleryUpload(this)">
-
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
 <script src="https://unpkg.com/3d-force-graph"></script>
 
 <script>
-/* ===============================
-   GLOBAL VARIABLES
-   =============================== */
-let selfieVideo=document.getElementById('selfie-video');
-let canvas=document.getElementById('canvas-capture');
-let generatedImage=document.getElementById('generated-image');
-let imageOverlay=document.getElementById('image-overlay');
-let imageLoadingText=document.getElementById('image-loading-text');
-let statusText=document.getElementById('status-text');
-let liveModel=null;
-let isLiveVisionActive=false;
-let visionStream=null;
-let currentCameraMode="user";
-let aiProvider="groq";
-let geminiModel="text-bison-001";
-let geminiKeys="";
-let groqKey="";
-let groqModel="llama-70b";
-let windowUserPhotos={};
-let latestUploadedPhoto=null;
-let chatHistory=[];
-let isProcessing=false,isAiSpeaking=false,silentMode=false;
-let selectedLensMode="history";
-let currentVisionPrompt="";
-let conversationBuffer="";
-let isSilentListening=false;
-let recognition=null;
+let recognition;
+let continuousMode = true;
+let isProcessing = false;
+let isAiSpeaking = false;
+let isSilentListening = false;
+let silentMode = false;
+let currentMood = 'neutral';
+let visionStream = null;
+let selfieVideo = document.getElementById('selfie-video');
+let canvas = document.getElementById('canvas-capture');
+let generatedImage = document.getElementById('generated-image');
+let imageLoadingText = document.getElementById('image-loading-text');
+let imageOverlay = document.getElementById('image-overlay');
+let statusText = document.getElementById('status-text');
+let currentVisionPrompt = "";
+let liveModel = null;
+let isLiveVisionActive = false;
 
-/* ===============================
-   PHOTO UPLOAD FUNCTION
-   =============================== */
-window.handleGalleryUpload=(input)=>{
-    const file=input.files[0];
+window.ragContent = "";
+
+let geminiKeys = "";  // તમારા API Keys અહીં
+let geminiModel = "text-bison-001";
+let groqKey = ""; // Groq Key
+let groqModel = "LLaMA-70b"; // 🔥 New Model
+
+window.chatHistory = [];
+window.permanentMemories = [];
+window.activeFamilyTree = null;
+let vanshavaliDocRef = null;
+let userName = "User";
+let currentCameraMode = "user";
+
+
+// 🔥 CLEANUP & SAVE TO GLOBAL MEMORY
+window.ragContent = ""; // document content
+document.getElementById('rag-status').innerText = '✅ RAG Ready';
+
+// 🔥 PHOTO UPLOAD FEATURE
+window.handleGalleryUpload = (input) => {
+    const file = input.files[0];
     if(!file) return;
-    const reader=new FileReader();
-    reader.onload=function(e){
-        generatedImage.src=e.target.result;
-        generatedImage.style.display="block";
-        imageLoadingText.style.display="none";
-        imageOverlay.style.display="flex";
-        document.getElementById('download-btn').style.display="block";
-        latestUploadedPhoto=e.target.result;
-        const name=file.name.split(".")[0];
-        windowUserPhotos[name]=e.target.result;
-    }
+    imageOverlay.style.display = 'flex';
+    imageLoadingText.style.display = "block";
+    imageLoadingText.innerText = "વિશ્લેષણ...";
+    generatedImage.style.display = "none";
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        generatedImage.src = e.target.result;
+        generatedImage.style.display = "block";
+        imageLoadingText.style.display = "none";
+        document.getElementById('download-btn').style.display = "block";
+        // Bot can now use this image to link with person name
+        window.lastUploadedImage = e.target.result.split(',')[1]; // Base64 only
+    };
     reader.readAsDataURL(file);
 };
 
-window.showPhotoByName=(name)=>{
-    if(windowUserPhotos[name]){
-        generatedImage.src=windowUserPhotos[name];
-        generatedImage.style.display="block";
-        imageOverlay.style.display="flex";
-        window.speak(name+" નું ફોટો દર્શાવ્યું");
-    } else {
-        window.speak(name+" માટે ફોટો ઉપલબ્ધ નથી.");
-    }
-};
 
-/* ===============================
-   CAMERA / VISION
-   =============================== */
-window.activateVision=async(mode="user")=>{
-    try{
-        visionStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:mode}});
-        selfieVideo.srcObject=visionStream;
-        selfieVideo.style.display='block';
-        selfieVideo.style.transform= mode==="user" ? "scaleX(-1)" : "scaleX(1)";
-        currentCameraMode=mode;
-    } catch(e){ alert("Camera Error: "+e); }
-};
-
-window.captureAndAnalyze=async(mode="user")=>{
-    if(visionStream && currentCameraMode!==mode){ window.stopVisionCamera(); }
-    if(!visionStream || !visionStream.active || selfieVideo.style.display==='none'){ 
+// 🔥 VISION FUNCTIONS (Camera & Live Detection)
+window.captureAndAnalyze = async (mode = "user") => {
+    if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); }
+    if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') {
+        window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો...");
         await window.activateVision(mode);
-        setTimeout(window.takeActualPhoto,3000);
-    } else { window.takeActualPhoto(); }
-};
-
-window.takeActualPhoto=()=>{
-    canvas.width=selfieVideo.videoWidth;
-    canvas.height=selfieVideo.videoHeight;
-    canvas.getContext('2d').drawImage(selfieVideo,0,0);
-    const base64Image=canvas.toDataURL('image/jpeg');
-    window.stopVisionCamera();
-    generatedImage.src=base64Image;
-    generatedImage.style.display="block";
-    imageLoadingText.style.display="none";
-    imageOverlay.style.display="flex";
-    document.getElementById('download-btn').style.display="block";
-    latestUploadedPhoto=base64Image;
-};
-
-/* ===============================
-   STOP CAMERA
-   =============================== */
-window.stopVisionCamera=()=>{
-    isLiveVisionActive=false;
-    canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-    if(visionStream) visionStream.getTracks().forEach(t=>t.stop());
-    selfieVideo.style.display='none';
-};
-
-/* ===============================
-   CONVERSATION / SPEECH
-   =============================== */
-const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
-if(SpeechRecognition){
-    recognition=new SpeechRecognition();
-    recognition.lang='gu-IN';
-    recognition.onstart=()=>{ statusText.innerText=isSilentListening?"નોંધ લઉં છું...":"સાંભળું છું..."; };
-    recognition.onend=()=>{ if(!isProcessing) statusText.innerText="માઈક દબાવો"; };
-    recognition.onresult=(e)=>{ let text=e.results[0][0].transcript; if(text.trim()) window.processCommand(text); };
-}
-
-window.startConversation=()=>{ try{ recognition.start(); } catch(e){} };
-window.stopConversation=()=>{ recognition.stop(); window.speechSynthesis.cancel(); window.stopVisionCamera(); isProcessing=false; isAiSpeaking=false; isSilentListening=false; };
-
-/* ===============================
-   AI COMMAND PROCESSING
-   =============================== */
-window.processCommand=async(text)=>{
-    if(text.trim().length<2) return;
-    let cmd=text.toLowerCase();
-
-    if(cmd.includes("શો ") && latestUploadedPhoto){
-        let name=text.replace("શો ","").trim();
-        window.showPhotoByName(name); return;
+        setTimeout(window.takeActualPhoto, 3000);
+    } else {
+        window.takeActualPhoto();
     }
-
-    if(aiProvider==="groq"){ await window.askGroqText(text); return; }
-
-    // OTHER COMMANDS (similar to original)...
 };
 
-/* ===============================
-   Groq LLaMA 70B CALL
-   =============================== */
-window.askGroqText=async(userText)=>{
-    if(!groqKey){ window.speak("Groq Key નથી."); return; }
-    let messages=[{role:"system",content:getSystemPrompt("",userText)},...chatHistory.slice(-6).map(m=>({role:m.role==="assistant"?"assistant":"user",content:m.content})),{role:"user",content:userText}];
-    try{
-        const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
-            method:"POST",
-            headers:{ "Authorization":`Bearer ${groqKey}`,"Content-Type":"application/json" },
-            body:JSON.stringify({model:groqModel,messages:messages,temperature:0.7,max_tokens:1000})
+window.takeActualPhoto = () => {
+    canvas.width = selfieVideo.videoWidth;
+    canvas.height = selfieVideo.videoHeight;
+    canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+    const base64Image = canvas.toDataURL('image/jpeg');
+    window.stopVisionCamera();
+    generatedImage.src = base64Image;
+    generatedImage.style.display = "block";
+    imageLoadingText.style.display = "none";
+    document.getElementById('download-btn').style.display = "block";
+    imageOverlay.style.display = "flex";
+    window.askGeminiVision(base64Image.split(',')[1]);
+};
+
+window.startLiveVision = async (btn) => {
+    document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
+    if(btn) btn.classList.add('active');
+    document.getElementById('canvas-capture').style.display = 'block';
+    await window.activateVision("environment");
+    if(!liveModel) liveModel = await cocoSsd.load();
+    isLiveVisionActive = true;
+    window.detectFrame();
+};
+
+window.detectFrame = () => {
+    if(!isLiveVisionActive) return;
+    const video = selfieVideo;
+    const ctx = canvas.getContext('2d');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    ctx.font = '20px Arial';
+    ctx.fillStyle = 'red';
+    ctx.fillText("SCANNING...", 20, 30);
+    liveModel.detect(video).then(predictions => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.font = '20px Arial';
+        ctx.fillStyle = 'red';
+        ctx.fillText("SCANNING...", 20, 30);
+        predictions.forEach(prediction => {
+            ctx.beginPath();
+            ctx.rect(...prediction.bbox);
+            ctx.lineWidth = 4;
+            ctx.strokeStyle = '#00ff00';
+            ctx.stroke();
+            ctx.font = 'bold 24px Arial';
+            ctx.fillStyle = '#00ff00';
+            ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30);
+            ctx.fillStyle = '#000000';
+            ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5);
         });
-        const data=await res.json();
-        if(data.choices){
-            let reply=data.choices[0].message.content;
-            chatHistory.push({role:"user",content:userText});
-            chatHistory.push({role:"assistant",content:reply});
-            window.speak(reply);
-        } else { window.speak("જવાબ નથી મળ્યો."); }
-    } catch(e){ window.speak("Groq કનેક્શન એરર."); }
+        if(isLiveVisionActive) requestAnimationFrame(window.detectFrame);
+    });
+};
+// 🔥 RAG & Vanshavali Formatting
+window.formatVanshavaliTree = (node, parentName = "મૂળ પુરુષ") => {
+    let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
+    if(node.info) text += ` [માહિતી: ${node.info}]`;
+    text += "\n";
+    if (node.children && node.children.length > 0) {
+        node.children.forEach(child => {
+            text += window.formatVanshavaliTree(child, node.name);
+        });
+    }
+    return text;
 };
 
-/* ===============================
-   SPEAK FUNCTION
-   =============================== */
-window.speak=(text)=>{
-    statusText.innerText="બોલું છું...";
-    const u=new SpeechSynthesisUtterance(text);
-    u.lang='gu-IN';
+// 🔥 STOP / START CAMERA
+window.activateVision = async (mode = "user") => {
+    try {
+        visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+        selfieVideo.srcObject = visionStream;
+        selfieVideo.style.display = 'block';
+        selfieVideo.style.transform = mode === "user" ? "scaleX(-1)" : "scaleX(1)";
+        currentCameraMode = mode;
+    } catch(e) {
+        alert("Camera Error: " + e);
+    }
+};
+
+window.stopVisionCamera = () => {
+    isLiveVisionActive = false;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    if(visionStream) visionStream.getTracks().forEach(t => t.stop());
+    selfieVideo.style.display = 'none';
+};
+
+// 🔥 SPEECH
+window.speak = (text, forceSpeak=false) => {
+    if(silentMode && !forceSpeak) { statusText.innerText="Silent"; return; }
+    const clean = text.replace(/[*#_]/g, "");
+    statusText.innerText = "બોલું છું...";
+    isAiSpeaking = true;
+    const u = new SpeechSynthesisUtterance(clean);
+    u.lang = 'gu-IN';
+    let voices = window.speechSynthesis.getVoices();
+    let bestVoice = voices.find(v=>v.lang==='gu-IN' && v.name.includes('Google'));
+    if(!bestVoice) bestVoice = voices.find(v=>v.lang==='gu-IN');
+    if(bestVoice) u.voice = bestVoice;
+    u.onstart = () => {};
+    u.onend = () => { isAiSpeaking=false; isProcessing=false; };
     window.speechSynthesis.speak(u);
 };
 
-/* ===============================
-   SYSTEM PROMPT + RAG
-   =============================== */
-function getSystemPrompt(memories, contextData){
-    let moodPrompt="You are a helpful assistant.";
-    let ragContext=window.ragContent?`[UPLOADED DOCUMENT CONTENT]:\n${window.ragContent}\n`:"";
-    return `IMPORTANT: Mood: normal. ${moodPrompt} ${ragContext} Question: "${contextData}"`;
+// 🔥 SYSTEM PROMPT GENERATION
+function getSystemPrompt(memories, contextData) { 
+    let moodPrompt = currentMood==='angry' ? "You are very angry, rude and sarcastic." : "You are a helpful assistant.";
+    let familyDataString = "";
+    if(window.activeFamilyTree) familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`;
+    let ragContext = window.ragContent ? `\n[UPLOADED DOCUMENT CONTENT]:\n${window.ragContent.substring(0,500000)}` : "";
+    return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator, generate full HTML/CSS/JS wrapped in :::APP_START::: ... :::APP_END:::. Do not explain the code.`;
 }
+
+// 🔥 GEMINI TEXT QUERY
+window.askGeminiText = async (userText) => {
+    let keys = geminiKeys.split(',').filter(k=>k); if(!keys.length){ window.speak("API Key નથી."); return; }
+    const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText);
+    let contents = window.chatHistory.slice(-10).map(msg=>({role:msg.role==='user'?'user':'model', parts:[{text:msg.content}]}));
+    contents.push({role:"user", parts:[{text:systemInstruction}]});
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
+            method: "POST",
+            headers: { "Content-Type":"application/json" },
+            body: JSON.stringify({ contents })
+        });
+        const data = await response.json();
+        if(data.candidates){
+            let reply = data.candidates[0].content.parts[0].text;
+            window.chatHistory.push({role:"user", content:userText});
+            window.chatHistory.push({role:"assistant", content:reply});
+            window.speak(reply);
+        } else { window.speak("જવાબ નથી મળ્યો."); }
+    } catch(e){ window.speak("ઇન્ટરનેટ એરર."); }
+};
+
+// 🔥 GEMINI VISION QUERY
+window.askGeminiVision = async (base64Image) => {
+    let keys = geminiKeys.split(',').filter(k=>k); if(!keys.length){ window.speak("API Key નથી."); return; }
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body: JSON.stringify({contents:[{role:"user", parts:[{text:currentVisionPrompt + " (Respond in Gujarati)"}, {inline_data:{mime_type:"image/jpeg", data:base64Image}}]}]})
+        });
+        const data = await response.json();
+        if(data.error){
+            console.error(data.error);
+            window.speak("ગૂગલ એરર આવી છે.");
+            return;
+        }
+        if(data.candidates){
+            const text = data.candidates[0].content.parts[0].text;
+            window.speak(text);
+        } else window.speak("કોઈ જવાબ મળ્યો નથી.");
+    } catch(e){ window.speak("Network Error."); }
+};
+
+// 🔥 GROQ LLaMA 70B QUERY
+window.askGroqText = async (userText) => {
+    if(!groqKey){ window.speak("Groq Key નથી."); return; }
+    let messages = [{role:"system", content:getSystemPrompt(window.permanentMemories.join("\n"), userText)}, 
+                    ...window.chatHistory.slice(-6).map(m=>({role:m.role==='assistant'?'assistant':'user', content:m.content})),
+                    {role:"user", content:userText}];
+    try {
+        const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method:"POST",
+            headers: {"Authorization":`Bearer ${groqKey}`, "Content-Type":"application/json"},
+            body: JSON.stringify({model:groqModel, messages:messages, temperature:0.7, max_tokens:1000})
+        });
+        const data = await res.json();
+        if(data.choices){
+            let reply = data.choices[0].message.content;
+            window.chatHistory.push({role:"user", content:userText});
+            window.chatHistory.push({role:"assistant", content:reply});
+            window.speak(reply);
+        } else window.speak("જવાબ નથી મળ્યો.");
+    } catch(e){ window.speak("Groq કનેક્શન એરર."); }
+};
+
+// 🔥 VOICE RECOGNITION
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if(SpeechRecognition){
+    recognition = new SpeechRecognition();
+    recognition.lang = 'gu-IN';
+    recognition.onstart = ()=>{ statusText.innerText = isSilentListening ? "નોંધ લઉં છું..." : "સાંભળું છું..."; };
+    recognition.onend = ()=>{ if(continuousMode && !isAiSpeaking && !isProcessing) recognition.start(); else statusText.innerText = "માઈક દબાવો"; };
+    recognition.onresult = (e)=>{ let text = e.results[0][0].transcript; if(text.trim()) window.processCommand(text); };
+}
+
+window.startConversation = ()=>{ try{ recognition.start(); }catch(e){} };
+window.stopConversation = ()=>{ recognition.stop(); window.speechSynthesis.cancel(); window.stopVisionCamera(); isProcessing=false; isAiSpeaking=false; isSilentListening=false; };
+
+// 🔥 COMMAND PROCESSING
+window.processCommand = async (text) => {
+    if(text.trim().length<2) return;
+    if(isSilentListening){ conversationBuffer += text + ". "; return; }
+    let cmd = text.toLowerCase();
+    if(cmd.includes("ફોટો") || cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
+    if(cmd.includes("ચિત્ર") && cmd.includes("બનાવ")) { window.generateMagicImage(text.replace("ચિત્ર બનાવ","")); return; }
+    // 🔥 AI QUERY
+    isProcessing=true;
+    if(window.groqKey && cmd.includes("લલામા")){ await window.askGroqText(text); }
+    else { await window.askGeminiText(text); }
+};
 </script>
 </body>
 </html>
