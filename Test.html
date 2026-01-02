@@ -2311,43 +2311,35 @@ processTextForNaturalSpeech(text, emotion) {
 
         // ==================== MAIN SPEAK FUNCTION ====================
         window.speak = async (text, forceSpeak = false, emotion = 'neutral') => { 
-            if (!text || text.trim().length === 0) {
-                isAiSpeaking = false;
-                isProcessing = false;
-                return;
-            }
-            
-            if(silentMode && !forceSpeak) { 
-                if (statusText) statusText.innerText = "મૌન (Silent)..."; 
-                isAiSpeaking = false; 
-                isProcessing = false; 
-                playVideo('silent'); 
-                return; 
-            }
-            
-            if (!emotion || emotion === 'neutral') {
-                emotion = window.emotionalAI.detectEmotionFromText(text);
-            }
-            
-            let responseText = text;
-            if (emotionalVoiceEnabled && window.emotionalAI) {
-                const empatheticResponses = {
-                    happy: [
-                        "વાહ! તમે ખુશ છો તે જાણી મને પણ આનંદ થાય છે!",
-                        "ખુશીની આ લહેર જોવરાવે છે!",
-                        "તમારી ખુશીથી હું પણ ખીલી ઊઠું છું!"
-                    ],
-                    sad: [
-                        "મને ખબર છે આ સમય કઠિન છે... હું તમારી સાથે છું.",
-                        "તમારું દુઃખ હું સમજી શકું છું...",
-                        "ક્યારેક રોવું પણ સારું છે, તે પછી હલકા લાગો છો."
-                    ],
-                    excited: [
-                        "વાહ! તમારો ઉત્સાહ સંપાદિત છે!",
-                        "અદ્ભુત! તમારી ઉત્સુકતા જોઈને હું પણ ઉત્સાહિત થઈ ગઈ!",
-                        "આ તો ખૂબ જ સારી વાત છે!"
-                    ]
-                };
+    if (!text || text.trim().length === 0) {
+        isAiSpeaking = false;
+        isProcessing = false;
+        return;
+    }
+    
+    // Clean text before speaking - remove punctuation marks
+    let cleanText = text
+        .replace(/[.,!?;:*+=\-–—#@&|~`^\\\[\]{}<>]/g, ' ')
+        .replace(/[।॥્ંઃ]/g, ' ')
+        .replace(/["'`()]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    
+    if(silentMode && !forceSpeak) { 
+        if (statusText) statusText.innerText = "મૌન (Silent)..."; 
+        isAiSpeaking = false; 
+        isProcessing = false; 
+        playVideo('silent'); 
+        return; 
+    }
+    
+    if (!emotion || emotion === 'neutral') {
+        emotion = window.emotionalAI.detectEmotionFromText(cleanText);
+    }
+    
+    let responseText = cleanText;
+    // ... rest of the speak function ...
+};
                 
                 if (empatheticResponses[emotion] && Math.random() < 0.4) {
                     const responses = empatheticResponses[emotion];
