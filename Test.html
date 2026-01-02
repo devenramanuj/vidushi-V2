@@ -2063,26 +2063,28 @@
                 };
             }
 
-            // Add this in the NaturalVoiceSystem class
-processTextForNaturalSpeech(text, emotion) {
-    if (!naturalVoiceEnabled || !text) return text;
-    
-    const settings = this.getEmotionSpeechSettings(emotion);
-    let processedText = text;
-    
-    // Simply remove problematic characters
-    processedText = processedText
-        .replace(/\*/g, '')      // Remove asterisks
-        .replace(/\+/g, ' ')     // Remove plus signs
-        .replace(/#/g, ' ')      // Remove hash
-        .replace(/@/g, ' ')      // Remove at symbol
-        .replace(/&/g, ' ')      // Remove ampersand
-        .replace(/\|/g, ' ')     // Remove pipe
-        .replace(/\s+/g, ' ')    // Normalize spaces
-        .trim();
-    
-    return processedText;
-}
+            processTextForNaturalSpeech(text, emotion) {
+                if (!naturalVoiceEnabled || !text) return text;
+                
+                const settings = this.getEmotionSpeechSettings(emotion);
+                let processedText = text;
+                
+                processedText = processedText
+                    .replace(/([.!?])\s+/g, `$1 `)
+                    .replace(/,/g, ', ')
+                    .replace(/;/g, '; ');
+                
+                if (emotion === 'excited' || emotion === 'happy') {
+                    const importantWords = ['ખુશ', 'સારું', 'વાહ', 'અદ્ભુત', 'શાભાશ'];
+                    importantWords.forEach(word => {
+                        const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                        processedText = processedText.replace(regex, word);
+                    });
+                }
+                
+                return processedText;
+            }
+
             speak(text, emotion = 'neutral', onStart = null, onEnd = null) {
                 return new Promise((resolve) => {
                     if (silentMode || !text) {
@@ -2311,35 +2313,44 @@ processTextForNaturalSpeech(text, emotion) {
 
         // ==================== MAIN SPEAK FUNCTION ====================
         window.speak = async (text, forceSpeak = false, emotion = 'neutral') => { 
-    if (!text || text.trim().length === 0) {
-        isAiSpeaking = false;
-        isProcessing = false;
-        return;
-    }
-    
-    // Clean text before speaking - remove punctuation marks
-    let cleanText = text
-        .replace(/[.,!?;:*+=\-–—#@&|~`^\\\[\]{}<>]/g, ' ')
-        .replace(/[।॥્ંઃ]/g, ' ')
-        .replace(/["'`()]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-    
-    if(silentMode && !forceSpeak) { 
-        if (statusText) statusText.innerText = "મૌન (Silent)..."; 
-        isAiSpeaking = false; 
-        isProcessing = false; 
-        playVideo('silent'); 
-        return; 
-    }
-    
-    if (!emotion || emotion === 'neutral') {
-        emotion = window.emotionalAI.detectEmotionFromText(cleanText);
-    }
-    
-    let responseText = cleanText;
-    // ... rest of the speak function ...
-};                
+            if (!text || text.trim().length === 0) {
+                isAiSpeaking = false;
+                isProcessing = false;
+                return;
+            }
+            
+            if(silentMode && !forceSpeak) { 
+                if (statusText) statusText.innerText = "મૌન (Silent)..."; 
+                isAiSpeaking = false; 
+                isProcessing = false; 
+                playVideo('silent'); 
+                return; 
+            }
+            
+            if (!emotion || emotion === 'neutral') {
+                emotion = window.emotionalAI.detectEmotionFromText(text);
+            }
+            
+            let responseText = text;
+            if (emotionalVoiceEnabled && window.emotionalAI) {
+                const empatheticResponses = {
+                    happy: [
+                        "વાહ! તમે ખુશ છો તે જાણી મને પણ આનંદ થાય છે!",
+                        "ખુશીની આ લહેર જોવરાવે છે!",
+                        "તમારી ખુશીથી હું પણ ખીલી ઊઠું છું!"
+                    ],
+                    sad: [
+                        "મને ખબર છે આ સમય કઠિન છે... હું તમારી સાથે છું.",
+                        "તમારું દુઃખ હું સમજી શકું છું...",
+                        "ક્યારેક રોવું પણ સારું છે, તે પછી હલકા લાગો છો."
+                    ],
+                    excited: [
+                        "વાહ! તમારો ઉત્સાહ સંપાદિત છે!",
+                        "અદ્ભુત! તમારી ઉત્સુકતા જોઈને હું પણ ઉત્સાહિત થઈ ગઈ!",
+                        "આ તો ખૂબ જ સારી વાત છે!"
+                    ]
+                };
+                
                 if (empatheticResponses[emotion] && Math.random() < 0.4) {
                     const responses = empatheticResponses[emotion];
                     responseText = responses[Math.floor(Math.random() * responses.length)];
