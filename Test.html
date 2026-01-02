@@ -2063,28 +2063,26 @@
                 };
             }
 
-            processTextForNaturalSpeech(text, emotion) {
-                if (!naturalVoiceEnabled || !text) return text;
-                
-                const settings = this.getEmotionSpeechSettings(emotion);
-                let processedText = text;
-                
-                processedText = processedText
-                    .replace(/([.!?])\s+/g, `$1 `)
-                    .replace(/,/g, ', ')
-                    .replace(/;/g, '; ');
-                
-                if (emotion === 'excited' || emotion === 'happy') {
-                    const importantWords = ['ખુશ', 'સારું', 'વાહ', 'અદ્ભુત', 'શાભાશ'];
-                    importantWords.forEach(word => {
-                        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-                        processedText = processedText.replace(regex, word);
-                    });
-                }
-                
-                return processedText;
-            }
-
+            // Add this in the NaturalVoiceSystem class
+processTextForNaturalSpeech(text, emotion) {
+    if (!naturalVoiceEnabled || !text) return text;
+    
+    const settings = this.getEmotionSpeechSettings(emotion);
+    let processedText = text;
+    
+    // Simply remove problematic characters
+    processedText = processedText
+        .replace(/\*/g, '')      // Remove asterisks
+        .replace(/\+/g, ' ')     // Remove plus signs
+        .replace(/#/g, ' ')      // Remove hash
+        .replace(/@/g, ' ')      // Remove at symbol
+        .replace(/&/g, ' ')      // Remove ampersand
+        .replace(/\|/g, ' ')     // Remove pipe
+        .replace(/\s+/g, ' ')    // Normalize spaces
+        .trim();
+    
+    return processedText;
+}
             speak(text, emotion = 'neutral', onStart = null, onEnd = null) {
                 return new Promise((resolve) => {
                     if (silentMode || !text) {
