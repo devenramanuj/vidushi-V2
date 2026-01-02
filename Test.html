@@ -1,4 +1,4 @@
-    <<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
@@ -1090,7 +1090,7 @@
         </div>
     </div>
 
-        script type="module">
+    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { 
             getFirestore, 
@@ -1107,17 +1107,6 @@
             getDocs, 
             getDoc 
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // FIREBASE CONFIG
-        const firebaseConfig = {
-            apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
-            authDomain: "vidushi-ai-614cb.firebaseapp.com",
-            projectId: "vidushi-ai-614cb",
-            storageBucket: "vidushi-ai-614cb.firebasestorage.app",
-            messagingSenderId: "146312927144",
-            appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
-            measurementId: "G-ZM9RS2J6SR"
-        };
 
         // Global Variables
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
@@ -1136,18 +1125,44 @@
         let persistentMemoryEnabled = localStorage.getItem('vidushi_persistent_memory') !== 'false';
         let autoReinforcementEnabled = localStorage.getItem('vidushi_auto_reinforcement') !== 'false';
 
-        // Initialize Firebase
-        try {
-            app = initializeApp(firebaseConfig);
-            db = getFirestore(app);
-            userDocRef = doc(db, "vidushi_db", "main_memory");
-            settingsDocRef = doc(db, "vidushi_db", "settings");
-            vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
-            console.log("✅ Firebase initialized successfully");
-            loadCloudSettings();
-        } catch (err) { 
-            console.error("Firebase error:", err);
-            document.getElementById('status-text').innerText = "DB Error: " + err.message; 
+        // Initialize Firebase CONDITIONALLY
+        function initializeFirebaseIfKeyAvailable() {
+            const savedApiKey = localStorage.getItem('vidushi_firebase_apiKey');
+            
+            if (savedApiKey && savedApiKey.trim() !== '' && savedApiKey !== "AIzaSyDummyKeyForInitialLoad") {
+                try {
+                    const firebaseConfig = {
+                        apiKey: savedApiKey,
+                        authDomain: "vidushi-ai-614cb.firebaseapp.com",
+                        projectId: "vidushi-ai-614cb",
+                        storageBucket: "vidushi-ai-614cb.firebasestorage.app",
+                        messagingSenderId: "146312927144",
+                        appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
+                        measurementId: "G-ZM9RS2J6SR"
+                    };
+
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                    userDocRef = doc(db, "vidushi_db", "main_memory");
+                    settingsDocRef = doc(db, "vidushi_db", "settings");
+                    vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
+                    console.log("✅ Firebase initialized successfully");
+                    loadCloudSettings();
+                    return true;
+                } catch (err) { 
+                    console.error("Firebase error:", err);
+                    return false;
+                }
+            } else {
+                console.log("⚠️ Firebase API key not found, running in offline mode");
+                return false;
+            }
+        }
+
+        // Try to initialize Firebase on load
+        const firebaseInitialized = initializeFirebaseIfKeyAvailable();
+        if (!firebaseInitialized) {
+            document.getElementById('status-text').innerText = "સ્થાનિક મોડ (Local Mode)";
         }
 
         // RAG MEMORY STORAGE
@@ -1190,6 +1205,27 @@
             smiling: document.getElementById('smiling-video'), 
             angry: document.getElementById('angry-video')
         };
+
+        // ==================== LOAD LOCAL DATA ====================
+        function loadLocalData() {
+            // Load notes
+            const localNotes = JSON.parse(localStorage.getItem('vidushi_local_notes') || '[]');
+            notes = localNotes;
+            
+            // Load expenses
+            const localExpenses = JSON.parse(localStorage.getItem('vidushi_local_expenses') || '[]');
+            expenses = localExpenses;
+            
+            // Load contacts
+            const localContacts = JSON.parse(localStorage.getItem('vidushi_local_contacts') || '[]');
+            contacts = localContacts;
+            
+            console.log("📱 Loaded local data:", { 
+                notes: notes.length, 
+                expenses: expenses.length, 
+                contacts: contacts.length 
+            });
+        }
 
         // ==================== VANSHAVALI FUNCTIONS ====================
         async function loadVanshavaliFromCloud() {
@@ -2206,6 +2242,9 @@
             document.getElementById('galleryLoader').onchange = (e) => window.handleGalleryUpload(e);
             document.getElementById('docLoader').onchange = (e) => window.handleRAGUpload(e);
             
+            // Load local data
+            loadLocalData();
+            
             setTimeout(() => {
                 if(!silentMode) {
                     const welcomeMessage = `જય શ્રી કૃષ્ણ ${userName}! હું ભાવનાત્મક બુદ્ધિશાળી વિદુષી તમારી સેવામાં હાજર છું. `;
@@ -2876,6 +2915,139 @@
             } 
         };
         
+        // ==================== SETTINGS FUNCTIONS ====================
+        window.openSettings = () => { 
+            document.getElementById('settings-modal').style.display = 'flex'; 
+            document.getElementById('userNameInput').value = localStorage.getItem('vidushi_username') || userName; 
+            document.getElementById('providerSelect').value = localStorage.getItem('vidushi_provider') || aiProvider; 
+            document.getElementById('geminiKeyInput').value = localStorage.getItem('vidushi_gemini_key') || geminiKeys; 
+            document.getElementById('geminiModelSelect').value = localStorage.getItem('vidushi_gemini_model') || geminiModel; 
+            document.getElementById('groqKeyInput').value = localStorage.getItem('vidushi_groq_key') || groqKey; 
+            document.getElementById('groqModelSelect').value = localStorage.getItem('vidushi_groq_model') || groqModel; 
+            document.getElementById('continuousModeCheck').checked = localStorage.getItem('vidushi_continuous') === 'true'; 
+            document.getElementById('silentModeCheck').checked = localStorage.getItem('vidushi_silent') === 'true'; 
+            document.getElementById('moodSelect').value = localStorage.getItem('vidushi_mood') || currentMood; 
+            document.getElementById('firebaseApiKeyInput').value = localStorage.getItem('vidushi_firebase_apiKey') || '';
+            document.getElementById('emotionalVoiceEnabled').checked = localStorage.getItem('vidushi_emotional_voice') !== 'false';
+            document.getElementById('naturalVoiceEnabled').checked = localStorage.getItem('vidushi_natural_voice') !== 'false';
+            document.getElementById('persistentMemoryEnabled').checked = localStorage.getItem('vidushi_persistent_memory') !== 'false';
+            document.getElementById('autoReinforcementEnabled').checked = localStorage.getItem('vidushi_auto_reinforcement') !== 'false';
+            window.toggleProviderSettings(); 
+            
+            // Show warning if Firebase is not initialized
+            if (!localStorage.getItem('vidushi_firebase_apiKey') || 
+                localStorage.getItem('vidushi_firebase_apiKey') === "AIzaSyDummyKeyForInitialLoad") {
+                const settingsBox = document.querySelector('.settings-box');
+                const warningDiv = document.createElement('div');
+                warningDiv.id = 'firebase-warning';
+                warningDiv.style.cssText = `
+                    background: rgba(255,100,0,0.2);
+                    border: 1px solid #ff5500;
+                    color: #ffaa00;
+                    padding: 10px;
+                    border-radius: 5px;
+                    margin: 10px 0;
+                    font-size: 12px;
+                    text-align: center;
+                `;
+                warningDiv.innerHTML = `
+                    ⚠️ Firebase API Key નથી. કૃપા કરીને API Key નાખો સિંક કરવા માટે.
+                    <br><small>તમે હજુ પણ બીજી સેટિંગ્સ બદલી શકો છો.</small>
+                `;
+                
+                // Insert after menu-grid
+                const menuGrid = document.querySelector('.menu-grid');
+                if (menuGrid && !document.getElementById('firebase-warning')) {
+                    menuGrid.parentNode.insertBefore(warningDiv, menuGrid.nextSibling);
+                }
+            }
+        };
+        
+        window.toggleProviderSettings = () => { 
+            const provider = document.getElementById('providerSelect').value;
+            document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none'; 
+            document.getElementById('groq-settings').style.display = provider === 'groq' ? 'block' : 'none'; 
+        };
+        
+        window.saveSettings = async () => { 
+            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
+            aiProvider = document.getElementById('providerSelect').value; 
+            geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
+            geminiModel = document.getElementById('geminiModelSelect').value; 
+            groqKey = document.getElementById('groqKeyInput').value.trim(); 
+            groqModel = document.getElementById('groqModelSelect').value; 
+            continuousMode = document.getElementById('continuousModeCheck').checked; 
+            silentMode = document.getElementById('silentModeCheck').checked; 
+            currentMood = document.getElementById('moodSelect').value; 
+            firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
+            emotionalVoiceEnabled = document.getElementById('emotionalVoiceEnabled').checked;
+            naturalVoiceEnabled = document.getElementById('naturalVoiceEnabled').checked;
+            persistentMemoryEnabled = document.getElementById('persistentMemoryEnabled').checked;
+            autoReinforcementEnabled = document.getElementById('autoReinforcementEnabled').checked;
+            
+            // Save to localStorage
+            localStorage.setItem('vidushi_username', userName); 
+            localStorage.setItem('vidushi_provider', aiProvider); 
+            localStorage.setItem('vidushi_gemini_key', geminiKeys); 
+            localStorage.setItem('vidushi_gemini_model', geminiModel); 
+            localStorage.setItem('vidushi_groq_key', groqKey); 
+            localStorage.setItem('vidushi_groq_model', groqModel); 
+            localStorage.setItem('vidushi_continuous', continuousMode); 
+            localStorage.setItem('vidushi_silent', silentMode); 
+            localStorage.setItem('vidushi_mood', currentMood);
+            localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
+            localStorage.setItem('vidushi_emotional_voice', emotionalVoiceEnabled);
+            localStorage.setItem('vidushi_natural_voice', naturalVoiceEnabled);
+            localStorage.setItem('vidushi_persistent_memory', persistentMemoryEnabled);
+            localStorage.setItem('vidushi_auto_reinforcement', autoReinforcementEnabled);
+            
+            // If Firebase API key is provided, try to initialize Firebase
+            if (firebaseApiKey && firebaseApiKey.trim() !== '' && firebaseApiKey !== "AIzaSyDummyKeyForInitialLoad") {
+                try {
+                    if (!app) {
+                        const firebaseConfig = {
+                            apiKey: firebaseApiKey,
+                            authDomain: "vidushi-ai-614cb.firebaseapp.com",
+                            projectId: "vidushi-ai-614cb",
+                            storageBucket: "vidushi-ai-614cb.firebasestorage.app",
+                            messagingSenderId: "146312927144",
+                            appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
+                            measurementId: "G-ZM9RS2J6SR"
+                        };
+                        
+                        app = initializeApp(firebaseConfig);
+                        db = getFirestore(app);
+                        userDocRef = doc(db, "vidushi_db", "main_memory");
+                        settingsDocRef = doc(db, "vidushi_db", "settings");
+                        vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
+                        
+                        console.log("✅ Firebase initialized with new API key");
+                        await saveToCloud();
+                        window.speak("Firebase કનેક્ટ થયું અને સેટિંગ્સ સેવ થયા.", false, 'happy');
+                    } else {
+                        await saveToCloud();
+                        window.speak("સેટિંગ્સ સેવ થઈ ગયા.", false, 'happy');
+                    }
+                } catch (error) {
+                    console.error("Firebase initialization failed:", error);
+                    window.speak("Firebase API Key ખોટો છે. કૃપા કરીને ફરી પ્રયાસ કરો.", false, 'sad');
+                }
+            } else {
+                window.speak("સેટિંગ્સ સ્થાનિક સંગ્રહ પર સેવ થઈ ગયા.", false, 'happy');
+            }
+            
+            // Update memory system settings
+            if (window.persistentMemory) {
+                // Reinitialize intervals with new settings
+                if (autoReinforcementEnabled) {
+                    window.persistentMemory.setupIntervals();
+                }
+                window.persistentMemory.updateMemoryPanel();
+            }
+            
+            document.getElementById('settings-modal').style.display = 'none'; 
+        };
+
         // ==================== MEMORY DASHBOARD FUNCTIONS ====================
         window.openMemoryDashboard = function() {
             document.getElementById('settings-modal').style.display = 'none';
@@ -3022,79 +3194,6 @@
             }
         };
 
-        // ==================== SETTINGS FUNCTIONS ====================
-        window.openSettings = () => { 
-            document.getElementById('settings-modal').style.display = 'flex'; 
-            document.getElementById('userNameInput').value = userName; 
-            document.getElementById('providerSelect').value = aiProvider; 
-            document.getElementById('geminiKeyInput').value = geminiKeys; 
-            document.getElementById('geminiModelSelect').value = geminiModel; 
-            document.getElementById('groqKeyInput').value = groqKey; 
-            document.getElementById('groqModelSelect').value = groqModel; 
-            document.getElementById('continuousModeCheck').checked = continuousMode; 
-            document.getElementById('silentModeCheck').checked = silentMode; 
-            document.getElementById('moodSelect').value = currentMood; 
-            document.getElementById('firebaseApiKeyInput').value = firebaseApiKey;
-            document.getElementById('emotionalVoiceEnabled').checked = emotionalVoiceEnabled;
-            document.getElementById('naturalVoiceEnabled').checked = naturalVoiceEnabled;
-            document.getElementById('persistentMemoryEnabled').checked = persistentMemoryEnabled;
-            document.getElementById('autoReinforcementEnabled').checked = autoReinforcementEnabled;
-            window.toggleProviderSettings(); 
-        };
-        
-        window.toggleProviderSettings = () => { 
-            const provider = document.getElementById('providerSelect').value;
-            document.getElementById('gemini-settings').style.display = provider === 'gemini' ? 'block' : 'none'; 
-            document.getElementById('groq-settings').style.display = provider === 'groq' ? 'block' : 'none'; 
-        };
-        
-        window.saveSettings = async () => { 
-            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
-            aiProvider = document.getElementById('providerSelect').value; 
-            geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
-            geminiModel = document.getElementById('geminiModelSelect').value; 
-            groqKey = document.getElementById('groqKeyInput').value.trim(); 
-            groqModel = document.getElementById('groqModelSelect').value; 
-            continuousMode = document.getElementById('continuousModeCheck').checked; 
-            silentMode = document.getElementById('silentModeCheck').checked; 
-            currentMood = document.getElementById('moodSelect').value; 
-            firebaseApiKey = document.getElementById('firebaseApiKeyInput').value.trim();
-            emotionalVoiceEnabled = document.getElementById('emotionalVoiceEnabled').checked;
-            naturalVoiceEnabled = document.getElementById('naturalVoiceEnabled').checked;
-            persistentMemoryEnabled = document.getElementById('persistentMemoryEnabled').checked;
-            autoReinforcementEnabled = document.getElementById('autoReinforcementEnabled').checked;
-            
-            // Save to localStorage
-            localStorage.setItem('vidushi_username', userName); 
-            localStorage.setItem('vidushi_provider', aiProvider); 
-            localStorage.setItem('vidushi_gemini_key', geminiKeys); 
-            localStorage.setItem('vidushi_gemini_model', geminiModel); 
-            localStorage.setItem('vidushi_groq_key', groqKey); 
-            localStorage.setItem('vidushi_groq_model', groqModel); 
-            localStorage.setItem('vidushi_continuous', continuousMode); 
-            localStorage.setItem('vidushi_silent', silentMode); 
-            localStorage.setItem('vidushi_mood', currentMood);
-            localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
-            localStorage.setItem('vidushi_emotional_voice', emotionalVoiceEnabled);
-            localStorage.setItem('vidushi_natural_voice', naturalVoiceEnabled);
-            localStorage.setItem('vidushi_persistent_memory', persistentMemoryEnabled);
-            localStorage.setItem('vidushi_auto_reinforcement', autoReinforcementEnabled);
-            
-            // Update memory system settings
-            if (window.persistentMemory) {
-                // Reinitialize intervals with new settings
-                if (autoReinforcementEnabled) {
-                    window.persistentMemory.setupIntervals();
-                }
-                window.persistentMemory.updateMemoryPanel();
-            }
-            
-            await saveToCloud();
-            document.getElementById('settings-modal').style.display = 'none'; 
-            
-            if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા.", false, 'happy'); 
-        };
-
         // Emotional Dashboard Functions
         window.openEmotionalDashboard = function() {
             document.getElementById('settings-modal').style.display = 'none';
@@ -3169,31 +3268,45 @@
         };
         
         window.addNote = async (text) => { 
-            if(!db || !text || text.trim().length === 0) return; 
+            if(!text || text.trim().length === 0) return; 
             
-            try {
-                await addDoc(collection(db, "vidushi_notes"), { 
-                    text: text.trim(), 
-                    timestamp: Date.now() 
-                }); 
-                
-                // Also save to persistent memory
-                if (persistentMemoryEnabled && window.persistentMemory) {
-                    window.persistentMemory.addMemory(`નોંધ: ${text.trim()}`, 'note', 3);
+            // First save to localStorage
+            const localNotes = JSON.parse(localStorage.getItem('vidushi_local_notes') || '[]');
+            localNotes.push({
+                id: Date.now().toString(),
+                text: text.trim(),
+                timestamp: Date.now()
+            });
+            localStorage.setItem('vidushi_local_notes', JSON.stringify(localNotes));
+            
+            // Then try to save to Firebase if available
+            if(db) {
+                try {
+                    await addDoc(collection(db, "vidushi_notes"), { 
+                        text: text.trim(), 
+                        timestamp: Date.now() 
+                    });
+                } catch(e) {
+                    console.error("Firebase note save error:", e);
                 }
-                
-                window.speak("લખ્યું.", false, 'happy'); 
-            } catch(e) {
-                console.error("Add note error:", e);
-                window.speak("નોંધ સેવ થઈ નહીં.", false, 'sad');
             }
+            
+            // Also save to persistent memory
+            if (persistentMemoryEnabled && window.persistentMemory) {
+                window.persistentMemory.addMemory(`નોંધ: ${text.trim()}`, 'note', 3);
+            }
+            
+            window.speak("લખ્યું.", false, 'happy'); 
         };
         
         window.renderNotes = () => { 
             const notesList = document.getElementById('notes-list');
             if (!notesList) return;
             
-            notesList.innerHTML = notes.map((n) => 
+            // Load from localStorage
+            const localNotes = JSON.parse(localStorage.getItem('vidushi_local_notes') || '[]');
+            
+            notesList.innerHTML = localNotes.map((n) => 
                 `<div class="list-item">
                     <span>${n.text || ''} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span>
                     <span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span>
@@ -3202,7 +3315,8 @@
         };
         
         window.speakNotes = () => { 
-            const noteTexts = notes.map(n => n.text || '').filter(text => text).join(". ");
+            const localNotes = JSON.parse(localStorage.getItem('vidushi_local_notes') || '[]');
+            const noteTexts = localNotes.map(n => n.text || '').filter(text => text).join(". ");
             if (noteTexts) {
                 window.speak(noteTexts, false, 'calm'); 
             } else {
@@ -3212,27 +3326,39 @@
         
         window.addExpense = async (text) => { 
             let amt = text.match(/\d+/); 
-            if(amt && db) { 
+            if(amt) { 
                 let amount = parseInt(amt[0]);
                 let d = text.replace(amt[0],"").replace("રૂપિયા","").trim(); 
                 
-                try {
-                    await addDoc(collection(db, "vidushi_expenses"), {
-                        amount: amount, 
-                        desc: d || "પરચુરણ", 
-                        timestamp: Date.now()
-                    }); 
-                    
-                    // Save to memory
-                    if (persistentMemoryEnabled && window.persistentMemory) {
-                        window.persistentMemory.addMemory(`ખર્ચ: ₹${amount} - ${d || "પરચુરણ"}`, 'expense', 2);
+                // First save to localStorage
+                const localExpenses = JSON.parse(localStorage.getItem('vidushi_local_expenses') || '[]');
+                localExpenses.push({
+                    id: Date.now().toString(),
+                    amount: amount,
+                    desc: d || "પરચુરણ",
+                    timestamp: Date.now()
+                });
+                localStorage.setItem('vidushi_local_expenses', JSON.stringify(localExpenses));
+                
+                // Then try to save to Firebase if available
+                if(db) {
+                    try {
+                        await addDoc(collection(db, "vidushi_expenses"), {
+                            amount: amount, 
+                            desc: d || "પરચુરણ", 
+                            timestamp: Date.now()
+                        });
+                    } catch(e) {
+                        console.error("Firebase expense save error:", e);
                     }
-                    
-                    window.speak(`${amount} લખ્યા.`, false, 'happy'); 
-                } catch(e) {
-                    console.error("Add expense error:", e);
-                    window.speak("ખર્ચ સેવ થયો નહીં.", false, 'sad');
                 }
+                
+                // Save to memory
+                if (persistentMemoryEnabled && window.persistentMemory) {
+                    window.persistentMemory.addMemory(`ખર્ચ: ₹${amount} - ${d || "પરચુરણ"}`, 'expense', 2);
+                }
+                
+                window.speak(`${amount} લખ્યા.`, false, 'happy'); 
             } else {
                 window.speak("રકમ સમજાઈ નહીં.", false, 'sad');
             }
@@ -3385,7 +3511,7 @@
             }
         };
         
-        // Load data from Firebase
+        // Load data from Firebase if available
         if (userDocRef) {
             onSnapshot(userDocRef, (docSnap) => {
                 if (docSnap.exists()) {
