@@ -2063,27 +2063,77 @@
                 };
             }
 
-            processTextForNaturalSpeech(text, emotion) {
-                if (!naturalVoiceEnabled || !text) return text;
-                
-                const settings = this.getEmotionSpeechSettings(emotion);
-                let processedText = text;
-                
-                processedText = processedText
-                    .replace(/([.!?])\s+/g, `$1 `)
-                    .replace(/,/g, ', ')
-                    .replace(/;/g, '; ');
-                
-                if (emotion === 'excited' || emotion === 'happy') {
-                    const importantWords = ['ખુશ', 'સારું', 'વાહ', 'અદ્ભુત', 'શાભાશ'];
-                    importantWords.forEach(word => {
-                        const regex = new RegExp(`\\b${word}\\b`, 'gi');
-                        processedText = processedText.replace(regex, word);
-                    });
-                }
-                
-                return processedText;
-            }
+            class NaturalVoiceSystem {
+    // ... existing code ...
+
+    processTextForNaturalSpeech(text, emotion) {
+        if (!naturalVoiceEnabled || !text) return text;
+        
+        const settings = this.getEmotionSpeechSettings(emotion);
+        let processedText = text;
+        
+        // Remove or replace punctuation marks that cause TTS to speak them
+        processedText = processedText
+            .replace(/\*/g, '')           // Remove asterisks
+            .replace(/\+/g, ' ')          // Replace plus with space
+            .replace(/=/g, ' ')           // Replace equals with space
+            .replace(/#/g, ' ')           // Replace hash with space
+            .replace(/_/g, ' ')           // Replace underscore with space
+            .replace(/@/g, ' ')           // Replace at symbol with space
+            .replace(/&/g, ' ')           // Replace ampersand with space
+            .replace(/\|/g, ' ')          // Replace pipe with space
+            .replace(/~/g, ' ')           // Replace tilde with space
+            .replace(/`/g, ' ')           // Replace backtick with space
+            .replace(/\^/g, ' ')          // Replace caret with space
+            .replace(/\\/g, ' ')          // Replace backslash with space
+            .replace(/\[/g, ' ')          // Replace opening bracket
+            .replace(/\]/g, ' ')          // Replace closing bracket
+            .replace(/\{/g, ' ')          // Replace opening brace
+            .replace(/\}/g, ' ')          // Replace closing brace
+            .replace(/<|>/g, ' ')         // Replace angle brackets
+            .replace(/;/g, ', ')          // Replace semicolon with comma
+            .replace(/:/g, '. ')          // Replace colon with period
+            .replace(/…/g, '. ')          // Replace ellipsis with period
+            .replace(/\.{3,}/g, '. ')     // Replace multiple dots with single period
+            .replace(/\s+/g, ' ')         // Replace multiple spaces with single space
+            .replace(/\s*,\s*/g, ', ')    // Normalize commas
+            .replace(/\s*\.\s*/g, '. ')   // Normalize periods
+            .replace(/\s*\?\s*/g, '? ')   // Normalize question marks
+            .replace(/\s*!\s*/g, '! ')    // Normalize exclamation marks
+            .trim();
+
+        // Handle special cases for Gujarati punctuation
+        processedText = processedText
+            .replace(/।/g, '. ')          // Replace Gujarati danda with period
+            .replace(/॥/g, '. ')          // Replace double danda with period
+            .replace(/્/g, '')           // Remove virama (halant)
+            .replace(/ં/g, '')            // Remove anusvara
+            .replace(/ઃ/g, '')            // Remove visarga
+            .replace(/્/g, '')           // Remove halant
+            .replace(/\u200C/g, '')       // Remove zero-width non-joiner
+            .replace(/\u200D/g, '');      // Remove zero-width joiner
+
+        // Clean up multiple punctuation marks
+        processedText = processedText
+            .replace(/([.,!?])\1+/g, '$1') // Remove repeating punctuation
+            .replace(/([.,!?])\s*([.,!?])/g, '$1') // Remove consecutive punctuation
+            .replace(/\s+([.,!?])/g, '$1') // Remove space before punctuation
+            .replace(/([.,!?])\s+/g, '$1 ') // Add single space after punctuation
+            .trim();
+
+        if (emotion === 'excited' || emotion === 'happy') {
+            const importantWords = ['ખુશ', 'સારું', 'વાહ', 'અદ્ભુત', 'શાભાશ'];
+            importantWords.forEach(word => {
+                const regex = new RegExp(`\\b${word}\\b`, 'gi');
+                processedText = processedText.replace(regex, word);
+            });
+        }
+        
+        return processedText;
+    }
+
+    // ... rest of the class ...
+}
 
             speak(text, emotion = 'neutral', onStart = null, onEnd = null) {
                 return new Promise((resolve) => {
