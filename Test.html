@@ -3,42 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Smart Assistant</title>
+    <title>Vidushi AI - સ્માર્ટ અસિસ્ટન્ટ</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, deleteDoc, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyAexampleKey1234567890",
+            authDomain: "vidushi-ai-614cb.firebaseapp.com",
+            projectId: "vidushi-ai-614cb",
+            storageBucket: "vidushi-ai-614cb.firebasestorage.app",
+            messagingSenderId: "146312927144",
+            appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d"
+        };
+        
+        window.firebaseApp = initializeApp(firebaseConfig);
+        window.firestore = getFirestore(firebaseApp);
+    </script>
     <style>
         :root { --primary: #ff4500; --secondary: #008cff; --accent: #d4af37; --bg: #0a0a0a; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        body { background: var(--bg); color: white; font-family: 'Segoe UI', sans-serif; }
         
-        /* Video Container */
         #video-container { position: fixed; width: 100%; height: 100%; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; display: none; }
         video.active { display: block; }
         
-        /* Buttons */
         .side-btn { position: fixed; top: 15px; right: 15px; width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.7); border: 1px solid #444; color: white; display: flex; align-items: center; justify-content: center; z-index: 100; cursor: pointer; }
         
-        /* Main Controls */
         #mic-container { position: fixed; bottom: 40px; left: 0; width: 100%; text-align: center; z-index: 100; }
         #status-text { background: rgba(0,0,0,0.7); padding: 8px 20px; border-radius: 20px; display: inline-block; margin-bottom: 15px; font-size: 14px; }
         #mic-btn { width: 70px; height: 70px; border-radius: 50%; background: var(--primary); border: none; color: white; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); cursor: pointer; }
         
-        /* Modals */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-box { background: rgba(30,30,30,0.95); border-radius: 15px; padding: 20px; width: 90%; max-width: 400px; border: 1px solid #444; }
+        .modal-box { background: rgba(30,30,30,0.95); border-radius: 15px; padding: 20px; width: 90%; max-width: 400px; max-height: 80vh; overflow-y: auto; border: 1px solid #444; }
         
-        /* Lists */
-        .list-item { background: #222; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 3px solid var(--primary); }
+        .list-item { background: #222; padding: 12px; margin: 8px 0; border-radius: 8px; border-left: 3px solid var(--primary); cursor: pointer; }
         
-        input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #222; border: 1px solid #444; color: white; border-radius: 5px; }
-        button { cursor: pointer; }
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 5px; width: 100%; margin-top: 10px; }
+        input, select, textarea, button { width: 100%; padding: 10px; margin: 8px 0; border-radius: 5px; }
+        input, select, textarea { background: #222; border: 1px solid #444; color: white; }
+        button { background: var(--primary); color: white; border: none; cursor: pointer; }
+        .btn-secondary { background: #444; margin-top: 5px; }
         
-        /* Image Overlay */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
         #generated-image { max-width: 90%; max-height: 70%; border-radius: 10px; }
+        
+        .tree-node { margin-left: 20px; border-left: 1px solid var(--accent); padding-left: 10px; margin-bottom: 5px; }
+        .tree-node-name { color: var(--accent); font-weight: bold; }
+        .tree-node-info { color: #aaa; font-size: 12px; margin-left: 10px; }
     </style>
 </head>
 <body>
+    <!-- Videos -->
     <div id="video-container">
         <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4"></video>
         <video id="talking-video" muted loop playsinline><source src="talking.mp4"></video>
@@ -47,6 +64,7 @@
     
     <canvas id="canvas" style="display:none;"></canvas>
     
+    <!-- Settings Button -->
     <button id="settings-btn" class="side-btn" onclick="openSettings()">⚙️</button>
     
     <!-- Settings Modal -->
@@ -58,14 +76,14 @@
             <input type="text" id="userNameInput" placeholder="દેવેન્દ્રભાઈ">
             
             <label>AI Provider:</label>
-            <select id="providerSelect" onchange="toggleProviderSettings()">
+            <select id="providerSelect">
                 <option value="gemini">Google Gemini</option>
                 <option value="groq">Groq (Llama)</option>
             </select>
             
             <div id="gemini-settings">
                 <label>Gemini API Key:</label>
-                <textarea id="geminiKeyInput" rows="3" placeholder="AIzaSy..."></textarea>
+                <textarea id="geminiKeyInput" rows="2" placeholder="AIzaSy..."></textarea>
             </div>
             
             <div id="groq-settings" style="display:none;">
@@ -73,19 +91,16 @@
                 <input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
             
-            <div style="margin-top: 20px; text-align: center;">
-                <button class="btn-primary" onclick="saveSettings()">💾 સેવ કરો</button>
-                <button class="btn-primary" onclick="toggleModal('settings')" style="background: #444; margin-top: 5px;">✖ બંધ કરો</button>
-            </div>
+            <button onclick="saveSettings()">💾 સેવ કરો</button>
+            <button onclick="toggleModal('settings')" class="btn-secondary">✖ બંધ</button>
             
             <hr style="margin: 20px 0; border-color: #444;">
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <div class="list-item" onclick="openFeature('notes')">📔 ડાયરી</div>
-                <div class="list-item" onclick="openFeature('photo-manager')">📷 ફોટો ID</div>
-                <div class="list-item" onclick="show3DVanshavali()">🌌 3D વંશાવલી</div>
-                <div class="list-item" onclick="openArcheology()">🔍 સ્માર્ટ લેન્સ</div>
-            </div>
+            <h4 style="color: var(--accent); margin-bottom: 10px;">મેનૂ</h4>
+            <div class="list-item" onclick="show3DVanshavali()">🌌 3D વંશાવલી</div>
+            <div class="list-item" onclick="toggleModal('photo-manager')">📷 ફોટો ID</div>
+            <div class="list-item" onclick="openRAGUpload()">📄 દસ્તાવેજ અપલોડ</div>
+            <div class="list-item" onclick="toggleModal('contacts')">📞 સંપર્કો</div>
         </div>
     </div>
     
@@ -98,19 +113,28 @@
             <input type="text" id="personName" placeholder="દેવેન્દ્રભાઈ">
             
             <div style="display: flex; gap: 10px; margin: 15px 0;">
-                <button class="btn-primary" onclick="startPhotoCapture()" style="background: #008cff;">📸 કેમેરો</button>
-                <button class="btn-primary" onclick="document.getElementById('photoUpload').click()" style="background: var(--accent);">🖼️ ગેલેરી</button>
+                <button onclick="startPhotoCapture()" style="background: #008cff;">📸 કેમેરો</button>
+                <button onclick="document.getElementById('photoUpload').click()" style="background: var(--accent);">🖼️ ગેલેરી</button>
             </div>
             <input type="file" id="photoUpload" accept="image/*" style="display:none;" onchange="uploadPhoto(event)">
             
             <video id="camera-preview" autoplay playsinline style="width: 100%; border-radius: 10px; display: none; margin: 10px 0;"></video>
             
             <div style="display: flex; gap: 10px;">
-                <button class="btn-primary" onclick="capturePhoto()" style="background: green; display: none;" id="capture-btn">📷 કેપ્ચર</button>
-                <button class="btn-primary" onclick="stopCamera()" style="background: red; display: none;" id="stop-camera-btn">✖ બંધ</button>
+                <button onclick="capturePhoto()" style="background: green; display: none;" id="capture-btn">📷 કેપ્ચર</button>
+                <button onclick="stopCamera()" style="background: red; display: none;" id="stop-camera-btn">✖ બંધ</button>
             </div>
             
-            <button class="btn-primary" onclick="toggleModal('photo-manager')" style="background: #444; margin-top: 15px;">🔙 પાછા</button>
+            <button onclick="toggleModal('photo-manager')" class="btn-secondary">🔙 પાછા</button>
+        </div>
+    </div>
+    
+    <!-- Contacts Modal -->
+    <div id="contacts-modal" class="modal">
+        <div class="modal-box">
+            <h3 style="margin-bottom: 15px; color: var(--accent);">📞 સંપર્કો</h3>
+            <div id="contacts-list"></div>
+            <button onclick="toggleModal('contacts')" class="btn-secondary">✖ બંધ</button>
         </div>
     </div>
     
@@ -118,7 +142,7 @@
     <div id="image-overlay">
         <img id="generated-image" alt="Image Preview">
         <div style="margin-top: 20px;">
-            <button class="btn-primary" onclick="closeImage()" style="width: auto; padding: 10px 20px;">✖ બંધ</button>
+            <button onclick="closeImage()" style="width: auto; padding: 10px 20px;">✖ બંધ</button>
         </div>
     </div>
     
@@ -129,8 +153,8 @@
     </div>
     
     <script>
-        // =========== GLOBAL VARIABLES ===========
-        let vanshavaliData = {
+        // =========== COMPLETE VANSHAAVALI DATA ===========
+        window.vanshavaliData = {
             name: "જગદગુરુ રામાનંદાચાર્યજી",
             info: "વિ. સં. ૧૩૫૬",
             children: [{
@@ -149,22 +173,53 @@
                                     children: [{
                                         name: "પુરણદાસજી બાપુ",
                                         info: "ઝીંઝર સમાધિ (૧૯૩૧)",
-                                        children: [{
-                                            name: "ગંગારામજી",
-                                            children: [{
-                                                name: "દયારામજી",
-                                                info: "દિવાળીબેન (ઝમરાળા)",
+                                        children: [
+                                            {
+                                                name: "ગંગારામજી",
+                                                children: [
+                                                    { 
+                                                        name: "આશારામજી",
+                                                        children: [
+                                                            { name: "ગિરધરદાસજી" }, 
+                                                            { 
+                                                                name: "મોજીરમજી",
+                                                                children: [{ name: "જેજેરામ" }] 
+                                                            }, 
+                                                            { name: "સીતારામજી" }
+                                                        ]
+                                                    },
+                                                    { 
+                                                        name: "વ્રજેશરામજી",
+                                                        children: [
+                                                            { name: "ભગવાનદાસજી", info: "ગાંગોદ" }, 
+                                                            { name: "તુલસીદાસજી", info: "રોજકા" }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                name: "રઘુરામજી",
                                                 children: [{
-                                                    name: "જાનકીદાસજી",
-                                                    info: "ઝીંઝર",
+                                                    name: "દયારામજી",
+                                                    info: "દિવાળીબેન (ઝમરાળા)",
                                                     children: [
-                                                        { name: "દેવેન્દ્રભાઈ" },
-                                                        { name: "મનહરલાલ" },
-                                                        { name: "પ્રતાપભાઈ" }
+                                                        { name: "કાશીરામજી", info: "રામપુર" }, 
+                                                        { name: "વશરામજી", info: "સંખેજ" }, 
+                                                        { 
+                                                            name: "જાનકીદાસજી",
+                                                            info: "ઝીંઝર",
+                                                            children: [
+                                                                { name: "મનહરલાલ" }, 
+                                                                { name: "પ્રતાપભાઈ" }, 
+                                                                { name: "વૈકુંઠભાઈ" }, 
+                                                                { name: "સતીષભાઈ" }, 
+                                                                { name: "દેવેન્દ્રભાઈ" }
+                                                            ]
+                                                        }
                                                     ]
                                                 }]
-                                            }]
-                                        }]
+                                            }
+                                        ]
                                     }]
                                 }]
                             }]
@@ -174,116 +229,149 @@
             }]
         };
         
+        // =========== GLOBAL VARIABLES ===========
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         let geminiKey = localStorage.getItem('vidushi_gemini_key') || "";
         let groqKey = localStorage.getItem('vidushi_groq_key') || "";
         let currentProvider = localStorage.getItem('vidushi_provider') || "gemini";
-        let photos = JSON.parse(localStorage.getItem('vidushi_photos') || "{}");
-        
         let cameraStream = null;
-        let isListening = false;
-        let chatHistory = [];
         
-        // =========== UI FUNCTIONS ===========
-        function playVideo(type) {
-            document.querySelectorAll('video').forEach(v => v.classList.remove('active'));
-            document.getElementById(`${type}-video`).classList.add('active');
-        }
-        
-        function toggleModal(modalId) {
-            const modal = document.getElementById(`${modalId}-modal`);
-            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
-        }
-        
-        function openSettings() {
-            document.getElementById('userNameInput').value = userName;
-            document.getElementById('providerSelect').value = currentProvider;
-            document.getElementById('geminiKeyInput').value = geminiKey;
-            document.getElementById('groqKeyInput').value = groqKey;
-            toggleProviderSettings();
-            toggleModal('settings');
-        }
-        
-        function toggleProviderSettings() {
-            const provider = document.getElementById('providerSelect').value;
-            document.getElementById('gemini-settings').style.display = 
-                provider === 'gemini' ? 'block' : 'none';
-            document.getElementById('groq-settings').style.display = 
-                provider === 'gemini' ? 'none' : 'block';
-        }
-        
-        function saveSettings() {
-            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ";
-            currentProvider = document.getElementById('providerSelect').value;
-            geminiKey = document.getElementById('geminiKeyInput').value.trim();
-            groqKey = document.getElementById('groqKeyInput').value.trim();
-            
-            localStorage.setItem('vidushi_username', userName);
-            localStorage.setItem('vidushi_provider', currentProvider);
-            localStorage.setItem('vidushi_gemini_key', geminiKey);
-            localStorage.setItem('vidushi_groq_key', groqKey);
-            
-            speak("સેટિંગ્સ સેવ થઈ");
-            toggleModal('settings');
-        }
-        
-        function openFeature(feature) {
-            toggleModal('settings');
-            setTimeout(() => toggleModal(feature), 300);
-        }
-        
-        function openArcheology() {
-            toggleModal('settings');
-            speak("સ્માર્ટ લેન્સ ખોલું છું");
-        }
-        
-        // =========== 3D VANSHAVALI ===========
-        function show3DVanshavali() {
-            toggleModal('settings');
-            playVideo('thinking');
-            speak("3D વંશાવલી બતાવું છું");
-            
-            // Simple 3D visualization using text
-            const modal = document.createElement('div');
-            modal.style.cssText = `
-                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-                background: rgba(0,0,0,0.95); z-index: 2000; padding: 20px; 
-                color: white; overflow: auto;
-            `;
-            
-            let treeText = formatTree(vanshavaliData);
-            modal.innerHTML = `
-                <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
-                    <h2 style="color: var(--accent);">🌌 3D વંશાવલી</h2>
-                    <button onclick="this.parentElement.parentElement.remove(); playVideo('silent');" 
-                            style="background: var(--primary); border: none; color: white; padding: 10px 20px; border-radius: 5px;">
-                        ✖ બંધ
-                    </button>
-                </div>
-                <div style="background: rgba(255,255,255,0.1); padding: 20px; border-radius: 10px; font-family: monospace; line-height: 2;">
-                    ${treeText}
-                </div>
-            `;
-            
-            document.body.appendChild(modal);
-        }
-        
-        function formatTree(node, level = 0) {
-            if (!node) return "";
-            let indent = "&nbsp;&nbsp;".repeat(level);
-            let html = `${indent}└─ <b style="color: var(--accent);">${node.name}</b>`;
-            if (node.info) html += ` <small style="color: #aaa;">(${node.info})</small>`;
-            html += "<br>";
-            
-            if (node.children) {
-                node.children.forEach(child => {
-                    html += formatTree(child, level + 1);
-                });
+        // =========== FIREBASE FUNCTIONS ===========
+        async function saveToFirebase(collectionName, data, id = null) {
+            try {
+                if (!window.firestore) {
+                    console.error("Firebase not initialized");
+                    return null;
+                }
+                
+                if (id) {
+                    await setDoc(doc(window.firestore, collectionName, id), data);
+                    return id;
+                } else {
+                    const docRef = await addDoc(collection(window.firestore, collectionName), data);
+                    return docRef.id;
+                }
+            } catch (error) {
+                console.error("Firebase save error:", error);
+                return null;
             }
-            return html;
         }
         
-        // =========== PHOTO MANAGER ===========
+        async function getFromFirebase(collectionName, field = null, value = null) {
+            try {
+                if (!window.firestore) return [];
+                
+                let q;
+                if (field && value) {
+                    q = query(collection(window.firestore, collectionName), where(field, "==", value));
+                } else {
+                    q = collection(window.firestore, collectionName);
+                }
+                
+                const snapshot = await getDocs(q);
+                return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            } catch (error) {
+                console.error("Firebase get error:", error);
+                return [];
+            }
+        }
+        
+        async function searchPhoto(name) {
+            try {
+                // FIXED PHOTO SEARCH LOGIC
+                if (!name || name.trim() === "") return null;
+                
+                // Clean the search name
+                let searchName = name.toLowerCase().trim();
+                searchName = searchName.replace(/ભાઈ|બેન|જી|સર|નો|ની|નું|ના|કો|ને|કોનો|ફોટો/g, "").trim();
+                
+                console.log("Searching for photo with name:", searchName);
+                
+                // Get all photos from Firebase
+                const photos = await getFromFirebase("photos");
+                
+                // Try exact match first
+                for (const photo of photos) {
+                    if (photo.name && photo.name.toLowerCase().trim() === searchName) {
+                        console.log("Found exact match:", photo.name);
+                        return photo;
+                    }
+                }
+                
+                // Try partial match
+                for (const photo of photos) {
+                    if (photo.name && 
+                        (photo.name.toLowerCase().includes(searchName) || 
+                         searchName.includes(photo.name.toLowerCase()))) {
+                        console.log("Found partial match:", photo.name);
+                        return photo;
+                    }
+                }
+                
+                // Try phonetic match (for Gujarati variations)
+                for (const photo of photos) {
+                    const photoName = photo.name ? photo.name.toLowerCase().replace(/ભાઈ|જી/g, "").trim() : "";
+                    const cleanSearch = searchName.replace(/ભાઈ|જી/g, "").trim();
+                    
+                    if (photoName && (photoName === cleanSearch || 
+                        photoName.includes(cleanSearch) || 
+                        cleanSearch.includes(photoName))) {
+                        console.log("Found phonetic match:", photo.name);
+                        return photo;
+                    }
+                }
+                
+                console.log("No photo found for:", searchName);
+                return null;
+            } catch (error) {
+                console.error("Photo search error:", error);
+                return null;
+            }
+        }
+        
+        // =========== PHOTO FUNCTIONS (FIXED) ===========
+        async function savePhoto(name, imageData) {
+            if (!name || name.trim() === "") {
+                speak("પહેલા નામ લખો");
+                return false;
+            }
+            
+            const photoData = {
+                name: name.trim(),
+                imageUrl: imageData,
+                timestamp: new Date().toISOString(),
+                searchKeywords: name.toLowerCase().replace(/ભાઈ|જી/g, "").trim()
+            };
+            
+            // Save to Firebase
+            const saved = await saveToFirebase("photos", photoData, name.trim());
+            
+            if (saved) {
+                speak(`${name} નો ફોટો સેવ થયો`);
+                return true;
+            } else {
+                speak("ફોટો સેવ કરવામાં ભૂલ થઈ");
+                return false;
+            }
+        }
+        
+        async function showPhoto(name) {
+            playVideo('thinking');
+            document.getElementById('status-text').textContent = "ફોટો શોધી રહ્યાં છું...";
+            
+            const photo = await searchPhoto(name);
+            
+            if (photo && photo.imageUrl) {
+                document.getElementById('generated-image').src = photo.imageUrl;
+                document.getElementById('image-overlay').style.display = 'flex';
+                playVideo('smiling');
+                speak(`${photo.name} નો ફોટો આ રહ્યો`);
+            } else {
+                playVideo('silent');
+                speak(`${name} નો કોઈ ફોટો મળ્યો નથી`);
+            }
+        }
+        
         function startPhotoCapture() {
             const personName = document.getElementById('personName').value.trim();
             if (!personName) {
@@ -306,7 +394,7 @@
                 });
         }
         
-        function capturePhoto() {
+        async function capturePhoto() {
             const personName = document.getElementById('personName').value.trim();
             if (!personName) {
                 speak("નામ લખો");
@@ -322,19 +410,15 @@
             
             const imageData = canvas.toDataURL('image/jpeg', 0.8);
             
-            // Save to localStorage
-            photos[personName] = imageData;
-            localStorage.setItem('vidushi_photos', JSON.stringify(photos));
-            
-            // Show preview
-            document.getElementById('generated-image').src = imageData;
-            document.getElementById('image-overlay').style.display = 'flex';
-            
-            speak(`${personName} નો ફોટો સેવ થયો`);
-            stopCamera();
+            const saved = await savePhoto(personName, imageData);
+            if (saved) {
+                document.getElementById('generated-image').src = imageData;
+                document.getElementById('image-overlay').style.display = 'flex';
+                stopCamera();
+            }
         }
         
-        function uploadPhoto(event) {
+        async function uploadPhoto(event) {
             const file = event.target.files[0];
             const personName = document.getElementById('personName').value.trim();
             
@@ -347,15 +431,13 @@
             if (!file) return;
             
             const reader = new FileReader();
-            reader.onload = function(e) {
-                photos[personName] = e.target.result;
-                localStorage.setItem('vidushi_photos', JSON.stringify(photos));
-                
-                document.getElementById('generated-image').src = e.target.result;
-                document.getElementById('image-overlay').style.display = 'flex';
-                
-                speak(`${personName} નો ફોટો અપલોડ થયો`);
-                document.getElementById('personName').value = '';
+            reader.onload = async function(e) {
+                const saved = await savePhoto(personName, e.target.result);
+                if (saved) {
+                    document.getElementById('generated-image').src = e.target.result;
+                    document.getElementById('image-overlay').style.display = 'flex';
+                    document.getElementById('personName').value = '';
+                }
                 event.target.value = '';
             };
             reader.readAsDataURL(file);
@@ -371,31 +453,164 @@
             document.getElementById('stop-camera-btn').style.display = 'none';
         }
         
+        // =========== UI FUNCTIONS ===========
+        function playVideo(type) {
+            document.querySelectorAll('video').forEach(v => v.classList.remove('active'));
+            document.getElementById(`${type}-video`).classList.add('active');
+        }
+        
+        function toggleModal(modalId) {
+            const modal = document.getElementById(`${modalId}-modal`);
+            modal.style.display = modal.style.display === 'flex' ? 'none' : 'flex';
+            
+            if (modalId === 'contacts') {
+                loadContacts();
+            }
+        }
+        
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'gu-IN';
+                utterance.rate = 1.0;
+                
+                utterance.onstart = () => playVideo('talking');
+                utterance.onend = () => {
+                    playVideo('silent');
+                    document.getElementById('status-text').textContent = "માઇક પર ટેપ કરો";
+                };
+                
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+        
+        // =========== SETTINGS ===========
+        function openSettings() {
+            document.getElementById('userNameInput').value = userName;
+            document.getElementById('providerSelect').value = currentProvider;
+            document.getElementById('geminiKeyInput').value = geminiKey;
+            document.getElementById('groqKeyInput').value = groqKey;
+            
+            document.getElementById('gemini-settings').style.display = 
+                currentProvider === 'gemini' ? 'block' : 'none';
+            document.getElementById('groq-settings').style.display = 
+                currentProvider === 'gemini' ? 'none' : 'block';
+            
+            toggleModal('settings');
+        }
+        
+        function saveSettings() {
+            userName = document.getElementById('userNameInput').value.trim() || "સાહેબ";
+            currentProvider = document.getElementById('providerSelect').value;
+            geminiKey = document.getElementById('geminiKeyInput').value.trim();
+            groqKey = document.getElementById('groqKeyInput').value.trim();
+            
+            localStorage.setItem('vidushi_username', userName);
+            localStorage.setItem('vidushi_provider', currentProvider);
+            localStorage.setItem('vidushi_gemini_key', geminiKey);
+            localStorage.setItem('vidushi_groq_key', groqKey);
+            
+            speak("સેટિંગ્સ સેવ થઈ");
+            toggleModal('settings');
+        }
+        
         function closeImage() {
             document.getElementById('image-overlay').style.display = 'none';
             playVideo('silent');
         }
         
-        // =========== PHOTO SEARCH ===========
-        function findPhoto(name) {
-            const cleanName = name.toLowerCase()
-                .replace(/ભાઈ|બેન|જી|સર|નો|ની|નું|ના/g, "")
-                .trim();
+        // =========== COMPLETE VANSHAAVALI VIEW ===========
+        function show3DVanshavali() {
+            toggleModal('settings');
+            playVideo('thinking');
+            speak("વંશાવલી બતાવું છું");
             
-            // Exact match
-            if (photos[cleanName]) {
-                return { name: cleanName, url: photos[cleanName] };
+            const modal = document.createElement('div');
+            modal.style.cssText = `
+                position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                background: rgba(0,0,0,0.98); z-index: 2000; padding: 20px; 
+                color: white; overflow: auto; font-family: 'Arial', sans-serif;
+            `;
+            
+            modal.innerHTML = `
+                <div style="display: flex; justify-content: space-between; margin-bottom: 20px; align-items: center;">
+                    <h2 style="color: var(--accent);">🌌 પૂર્ણ વંશાવલી</h2>
+                    <button onclick="this.parentElement.parentElement.remove(); playVideo('silent');" 
+                            style="background: var(--primary); border: none; color: white; padding: 10px 20px; border-radius: 5px; cursor: pointer;">
+                        ✖ બંધ
+                    </button>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 10px; border: 1px solid var(--accent);">
+                    <div id="tree-container" style="font-size: 14px; line-height: 1.8;"></div>
+                </div>
+                <div style="margin-top: 20px; color: #aaa; font-size: 12px; text-align: center;">
+                    કુલ ${countPeople(vanshavaliData)} લોકો | ${countGenerations(vanshavaliData)} પેઢીઓ
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            renderTree(window.vanshavaliData, document.getElementById('tree-container'));
+        }
+        
+        function renderTree(node, container, level = 0) {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-node';
+            nodeDiv.style.marginLeft = (level * 20) + 'px';
+            
+            let html = `<div class="tree-node-name">${node.name}</div>`;
+            if (node.info) {
+                html += `<span class="tree-node-info">(${node.info})</span>`;
             }
             
-            // Partial match
-            for (const [savedName, url] of Object.entries(photos)) {
-                if (savedName.toLowerCase().includes(cleanName) || 
-                    cleanName.includes(savedName.toLowerCase())) {
-                    return { name: savedName, url };
-                }
-            }
+            nodeDiv.innerHTML = html;
+            container.appendChild(nodeDiv);
             
-            return null;
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    renderTree(child, container, level + 1);
+                });
+            }
+        }
+        
+        function countPeople(node) {
+            if (!node) return 0;
+            let count = 1;
+            if (node.children) {
+                node.children.forEach(child => {
+                    count += countPeople(child);
+                });
+            }
+            return count;
+        }
+        
+        function countGenerations(node) {
+            if (!node.children || node.children.length === 0) return 1;
+            let maxDepth = 0;
+            node.children.forEach(child => {
+                maxDepth = Math.max(maxDepth, countGenerations(child));
+            });
+            return maxDepth + 1;
+        }
+        
+        // =========== CONTACTS ===========
+        async function loadContacts() {
+            const contacts = await getFromFirebase("contacts");
+            const listDiv = document.getElementById('contacts-list');
+            listDiv.innerHTML = '';
+            
+            if (contacts.length === 0) {
+                listDiv.innerHTML = '<div class="list-item">કોઈ સંપર્ક નથી</div>';
+            } else {
+                contacts.forEach(contact => {
+                    const div = document.createElement('div');
+                    div.className = 'list-item';
+                    div.innerHTML = `
+                        <div><strong>${contact.name}</strong></div>
+                        <small>${contact.phone}</small>
+                    `;
+                    listDiv.appendChild(div);
+                });
+            }
         }
         
         // =========== VOICE FUNCTIONS ===========
@@ -410,29 +625,26 @@
             recognition.continuous = false;
             
             recognition.onstart = () => {
-                isListening = true;
                 document.getElementById('mic-btn').style.background = 'red';
                 document.getElementById('status-text').textContent = "સાંભળું છું...";
                 playVideo('thinking');
             };
             
-            recognition.onresult = (event) => {
+            recognition.onresult = async (event) => {
                 const transcript = event.results[0][0].transcript;
                 document.getElementById('status-text').textContent = transcript;
-                processCommand(transcript);
+                await processCommand(transcript);
             };
             
             recognition.onend = () => {
-                isListening = false;
                 document.getElementById('mic-btn').style.background = 'var(--primary)';
-                document.getElementById('status-text').textContent = "માઇક પર ટેપ કરો";
             };
             
             recognition.start();
         }
         
         // =========== COMMAND PROCESSING ===========
-        function processCommand(text) {
+        async function processCommand(text) {
             const cmd = text.toLowerCase();
             
             // 1. PHOTO SHOWING - FIXED
@@ -444,14 +656,7 @@
                     return;
                 }
                 
-                const photo = findPhoto(name);
-                if (photo) {
-                    document.getElementById('generated-image').src = photo.url;
-                    document.getElementById('image-overlay').style.display = 'flex';
-                    speak(`${photo.name} નો ફોટો આ રહ્યો`);
-                } else {
-                    speak(`${name} નો કોઈ ફોટો મળ્યો નથી`);
-                }
+                await showPhoto(name);
                 return;
             }
             
@@ -471,55 +676,65 @@
                 return;
             }
             
-            // 3. 3D VANSHAVALI
+            // 3. VANSHAAVALI
             if (cmd.includes('વંશાવલી') || cmd.includes('ફેમિલી ટ્રી')) {
                 show3DVanshavali();
                 return;
             }
             
-            // 4. AI CHAT
-            speakAIResponse(text);
-        }
-        
-        function speakAIResponse(text) {
-            let response = "";
-            
-            if (text.includes('કેમ છો')) {
-                response = `હું મજામાં છું ${userName}ભાઈ. તમે કેમ છો?`;
-            } else if (text.includes('તમારું નામ')) {
-                response = "મારું નામ વિદુષી AI છે. હું દેવેન્દ્રભાઈ દ્વારા બનાવવામાં આવી છું.";
-            } else if (text.includes('વંશાવલી')) {
-                response = "મારી પાસે વિસ્તૃત વંશાવલીની માહિતી છે. 3D વંશાવલી જોવા મેનૂમાં જાવ.";
-            } else {
-                response = `તમે કહ્યું: "${text}". હજુ હું આ શીખી રહી છું.`;
+            // 4. GREETINGS
+            if (cmd.includes('હેલો') || cmd.includes('કેમ છો')) {
+                speak(`નમસ્તે ${userName}ભાઈ, હું મજામાં છું. તમે કેમ છો?`);
+                return;
             }
             
-            speak(response);
-        }
-        
-        function speak(text) {
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(text);
-                utterance.lang = 'gu-IN';
-                utterance.rate = 1.0;
-                
-                utterance.onstart = () => playVideo('talking');
-                utterance.onend = () => {
-                    playVideo('silent');
-                    document.getElementById('status-text').textContent = "માઇક પર ટેપ કરો";
-                };
-                
-                window.speechSynthesis.speak(utterance);
-            } else {
-                alert(text);
-            }
+            // 5. DEFAULT RESPONSE
+            speak(`તમે કહ્યું: "${text}". હજુ હું આ શીખી રહી છું.`);
         }
         
         // =========== INITIALIZATION ===========
         window.onload = () => {
             playVideo('silent');
-            speak(`નમસ્તે ${userName}ભાઈ, વિદુષી AI તૈયાર છે`);
+            
+            // Check Firebase connection
+            if (window.firestore) {
+                console.log("Firebase connected successfully");
+                document.getElementById('status-text').textContent = "Firebase કનેક્ટેડ";
+            } else {
+                console.warn("Firebase not connected");
+                document.getElementById('status-text').textContent = "Firebase એરર";
+            }
+            
+            setTimeout(() => {
+                speak(`નમસ્તે ${userName}ભાઈ, વિદુષી AI તૈયાર છે`);
+                document.getElementById('status-text').textContent = "માઇક પર ટેપ કરો";
+            }, 1000);
         };
+        
+        // =========== RAG UPLOAD ===========
+        function openRAGUpload() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.pdf,.txt,.doc,.docx';
+            input.onchange = async (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    playVideo('thinking');
+                    speak("દસ્તાવેજ પ્રોસેસ કરી રહ્યાં છું");
+                    
+                    // Here you can add RAG processing logic
+                    await saveToFirebase("documents", {
+                        name: file.name,
+                        type: file.type,
+                        size: file.size,
+                        uploadedAt: new Date().toISOString()
+                    });
+                    
+                    speak(`${file.name} અપલોડ થયો`);
+                }
+            };
+            input.click();
+        }
     </script>
 </body>
 </html>
