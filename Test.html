@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate RAG (Smart Lens Fix)</title>
+    <title>Vidushi AI - Ultimate RAG (Smart Search)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -23,7 +23,7 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; user-select: none; color: white; }
 
         /* Video Layers */
-        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; background: #000; }
+        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index:1; background: #000; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; opacity: 0; transition: opacity 0.5s; }
         video.active { opacity: 1; }
         
@@ -42,7 +42,7 @@
         /* Form Elements */
         input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #222; color: white; border: 1px solid #444; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
         button { cursor: pointer; }
-        .save-btn { width: 100%; padding: 12px; background: var(--primary); border: none; color: white; margin-top: 15px; border-radius: 5px; font-weight: bold; }
+        .save-btn { width: 100%; padding: 12px; background: var(--primary); border: none; color: white; margin-top: 15px; border-radius:5px; font-weight: bold; }
         
         /* Lists & Grids */
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
@@ -61,10 +61,10 @@
         /* Specifics */
         #rag-status { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 50; }
         #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid var(--accent); border-radius: 15px; padding: 15px; z-index: 150; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
-        .lens-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+        .lens-modes { display: grid; grid-template-columns:1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
         .mode-btn { background: #333; color: #aaa; border: 1px solid #555; padding: 8px; border-radius: 5px; font-size: 10px; text-align: center; }
         .mode-btn.active { background: var(--accent); color: black; font-weight: bold; }
-        .action-row { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; width: 100%; }
+        .action-row { display: flex; justify-content: space-around; border-top:1px solid #444; padding-top: 10px; width: 100%; }
         .arch-btn { display: flex; flex-direction: column; align-items: center; color: white; cursor: pointer; font-size: 12px; }
         
         /* App & Image Viewer */
@@ -75,12 +75,16 @@
         /* 3D UNIVERSE */
         #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
         #graph-container { width: 100%; height: 100%; }
-        #close-3d-btn { position: fixed; top: 20px; right: 20px; background: var(--primary); color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; border-radius: 5px; cursor: pointer; }
+        #close-3d-btn { position: absolute; top: 20px; right: 20px; background: var(--primary); color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; border-radius: 5px; cursor: pointer; }
+
+        /* Photo Manager Section */
+        #manager-video { width: 100%; border-radius: 10px; border: 2px solid var(--accent); transform: scaleX(-1); }
+        .photo-actions { display: flex; gap: 10px; margin-top: 10px; }
 
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity:1; } }
         
-        /* New Image Overlay Style */
+        /* Image Overlay */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; flex-direction: column; align-items: center; justify-content: center; }
         #generated-image { max-width: 90%; max-height: 70%; border: 3px solid var(--primary); border-radius: 10px; }
         .overlay-btns { margin-top: 20px; display: flex; gap: 15px; }
@@ -147,6 +151,8 @@
                 <div class="menu-btn" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf" style="color:red;"></i> દસ્તાવેજ</div>
                 
                 <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-eye" style="color:var(--accent);"></i> Smart Lens</div>
+                <div class="menu-btn" onclick="window.openFeature('photo-manager')"><i class="fas fa-camera-retro" style="color:#ff69b4;"></i> ફોટો ID</div>
+                
                 <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid var(--accent);"><i class="fas fa-globe" style="color:var(--accent);"></i> 🌌 3D વંશાવલી</div>
             </div>
 
@@ -202,6 +208,39 @@
         </div>
     </div>
 
+    <!-- PHOTO MANAGER MODAL -->
+    <div id="photo-manager-modal" class="modal">
+        <div class="settings-box" style="text-align: left;">
+            <div style="display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;">
+                <span>ફોટો ઓળખ (Photo ID)</span>
+                <span onclick="window.toggleModal('photo-manager')" style="cursor:pointer">✖</span>
+            </div>
+            
+            <label>વ્યક્તિનું નામ:</label>
+            <input type="text" id="photoPersonName" placeholder="દા.ત. દેવેન્દ્રભાઈ">
+            
+            <div class="photo-actions">
+                <button class="save-btn" style="flex:1; background:#008cff;" onclick="window.startPhotoCaptureMode()">
+                    <i class="fas fa-camera"></i> કેમેરો
+                </button>
+                <button class="save-btn" style="flex:1; background:var(--accent);" onclick="document.getElementById('gallery-photo-upload').click()">
+                    <i class="fas fa-images"></i> ગેલેરી
+                </button>
+            </div>
+            <input type="file" id="gallery-photo-upload" accept="image/*" style="display:none;" onchange="window.handleGalleryPhotoUpload(this)">
+            
+            <div id="photo-capture-area" style="display:none; margin-top:15px; text-align:center;">
+                <video id="manager-video" autoplay playsinline muted></video>
+                <button class="save-btn" style="background:green;" onclick="window.captureManagerPhoto()">
+                    <i class="fas fa-camera"></i> કેપ્ચર અને સેવ
+                </button>
+                <button class="save-btn" style="background:red;" onclick="window.stopPhotoCamera()">
+                    <i class="fas fa-times"></i> રદ કરો
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div id="notes-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>ડાયરી</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
     <div id="music-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
     <div id="expense-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>હિસાબ</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
@@ -235,7 +274,7 @@
     </div>
 
     <script type="module">
-        // --- VANSHAVALI DATA (Embedded) ---
+        // --- CLEANED VANSHAVALI DATA ---
         window.vanshavaliData = {
             name: "જગદગુરુ રામાનંદાચાર્યજી", 
             info: "વિ. સં. ૧૩૫૬",
@@ -262,52 +301,19 @@
                                                     { 
                                                         name: "આશારામજી", 
                                                         children: [
-                                                            { 
-                                                                name: "ગિરધરદાસજી", 
-                                                                children: [
-                                                                    { name: "હરીરામજી" }
-                                                                ] 
-                                                            }, 
+                                                            { name: "ગિરધરદાસજી" }, 
                                                             { 
                                                                 name: "મોજીરમજી", 
-                                                                children: [
-                                                                    { 
-                                                                        name: "જેજેરામ", 
-                                                                        children: [
-                                                                            { name: "ગૌતમ" }
-                                                                        ] 
-                                                                    }
-                                                                ] 
+                                                                children: [{ name: "જેજેરામ" }] 
                                                             }, 
-                                                            { 
-                                                                name: "સીતારામજી", 
-                                                                children: [
-                                                                    { name: "પ્રભુદાસ" }, 
-                                                                    { name: "રાજુભાઈ" }
-                                                                ] 
-                                                            }
+                                                            { name: "સીતારામજી" }
                                                         ]
                                                     },
                                                     { 
                                                         name: "વ્રજેશરામજી", 
                                                         children: [
-                                                            { 
-                                                                name: "ભગવાનદાસજી", 
-                                                                info: "ગાંગોદ", 
-                                                                children: [
-                                                                    { name: "બાબુરામજી" }, 
-                                                                    { name: "ઈશ્વરદાસજી" }
-                                                                ] 
-                                                            }, 
-                                                            { 
-                                                                name: "તુલસીદાસજી", 
-                                                                info: "રોજકા", 
-                                                                children: [
-                                                                    { name: "મનસુખભાઈ" }, 
-                                                                    { name: "વિમુભાઈ" }, 
-                                                                    { name: "પરશુરામ" }
-                                                                ] 
-                                                            }
+                                                            { name: "ભગવાનદાસજી", info: "ગાંગોદ" }, 
+                                                            { name: "તુલસીદાસજી", info: "રોજકા" }
                                                         ]
                                                     }
                                                 ]
@@ -345,7 +351,7 @@
         };
 
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- FIREBASE CONFIG ---
         const firebaseConfig = {
@@ -358,7 +364,7 @@
             measurementId: "G-ZM9RS2J6SR"
         };
 
-        let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
+        let app, db, userDocRef, settingsDocRef, vanshavaliDocRef, galleryRef;
         
         // --- STATE MANAGEMENT ---
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
@@ -372,8 +378,9 @@
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         window.ragContent = ""; 
+        let managerVideoStream = null; 
 
-        // --- HELPER: Format Vanshavali Tree for AI Prompt ---
+        // --- HELPER: Format Vanshavali Tree ---
         window.formatVanshavaliTree = function(node, level = 0) {
             if (!node) return "";
             let indent = "  ".repeat(level);
@@ -388,12 +395,20 @@
             return output;
         };
 
+        function convertTreeToGraph(node, nodes = [], links = [], parent = null) {
+            nodes.push({ id: node.name });
+            if (parent) links.push({ source: parent.name, target: node.name });
+            if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node));
+            return { nodes, links };
+        }
+
         try {
             app = initializeApp(firebaseConfig);
             db = getFirestore(app);
             userDocRef = doc(db, "vidushi_db", "main_memory");
             settingsDocRef = doc(db, "vidushi_db", "settings");
             vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
+            galleryRef = collection(db, "vidushi_gallery");
             loadCloudSettings();
             loadVanshavaliFromCloud(); 
         } catch (err) { console.error("Firebase Error", err); document.getElementById('status-text').innerText = "DB Error: " + err.message; }
@@ -426,9 +441,7 @@
         }
         
         async function loadVanshavaliFromCloud() {
-            if (window.vanshavaliData) {
-                window.activeFamilyTree = window.vanshavaliData;
-            }
+            window.activeFamilyTree = window.vanshavaliData;
             if(!db) return;
             try {
                 const docSnap = await getDoc(vanshavaliDocRef);
@@ -475,10 +488,10 @@
 
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
-            'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain the logic in Gujarati.`,
+            'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain logic in Gujarati.`,
             'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
-            'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
-            'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
+            'object': `Identify main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
+            'summary': `Read the text in this document image. Provide a concise summary of main points in Gujarati. Bullet points preferred.`
         };
 
         let currentVisionPrompt = visionPrompts['history'];
@@ -489,6 +502,7 @@
         const canvas = document.getElementById('canvas-capture');
         const imageOverlay = document.getElementById('image-overlay');
         const generatedImage = document.getElementById('generated-image');
+        const managerVideo = document.getElementById('manager-video');
         
         const videos = {
             silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'),
@@ -540,7 +554,154 @@
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
         };
 
-        window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
+        window.toggleModal = (type) => { 
+            const m = document.getElementById(type+'-modal'); 
+            m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; 
+            if(type==='notes') window.renderNotes(); 
+            if(type==='expense') window.renderExpenses(); 
+            if(type==='contacts') window.renderContacts();
+            if(type === 'photo-manager' && m.style.display === 'none') window.stopPhotoCamera();
+        };
+
+        // --- HELPER: RESIZE IMAGE ---
+        window.resizeImage = (base64Str, maxWidth = 640, maxHeight = 640) => {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    let width = img.width;
+                    let height = img.height;
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img,0,0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.6));
+                };
+                img.onerror = (err) => {
+                    console.error("Image Load Error", err);
+                    resolve(base64Str);
+                };
+            });
+        };
+
+        // --- PHOTO MANAGER FUNCTIONS ---
+        window.startPhotoCaptureMode = async () => {
+            const nameInput = document.getElementById('photoPersonName');
+            const name = nameInput.value.trim(); 
+            if(!name) {
+                alert("કૃપા કરીને નામ લખો.");
+                return;
+            }
+            try {
+                managerVideoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                managerVideo.srcObject = managerVideoStream;
+                document.getElementById('photo-capture-area').style.display = 'block';
+            } catch(e) {
+                alert("કેમેરો એક્સેસ મળતું નથી.");
+            }
+        };
+
+        // --- GALLERY UPLOAD FUNCTION ---
+        window.handleGalleryPhotoUpload = async (input) => {
+            const file = input.files[0];
+            const nameInput = document.getElementById('photoPersonName');
+            const name = nameInput.value.trim(); 
+            
+            if(!name) {
+                alert("પહેલા વ્યક્તિનું નામ લખો.");
+                input.value = '';
+                return;
+            }
+            
+            if(!file) return;
+
+            if(!db) { alert("Firebase કનેક્ટ થયું નથી."); return; }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const rawBase64 = e.target.result;
+                const resizedBase64 = await window.resizeImage(rawBase64);
+                
+                const sizeInBytes = Math.round((resizedBase64.length * 3) / 4);
+                if(sizeInBytes > 1000000) {
+                    alert("ફોટો બહુ મોટો છે.");
+                    return;
+                }
+                
+                generatedImage.src = resizedBase64;
+                imageOverlay.style.display = 'flex';
+                
+                try {
+                    // IMPORTANT: Saving 'name' as a field too for flexible search
+                    await setDoc(doc(db, "vidushi_gallery", name), {
+                        name: name, // Saving name in data for searching
+                        imageUrl: resizedBase64,
+                        timestamp: Date.now()
+                    });
+                    window.speak(`${name} નો ફોટો સેવ થયો.`);
+                    window.toggleModal('photo-manager');
+                    document.getElementById('photoPersonName').value = '';
+                    input.value = ''; 
+                } catch(err) {
+                    console.error(err);
+                    alert("ભૂળ: " + err.message);
+                }
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.captureManagerPhoto = async () => {
+            const name = document.getElementById('photoPersonName').value.trim();
+            canvas.width = managerVideo.videoWidth;
+            canvas.height = managerVideo.videoHeight;
+            canvas.getContext('2d').translate(canvas.width, 0);
+            canvas.getContext('2d').scale(-1, 1); 
+            canvas.getContext('2d').drawImage(managerVideo, 0, 0);
+            
+            const rawBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            const resizedBase64 = await window.resizeImage(rawBase64);
+            
+            generatedImage.src = resizedBase64;
+            imageOverlay.style.display = 'flex';
+            
+            if(db) {
+                try {
+                    await setDoc(doc(db, "vidushi_gallery", name), {
+                        name: name,
+                        imageUrl: resizedBase64,
+                        timestamp: Date.now()
+                    });
+                    window.speak(`${name} નો ફોટો સેવ થયો.`);
+                    window.stopPhotoCamera();
+                    window.toggleModal('photo-manager'); 
+                    document.getElementById('photoPersonName').value = ''; 
+                } catch(err) {
+                    alert("ભૂળ: " + err.message);
+                }
+            }
+        };
+
+        window.stopPhotoCamera = () => {
+            if(managerVideoStream) {
+                managerVideoStream.getTracks().forEach(t => t.stop());
+                managerVideoStream = null;
+                managerVideo.srcObject = null;
+            }
+            document.getElementById('photo-capture-area').style.display = 'none';
+        };
+
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("નોંધ લીધી."); };
         window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n) => `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
         window.deleteNote = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_notes", id)); };
@@ -558,40 +719,74 @@
         window.playMusic = (q) => { window.speak(`વગાડું છે ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         window.closeImage = () => { imageOverlay.style.display='none'; playVideo('silent'); isProcessing=false; document.getElementById('download-btn').style.display = 'none'; };
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ."); };
-        function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; window.speak("એપ બનાવી."); return true; } return false; }
+        function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; window.speak("એપ બનાવી."); return true; } return false }
 
-        // --- NEW FUNCTIONS FOR PHOTO SAVING ---
+        // --- PHOTO SAVING LOGIC (VOICE) ---
         window.saveCapturedPhoto = async (name) => {
             if(!db) return;
             window.speak(`${name} ના નામે ફોટો સેવ કરું છું.`);
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
-            const base64Image = canvas.toDataURL('image/jpeg', 0.5); // 0.5 Quality to stay under 1MB
-            
+            const rawBase64 = canvas.toDataURL('image/jpeg', 0.8);
+            const resizedBase64 = await window.resizeImage(rawBase64);
+
             try {
-                await setDoc(doc(db, "vidushi_gallery", name), {
-                    imageUrl: base64Image,
-                    timestamp: Date.now()
-                });
+                await setDoc(doc(db, "vidushi_gallery", name.trim()), { 
+                    name: name.trim(), // Save name in data
+                    imageUrl: resizedBase64, 
+                    timestamp: Date.now() 
+                }); 
                 window.speak("ફોટો સેવ થઈ ગયો.");
                 window.stopVisionCamera();
-            } catch(e) { window.speak("સેવ કરવામાં ભૂલ થઈ."); }
+            } catch(e) { 
+                console.error(e); 
+                window.speak("સેવ કરવામાં ભૂલ થઈ: " + e.code); 
+            }
         };
 
+        // --- PHOTO SHOWING LOGIC (SMART SEARCH) ---
         window.showPersonPhoto = async (name) => {
             if(!db) return;
             statusText.innerText = "Searching...";
+            
+            // DEBUG: Tell user what name is being searched
+            window.speak(`Searching for ${name}.`);
+
             try {
-                const docRef = doc(db, "vidushi_gallery", name);
+                // 1. Try Exact ID Match (Fastest)
+                const docRef = doc(db, "vidushi_gallery", name.trim());
                 const docSnap = await getDoc(docRef);
+                
                 if (docSnap.exists()) {
                     const data = docSnap.data();
                     generatedImage.src = data.imageUrl;
                     imageOverlay.style.display = 'flex';
                     playVideo('smiling');
                     window.speak(`${name} નો ફોટો આ રહ્યો.`);
-                } else { window.speak("આ નામનો કોઈ ફોટો મળ્યો નથી."); }
-            } catch(e) { window.speak("શોધવામાં ભૂલ થઈ."); }
+                } else {
+                    // 2. Fallback: Search whole collection for case-insensitive match
+                    const querySnapshot = await getDocs(collection(db, "vidushi_gallery"));
+                    let found = false;
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        // Compare saved name (from data field) with queried name
+                        if (data.name && data.name.toLowerCase() === name.toLowerCase()) {
+                            found = true;
+                            generatedImage.src = data.imageUrl;
+                            imageOverlay.style.display = 'flex';
+                            playVideo('smiling');
+                            window.speak(`${data.name} નો ફોટો આ રહ્યો.`);
+                        }
+                    });
+                    
+                    if (!found) {
+                        window.speak("આ નામનો કોઈ ફોટો મળ્યો નથી.");
+                    }
+                }
+            } catch(e) { 
+                console.error(e);
+                window.speak("શોધવામાં ભૂલ થઈ."); 
+            }
             isProcessing = false;
         };
 
@@ -599,22 +794,22 @@
             if(text.trim().length < 2) return;
             let cmd = text.toLowerCase();
             
-            // PHOTO SAVE COMMAND
-            if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && cmd.includes("સેવ કર")) {
-                let name = text.replace(/આ ફોટો|ફોટો|ચિત્ર|સેવ કર|ના નામે|નામે/g, "").trim();
+            // SAFE REGEX FOR SAVING
+            if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && cmd.includes("સેવ")) {
+                let name = text.replace(/ફોટો|ચિત્ર|સેવ|કર|આ|નામે|ને/g, "").trim();
                 if(name) {
                     if(!visionStream) {
                         window.speak("કેમેરો ચાલુ કરું છું.");
-                        await window.activateVision("environment");
+                        await window.activateVision("user");
                         setTimeout(() => window.saveCapturedPhoto(name), 3000);
                     } else { window.saveCapturedPhoto(name); }
                 } else { window.speak("કોના નામે સેવ કરવો છે તે જણાવો."); }
                 return;
             }
 
-            // PHOTO SHOW COMMAND
+            // SAFE REGEX FOR SHOWING
             if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && (cmd.includes("બતાવ") || cmd.includes("દેખાડ"))) {
-                let name = text.replace(/ફોટો|ચિત્ર|બતાવ|દેખાડ|નો|ની|નું/g, "").trim();
+                let name = text.replace(/ફોટો|ચિત્ર|બતાવ|દેખાડ|આ|નો|ની|નું|ના|શું|છે|બતાવો/g, "").trim();
                 if(name) { window.showPersonPhoto(name); } else { window.speak("કોનો ફોટો જોવો છે?"); }
                 return;
             }
@@ -706,8 +901,27 @@
         window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageOverlay.style.display='flex'; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + Date.now(); generatedImage.onload = () => { window.speak("તૈયાર!"); }; };
-        window.open3DVanshavali = () => { if(!window.activeFamilyTree) return; document.getElementById('settings-modal').style.display = 'none'; document.getElementById('vanshavali-3d-modal').style.display = 'block'; const gData = convertTreeToGraph(window.activeFamilyTree); ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').onNodeClick(node => window.speak(node.id)); };
-        function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
+        
+        window.open3DVanshavali = () => {
+            if(!window.activeFamilyTree) { alert("Data not loaded yet."); return; }
+            document.getElementById('settings-modal').style.display = 'none';
+            const modal = document.getElementById('vanshavali-3d-modal');
+            modal.style.display = 'block';
+            document.getElementById('graph-container').innerHTML = '';
+            const gData = convertTreeToGraph(window.activeFamilyTree);
+            const Graph = ForceGraph3D();
+            Graph(document.getElementById('graph-container'))
+                .graphData(gData)
+                .nodeLabel('id')
+                .nodeAutoColorBy('id')
+                .onNodeClick(node => { window.speak(`આ ${node.id} છે.`); });
+        };
+        
+        window.close3DVanshavali = () => { 
+            document.getElementById('vanshavali-3d-modal').style.display = 'none'; 
+            document.getElementById('graph-container').innerHTML = ''; 
+            window.speak("વંશાવલી બંધ."); 
+        }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
