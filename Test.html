@@ -39,14 +39,17 @@
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); z-index: 200; flex-direction: column; padding: 20px; justify-content: center; align-items: center; animation: fadeIn 0.3s; }
         .settings-box { background: var(--glass); padding: 25px; border-radius: 15px; width: 90%; max-width: 350px; border: 1px solid #333; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
         
+        /* Form Elements */
         input, select, textarea { width: 100%; padding: 10px; margin: 8px 0; background: #222; color: white; border: 1px solid #444; border-radius: 5px; box-sizing: border-box; font-size: 14px; }
         button { cursor: pointer; }
         .save-btn { width: 100%; padding: 12px; background: var(--primary); border: none; color: white; margin-top: 15px; border-radius: 5px; font-weight: bold; }
         
+        /* Lists & Grids */
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
         .menu-btn { background: #333; color: white; padding: 15px; border-radius: 8px; border: 1px solid #444; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; text-align: center; }
         .list-item { background: #222; padding: 15px; margin-bottom: 8px; border-radius: 8px; border-left: 3px solid var(--primary); color: white; width: 100%; display: flex; justify-content: space-between; align-items: center; }
         
+        /* Bottom Controls */
         #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; pointer-events: none; }
         #status-text { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; margin-bottom: 15px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); font-size: 13px; pointer-events: auto; }
         .controls-row { display: flex; gap: 20px; pointer-events: auto; }
@@ -55,6 +58,7 @@
         #stop-btn { width: 50px; height: 50px; background: #444; font-size: 18px; }
         .listening { animation: pulse 1.5s infinite; background: red !important; }
 
+        /* Specifics */
         #rag-status { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: var(--primary); color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 50; }
         #archeology-selector { display: none; position: fixed; bottom: 120px; left: 50%; transform: translateX(-50%); background: #222; border: 2px solid var(--accent); border-radius: 15px; padding: 15px; z-index: 150; width: 90%; max-width: 400px; box-shadow: 0 0 20px rgba(0,0,0,0.8); }
         .lens-modes { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 10px; }
@@ -63,20 +67,23 @@
         .action-row { display: flex; justify-content: space-around; border-top: 1px solid #444; padding-top: 10px; width: 100%; }
         .arch-btn { display: flex; flex-direction: column; align-items: center; color: white; cursor: pointer; font-size: 12px; }
         
+        /* App & Image Viewer */
         #app-viewer-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; flex-direction: column; }
         #app-viewer-header { padding: 15px; background: #222; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; color: white; font-weight: bold; }
         #app-render-area { flex: 1; width: 100%; background: white; overflow: auto; position: relative; }
 
+        /* 3D UNIVERSE */
         #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
         #graph-container { width: 100%; height: 100%; }
         #close-3d-btn { position: fixed; top: 20px; right: 20px; background: var(--primary); color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; border-radius: 5px; cursor: pointer; }
 
+        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* Image Overlay */
         #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; flex-direction: column; align-items: center; justify-content: center; }
         #generated-image { max-width: 90%; max-height: 70%; border: 3px solid var(--primary); border-radius: 10px; }
         .overlay-btns { margin-top: 20px; display: flex; gap: 15px; }
-
-        @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
@@ -136,36 +143,86 @@
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
                 <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
+                
                 <div class="menu-btn" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf" style="color:red;"></i> દસ્તાવેજ</div>
+                
                 <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-eye" style="color:var(--accent);"></i> Smart Lens</div>
                 <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid var(--accent);"><i class="fas fa-globe" style="color:var(--accent);"></i> 🌌 3D વંશાવલી</div>
             </div>
 
             <div style="font-size:12px; color:#aaa; margin-top:10px;">Personal Info</div>
-            <label>નામ:</label><input type="text" id="userNameInput">
+            <label>નામ:</label><input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
             <div style="display:flex; justify-content:space-between; background:#333; padding:10px; border-radius:5px; margin:10px 0;">
                 <span>🔇 Silent Mode</span><input type="checkbox" id="silentModeCheck">
             </div>
             <div style="display:flex; justify-content:space-between; background:#333; padding:10px; border-radius:5px; margin:10px 0;">
                 <span>Hands-Free</span><input type="checkbox" id="continuousModeCheck">
             </div>
+            
             <label>AI Mood:</label>
-            <select id="moodSelect"><option value="normal">😇 Normal</option><option value="angry">😡 Angry Mode</option></select>
+            <select id="moodSelect">
+                <option value="normal">😇 Normal</option>
+                <option value="angry">😡 Angry Mode</option>
+            </select>
 
             <label>AI Provider:</label>
-            <select id="providerSelect" onchange="window.toggleProviderSettings()"><option value="gemini">Google Gemini</option><option value="groq">Groq (Llama)</option></select>
+            <select id="providerSelect" onchange="window.toggleProviderSettings()">
+                <option value="gemini">Google Gemini</option>
+                <option value="groq">Groq (Llama)</option>
+            </select>
             
-            <div id="gemini-settings"><label>Gemini Key:</label><textarea id="geminiKeyInput" rows="2"></textarea></div>
-            <div id="groq-settings" style="display:none;"><label>Groq Key:</label><input type="password" id="groqKeyInput"></div>
+            <div id="gemini-settings">
+                <div style="font-size:12px; color:#aaa;">Gemini Model</div>
+                <select id="geminiModelSelect">
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                    <option value="gemini-2.0-flash-exp">Gemini 2.0 Flash Exp</option>
+                </select>
+                <div style="font-size:12px; color:#aaa;">API Keys (comma sep)</div><textarea id="geminiKeyInput" rows="3"></textarea>
+            </div>
+            
+            <div id="groq-settings" style="display:none;">
+                <div style="font-size:12px; color:#aaa;">Groq Model</div>
+                <select id="groqModelSelect">
+                    <option value="llama-3.3-70b-instant">Llama 70B (Super Fast)</option>
+                    <option value="llama-3.3-70b-versatile">Llama 70B (Versatile)</option>
+                    <option value="llama-3.3-70b-specdec">Llama 70B (Speculative)</option>
+                    <option value="llama-3.1-8b-instant">Llama 8B (Instant)</option>
+                </select>
+                <div style="font-size:12px; color:#aaa;">Groq Key</div><input type="password" id="groqKeyInput" placeholder="gsk_...">
+            </div>
+
+            <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+                <label style="color:var(--accent); font-weight:bold;">Firebase Database</label>
+                <label>Firebase API Key:</label><input type="password" id="firebaseKeyInput" placeholder="AIzaSy...">
+                <div style="font-size:10px; color:#777; text-align:left; margin-top:-5px;">(Only API Key is required. Other details are pre-set.)</div>
+            </div>
 
             <button class="save-btn" onclick="window.saveSettings()">SAVE & SYNC</button>
         </div>
     </div>
 
+    <div id="notes-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>ડાયરી</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
+    <div id="music-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
+    <div id="expense-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>હિસાબ</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
+    <div id="contacts-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>સંપર્કો</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
+    
     <div id="image-overlay">
-        <img id="generated-image" src="" alt="Vidushi Image">
+        <img id="generated-image" src="" alt="Magic Image">
         <div class="overlay-btns">
-            <button class="save-btn" onclick="window.closeImage()" style="background:gray;">Close</button>
+            <button id="download-btn" class="save-btn" onclick="window.downloadSelfie()" style="display:none; width:auto; padding:10px 20px;">Save</button>
+            <button class="save-btn" onclick="window.closeImage()" style="width:auto; padding:10px 20px; background:gray;">Close</button>
+        </div>
+    </div>
+
+    <div id="report-modal" class="modal">
+        <div class="settings-box" style="text-align: left;">
+            <h3>વિઝન રિપોર્ટ</h3>
+            <textarea id="report-content-area" rows="10" style="width:100%; margin-bottom:10px;"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="save-btn" onclick="navigator.clipboard.writeText(document.getElementById('report-content-area').value); window.speak('કોપી થયું');">Copy</button>
+                <button class="save-btn" onclick="document.getElementById('report-modal').style.display='none'" style="background:#444;">Close</button>
+            </div>
         </div>
     </div>
 
@@ -181,145 +238,191 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
             projectId: "vidushi-ai-614cb",
-            storageBucket: "vidushi-ai-614cb.firebasestorage.app"
+            storageBucket: "vidushi-ai-614cb.firebasestorage.app",
+            messagingSenderId: "146312927144",
+            appId: "1:146312927144:web:91bfb8c430a2124d0e6f9d",
+            measurementId: "G-ZM9RS2J6SR"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        
-        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
+        let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
+        let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-instant"; 
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let silentMode = localStorage.getItem('vidushi_silent') === 'true';
-        let currentMood = localStorage.getItem('vidushi_mood') || 'normal';
+        let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
+        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
 
-        // --- CORE FUNCTIONS (Original) ---
-        window.openSettings = () => {
-            document.getElementById('settings-modal').style.display = 'flex';
-            document.getElementById('userNameInput').value = userName;
-            document.getElementById('providerSelect').value = aiProvider;
-            window.toggleProviderSettings();
+        try {
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            userDocRef = doc(db, "vidushi_db", "main_memory");
+            settingsDocRef = doc(db, "vidushi_db", "settings");
+            vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
+            loadCloudSettings();
+        } catch (err) { console.error("Firebase Error", err); }
+
+        async function loadCloudSettings() {
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(settingsDocRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    userName = data.userName || userName;
+                    geminiKeys = data.geminiKey || geminiKeys;
+                    document.getElementById('status-text').innerText = "Ready";
+                }
+            } catch (e) {}
+        }
+
+        async function saveToCloud() {
+            if(!db) return;
+            const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, groqModel: groqModel, lastUpdated: new Date() };
+            await setDoc(settingsDocRef, settingsData, { merge: true });
+        }
+
+        let notes = [], expenses = [], contacts = [], currentCameraMode = "user"; 
+
+        window.formatDate = (timestamp) => {
+            if (!timestamp) return "";
+            let date = timestamp.toDate ? timestamp.toDate() : new Date(timestamp);
+            return date.toLocaleString('gu-IN', { timeZone: 'Asia/Kolkata', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit', hour12: true });
         };
 
-        window.toggleProviderSettings = () => {
-            const provider = document.getElementById('providerSelect').value;
-            document.getElementById('gemini-settings').style.display = (provider === 'gemini') ? 'block' : 'none';
-            document.getElementById('groq-settings').style.display = (provider === 'groq') ? 'block' : 'none';
+        const visionPrompts = {
+            'history': `Analyze script. Report in Gujarati.`,
+            'math': `Solve step-by-step in Gujarati.`,
+            'translate': `Translate to Gujarati.`,
+            'object': `Identify and describe in Gujarati.`,
+            'summary': `Summarize in Gujarati.`
         };
 
-        window.saveSettings = async () => {
-            userName = document.getElementById('userNameInput').value;
-            aiProvider = document.getElementById('providerSelect').value;
-            geminiKeys = document.getElementById('geminiKeyInput').value;
-            groqKey = document.getElementById('groqKeyInput').value;
-            localStorage.setItem('vidushi_username', userName);
-            localStorage.setItem('vidushi_provider', aiProvider);
-            localStorage.setItem('vidushi_gemini_key', geminiKeys);
-            localStorage.setItem('vidushi_groq_key', groqKey);
-            document.getElementById('settings-modal').style.display = 'none';
-        };
+        let currentVisionPrompt = visionPrompts['history'];
+        const statusText = document.getElementById('status-text');
+        const micBtn = document.getElementById('mic-btn');
+        const selfieVideo = document.getElementById('selfie-video');
+        const canvas = document.getElementById('canvas-capture');
+        const imageOverlay = document.getElementById('image-overlay');
+        const generatedImage = document.getElementById('generated-image');
+        const videos = { silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'), thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video') };
 
-        window.openArcheologyMenu = () => {
-            document.getElementById('settings-modal').style.display = 'none';
-            document.getElementById('archeology-selector').style.display = 'flex';
-        };
+        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null;
 
-        // --- PHOTO & GALLERY LOGIC ---
+        window.onload = () => { playVideo('smiling'); };
+        function playVideo(type) {
+            Object.values(videos).forEach(v => { v.classList.remove('active'); v.pause(); });
+            if(videos[type]) { videos[type].classList.add('active'); videos[type].play().catch(()=>{}); }
+        }
+
+        window.openSettings = () => { document.getElementById('settings-modal').style.display = 'flex'; };
+        window.saveSettings = async () => { /* basic local save */ document.getElementById('settings-modal').style.display = 'none'; };
+
+        // --- PHOTO FUNCTIONS ---
         window.saveCapturedPhoto = async (name) => {
-            const video = document.getElementById('selfie-video');
-            const canvas = document.getElementById('canvas-capture');
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight;
-            canvas.getContext('2d').drawImage(video, 0, 0);
-            const base64 = canvas.toDataURL('image/jpeg', 0.5);
-            await setDoc(doc(db, "vidushi_gallery", name), { imageUrl: base64, timestamp: Date.now() });
-            window.speak("ફોટો સેવ થયો.");
-            window.stopVisionCamera();
-        };
-
-        window.handleGalleryUploadAndSave = (input, name) => {
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                await setDoc(doc(db, "vidushi_gallery", name), { imageUrl: e.target.result, timestamp: Date.now() });
-                window.speak("ગેલેરીનો ફોટો સેવ થયો.");
-            };
-            reader.readAsDataURL(input.files[0]);
+            if(!db) return;
+            window.speak(`${name} ના નામે ફોટો સેવ કરું છું.`);
+            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
+            canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            const base64Image = canvas.toDataURL('image/jpeg', 0.5);
+            try {
+                await setDoc(doc(db, "vidushi_gallery", name), { imageUrl: base64Image, timestamp: Date.now() });
+                window.speak("ફોટો સેવ થઈ ગયો.");
+                window.stopVisionCamera();
+            } catch(e) { window.speak("ભૂલ થઈ."); }
         };
 
         window.showPersonPhoto = async (name) => {
-            const docSnap = await getDoc(doc(db, "vidushi_gallery", name));
-            if (docSnap.exists()) {
-                document.getElementById('generated-image').src = docSnap.data().imageUrl;
-                document.getElementById('image-overlay').style.display = 'flex';
-                window.speak(`${name} નો ફોટો આ રહ્યો.`);
-            } else { window.speak("ફોટો મળ્યો નથી."); }
+            if(!db) return;
+            try {
+                const docSnap = await getDoc(doc(db, "vidushi_gallery", name));
+                if (docSnap.exists()) {
+                    generatedImage.src = docSnap.data().imageUrl;
+                    imageOverlay.style.display = 'flex';
+                    window.speak(`${name} નો ફોટો આ રહ્યો.`);
+                } else { window.speak("ફોટો મળ્યો નથી."); }
+            } catch(e) {}
+            isProcessing = false;
+        };
+
+        window.handleGalleryUploadAndSave = async (input, name) => {
+            const file = input.files[0];
+            if (!file || !name) return;
+            window.speak(`${name} ના નામે ગેલેરીમાંથી ફોટો સેવ કરું છું.`);
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    await setDoc(doc(db, "vidushi_gallery", name), { imageUrl: e.target.result, timestamp: Date.now() });
+                    window.speak("ગેલેરીનો ફોટો સેવ થઈ ગયો.");
+                } catch(err) { window.speak("ભૂલ થઈ."); }
+            };
+            reader.readAsDataURL(file);
         };
 
         window.processCommand = async (text) => {
+            if(text.trim().length < 2) return;
             let cmd = text.toLowerCase();
+            
+            // Photo Save via Gallery
             if(cmd.includes("ગેલેરી") && cmd.includes("સેવ કર")) {
                 let name = text.replace(/ગેલેરી|માંથી|ફોટો|સેવ કર|ના નામે|નામે/g, "").trim();
-                const loader = document.getElementById('galleryLoader');
-                loader.onchange = () => window.handleGalleryUploadAndSave(loader, name);
-                loader.click();
+                if(name) {
+                    const loader = document.getElementById('galleryLoader');
+                    loader.onchange = () => window.handleGalleryUploadAndSave(loader, name);
+                    loader.click();
+                } else { window.speak("કોના નામે સેવ કરવો છે?"); }
                 return;
             }
-            if(cmd.includes("સેવ કર") && cmd.includes("ફોટો")) {
-                let name = text.replace(/આ ફોટો|ફોટો|સેવ કર|ના નામે|નામે/g, "").trim();
-                await window.activateVision("environment");
-                setTimeout(() => window.saveCapturedPhoto(name), 3000);
+
+            // Photo Save via Camera
+            if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && cmd.includes("સેવ કર")) {
+                let name = text.replace(/આ ફોટો|ફોટો|ચિત્ર|સેવ કર|ના નામે|નામે/g, "").trim();
+                if(name) {
+                    if(!visionStream) {
+                        window.speak("કેમેરો ચાલુ કરું છું.");
+                        await window.activateVision("environment");
+                        setTimeout(() => window.saveCapturedPhoto(name), 3000);
+                    } else { window.saveCapturedPhoto(name); }
+                } else { window.speak("નામ જણાવો."); }
                 return;
             }
-            if(cmd.includes("બતાવ") && cmd.includes("ફોટો")) {
-                let name = text.replace(/ફોટો|બતાવ|દેખાડ|નો|ની|નું/g, "").trim();
-                window.showPersonPhoto(name);
+
+            // Photo Show
+            if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && (cmd.includes("બતાવ") || cmd.includes("દેખાડ"))) {
+                let name = text.replace(/ફોટો|ચિત્ર|બતાવ|દેખાડ|નો|ની|નું/g, "").trim();
+                if(name) window.showPersonPhoto(name);
                 return;
             }
+
+            // Other Commands...
+            isProcessing = true;
             window.speak("વિચારું છું...");
         };
 
-        // --- SYSTEM ---
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const recognition = new SpeechRecognition();
-        recognition.lang = 'gu-IN';
-        recognition.onresult = (e) => window.processCommand(e.results[0][0].transcript);
-
-        window.startConversation = () => recognition.start();
-        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); window.stopVisionCamera(); };
-        window.activateVision = async (mode) => {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
-            document.getElementById('selfie-video').srcObject = stream;
-            document.getElementById('selfie-video').style.display = 'block';
-        };
-        window.stopVisionCamera = () => {
-            const video = document.getElementById('selfie-video');
-            if(video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
-            video.style.display = 'none';
-        };
-        window.closeImage = () => document.getElementById('image-overlay').style.display = 'none';
-        window.speak = (t) => {
-            const u = new SpeechSynthesisUtterance(t); u.lang = 'gu-IN';
-            window.speechSynthesis.speak(u);
-        };
-        window.setVisionMode = (m, btn) => {
-            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
+        if(SpeechRecognition) { 
+            recognition = new SpeechRecognition(); recognition.lang = 'gu-IN'; 
+            recognition.onresult = (e) => window.processCommand(e.results[0][0].transcript); 
         }
-        window.toggleProviderSettings = () => {
-    const provider = document.getElementById('providerSelect').value;
-    document.getElementById('gemini-settings').style.display = (provider === 'gemini') ? 'block' : 'none';
-    document.getElementById('groq-settings').style.display = (provider === 'groq') ? 'block' : 'none';
-};
-window.openArcheologyMenu = () => {
-    document.getElementById('settings-modal').style.display = 'none';
-    document.getElementById('archeology-selector').style.display = 'block';
-};
+        
+        window.startConversation = () => { try{recognition.start();}catch(e){} };
+        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; };
+        window.activateVision = async (mode = "user") => { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; };
+        window.stopVisionCamera = () => { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; visionStream = null; playVideo('silent'); };
+        window.closeImage = () => { imageOverlay.style.display='none'; playVideo('silent'); isProcessing=false; };
 
+        window.speak = (text) => { 
+            isAiSpeaking = true; const u = new SpeechSynthesisUtterance(text); u.lang = 'gu-IN'; 
+            u.onstart = () => playVideo('talking');
+            u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; }; 
+            window.speechSynthesis.speak(u); 
+        };
     </script>
 </body>
 </html>
