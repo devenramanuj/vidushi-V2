@@ -309,7 +309,17 @@
         window.setVisionMode = (m, btn) => {
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-        };
+        }
+        window.toggleProviderSettings = () => {
+    const provider = document.getElementById('providerSelect').value;
+    document.getElementById('gemini-settings').style.display = (provider === 'gemini') ? 'block' : 'none';
+    document.getElementById('groq-settings').style.display = (provider === 'groq') ? 'block' : 'none';
+};
+window.openArcheologyMenu = () => {
+    document.getElementById('settings-modal').style.display = 'none';
+    document.getElementById('archeology-selector').style.display = 'block';
+};
+
     </script>
 </body>
 </html>
