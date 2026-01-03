@@ -79,6 +79,11 @@
 
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        
+        /* New Image Overlay Style */
+        #image-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 500; flex-direction: column; align-items: center; justify-content: center; }
+        #generated-image { max-width: 90%; max-height: 70%; border: 3px solid var(--primary); border-radius: 10px; }
+        .overlay-btns { margin-top: 20px; display: flex; gap: 15px; }
     </style>
 </head>
 <body>
@@ -201,9 +206,15 @@
     <div id="music-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
     <div id="expense-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>હિસાબ</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
     <div id="contacts-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>સંપર્કો</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
-    <div id="image-overlay"><img id="generated-image" src="" alt="Magic Image"><div class="overlay-btns"><button class="save-btn" onclick="window.downloadSelfie()" style="width:auto; padding:10px 20px;">Save</button><button class="save-btn" onclick="window.closeImage()" style="width:auto; padding:10px 20px; background:gray;">Close</button></div></div>
+    
+    <div id="image-overlay">
+        <img id="generated-image" src="" alt="Magic Image">
+        <div class="overlay-btns">
+            <button id="download-btn" class="save-btn" onclick="window.downloadSelfie()" style="display:none; width:auto; padding:10px 20px;">Save</button>
+            <button class="save-btn" onclick="window.closeImage()" style="width:auto; padding:10px 20px; background:gray;">Close</button>
+        </div>
+    </div>
 
-    <!-- Report Modal for Vision -->
     <div id="report-modal" class="modal">
         <div class="settings-box" style="text-align: left;">
             <h3>વિઝન રિપોર્ટ</h3>
@@ -414,33 +425,21 @@
             } catch (e) { console.error("Sync Error", e); }
         }
         
-        // --- UPDATED: Always load local data first, then sync with cloud ---
         async function loadVanshavaliFromCloud() {
-            // 1. Load Local Data immediately so 3D works even offline
             if (window.vanshavaliData) {
                 window.activeFamilyTree = window.vanshavaliData;
-                console.log("Vanshavali loaded from local storage.");
             }
-
-            if(!db) {
-                console.log("Database not available, using local data.");
-                return;
-            }
-
+            if(!db) return;
             try {
                 const docSnap = await getDoc(vanshavaliDocRef);
                 if (docSnap.exists()) {
-                    // 2. Override with cloud data if exists
                     window.activeFamilyTree = docSnap.data().tree;
-                    console.log("Vanshavali loaded from Cloud.");
                 } else {
-                    // 3. If cloud is empty, upload local data to cloud
                     if(window.vanshavaliData) {
                         await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
-                        console.log("Local Vanshavali synced to Cloud.");
                     }
                 }
-            } catch(e) { console.error("Vanshavali Error, falling back to local.", e); }
+            } catch(e) { console.error("Vanshavali Error", e); }
         }
 
         async function saveToCloud() {
@@ -484,7 +483,6 @@
 
         let currentVisionPrompt = visionPrompts['history'];
         let selectedLensMode = 'history';
-        let isSilentListening = false;
         const statusText = document.getElementById('status-text');
         const micBtn = document.getElementById('mic-btn');
         const selfieVideo = document.getElementById('selfie-video');
@@ -497,12 +495,9 @@
             thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video')
         };
 
-        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null, wakeLock = null;
+        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null;
 
-        window.onload = () => {
-            playVideo('smiling'); window.speechSynthesis.getVoices();
-            if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
-        };
+        window.onload = () => { playVideo('smiling'); };
 
         function playVideo(type) {
             if(selfieVideo.style.display === 'block') return;
@@ -515,25 +510,14 @@
             document.getElementById('userNameInput').value = userName; 
             document.getElementById('providerSelect').value = aiProvider; 
             document.getElementById('geminiKeyInput').value = geminiKeys; 
-            document.getElementById('geminiModelSelect').value = geminiModel; 
             document.getElementById('groqKeyInput').value = groqKey; 
-            document.getElementById('groqModelSelect').value = groqModel; 
             document.getElementById('continuousModeCheck').checked = continuousMode; 
             document.getElementById('silentModeCheck').checked = silentMode; 
             document.getElementById('moodSelect').value = currentMood; 
-            document.getElementById('firebaseKeyInput').value = localStorage.getItem('vidushi_firebase_apiKey') || '';
             window.toggleProviderSettings(); 
         };
         window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
-        
-        // IMPROVED LOGIC: Treat 'આખો' (Open) and 'સેટિંગ્સ' (Settings) as request for Archeology
-        window.openArcheologyMenu = () => { 
-            document.getElementById('settings-modal').style.display = 'none'; 
-            document.getElementById('archeology-selector').style.display = 'flex'; 
-            // Ensure the 'History' mode is selected by default when opening
-            window.setVisionMode('history', document.querySelector('.mode-btn')); 
-        };
-        
+        window.openArcheologyMenu = () => { document.getElementById('settings-modal').style.display = 'none'; document.getElementById('archeology-selector').style.display = 'flex'; window.setVisionMode('history', document.querySelector('.mode-btn')); };
         window.toggleProviderSettings = () => { 
             document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; 
             document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; 
@@ -543,26 +527,15 @@
             userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
             aiProvider = document.getElementById('providerSelect').value; 
             geminiKeys = document.getElementById('geminiKeyInput').value.trim(); 
-            geminiModel = document.getElementById('geminiModelSelect').value; 
             groqKey = document.getElementById('groqKeyInput').value.trim(); 
-            groqModel = document.getElementById('groqModelSelect').value; 
-            
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value; 
-            let firebaseKey = document.getElementById('firebaseKeyInput').value.trim();
-
-            // Save all to LocalStorage
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
-            localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
-            localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
+            localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_groq_key', groqKey); 
             localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
             localStorage.setItem('vidushi_mood', currentMood);
-            localStorage.setItem('vidushi_firebase_apiKey', firebaseKey);
-
-            // Save to Cloud
-            try { await saveToCloud(); } catch(e) { console.warn("Cloud save failed, but local saved."); }
-            
+            try { await saveToCloud(); } catch(e) {}
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
         };
@@ -584,24 +557,68 @@
         window.sendMessage = (text) => { let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને વોટ્સએપ ખોલું છે.`); setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
         window.playMusic = (q) => { window.speak(`વગાડું છે ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         window.closeImage = () => { imageOverlay.style.display='none'; playVideo('silent'); isProcessing=false; document.getElementById('download-btn').style.display = 'none'; };
-        
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ."); };
-        function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી."); return true; } return false; }
-        
-        // --- MAIN COMMAND LOGIC ---
+        function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; window.speak("એપ બનાવી."); return true; } return false; }
+
+        // --- NEW FUNCTIONS FOR PHOTO SAVING ---
+        window.saveCapturedPhoto = async (name) => {
+            if(!db) return;
+            window.speak(`${name} ના નામે ફોટો સેવ કરું છું.`);
+            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
+            canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
+            const base64Image = canvas.toDataURL('image/jpeg', 0.5); // 0.5 Quality to stay under 1MB
+            
+            try {
+                await setDoc(doc(db, "vidushi_gallery", name), {
+                    imageUrl: base64Image,
+                    timestamp: Date.now()
+                });
+                window.speak("ફોટો સેવ થઈ ગયો.");
+                window.stopVisionCamera();
+            } catch(e) { window.speak("સેવ કરવામાં ભૂલ થઈ."); }
+        };
+
+        window.showPersonPhoto = async (name) => {
+            if(!db) return;
+            statusText.innerText = "Searching...";
+            try {
+                const docRef = doc(db, "vidushi_gallery", name);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    generatedImage.src = data.imageUrl;
+                    imageOverlay.style.display = 'flex';
+                    playVideo('smiling');
+                    window.speak(`${name} નો ફોટો આ રહ્યો.`);
+                } else { window.speak("આ નામનો કોઈ ફોટો મળ્યો નથી."); }
+            } catch(e) { window.speak("શોધવામાં ભૂલ થઈ."); }
+            isProcessing = false;
+        };
+
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
-            const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
             
-            // IMPROVED: If user says 'આખો' or similar, treat it as 'Archeology' request
-            if(cmd.includes("આખો") || cmd.includes("સેટિંગ્સ")) {
-                document.getElementById('settings-modal').style.display = 'none'; 
-                document.getElementById('archeology-selector').style.display = 'flex';
-                window.setVisionMode('history', document.querySelector('.mode-btn'));
+            // PHOTO SAVE COMMAND
+            if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && cmd.includes("સેવ કર")) {
+                let name = text.replace(/આ ફોટો|ફોટો|ચિત્ર|સેવ કર|ના નામે|નામે/g, "").trim();
+                if(name) {
+                    if(!visionStream) {
+                        window.speak("કેમેરો ચાલુ કરું છું.");
+                        await window.activateVision("environment");
+                        setTimeout(() => window.saveCapturedPhoto(name), 3000);
+                    } else { window.saveCapturedPhoto(name); }
+                } else { window.speak("કોના નામે સેવ કરવો છે તે જણાવો."); }
                 return;
             }
-            
+
+            // PHOTO SHOW COMMAND
+            if((cmd.includes("ફોટો") || cmd.includes("ચિત્ર")) && (cmd.includes("બતાવ") || cmd.includes("દેખાડ"))) {
+                let name = text.replace(/ફોટો|ચિત્ર|બતાવ|દેખાડ|નો|ની|નું/g, "").trim();
+                if(name) { window.showPersonPhoto(name); } else { window.speak("કોનો ફોટો જોવો છે?"); }
+                return;
+            }
+
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { window.makeCall(text); return; }
             if(cmd.includes("મેસેજ કર")) { window.sendMessage(text); return; }
             if(cmd.includes("ચિત્ર") && cmd.includes("બનાવ")) { window.generateMagicImage(text.replace("ચિત્ર બનાવ","")); return; }
@@ -609,43 +626,23 @@
             if(cmd.includes("નોંધ")) { window.addNote(text.replace("નોંધ","")); return; }
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
-            if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { currentVisionPrompt = visionPrompts['object']; window.captureAndAnalyze("environment"); return; }
+            if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે")) { currentVisionPrompt = visionPrompts['object']; window.captureAndAnalyze("environment"); return; }
             
             isProcessing = true; statusText.innerText = "Thinking..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
-        // --- SYSTEM PROMPT ---
         function getSystemPrompt(memories, contextData) { 
-            let moodPrompt = "You are a helpful assistant."; 
-            if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
-            
-            let familyDataString = ""; 
-            try { 
-                if (window.activeFamilyTree) { 
-                    familyDataString = `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}`; 
-                } 
-            } catch (e) { console.error(e); } 
-            
-            // RAG CONTENT
-            let ragContext = "";
-            if(window.ragContent && window.ragContent.length > 0) {
-                const safeContent = window.ragContent.substring(0, 500000); 
-                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
-            }
-
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
+            let familyDataString = window.activeFamilyTree ? `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}` : ""; 
+            return `User: ${userName}, Mood: ${currentMood}. ${familyDataString} [Memory]: ${memories} Question: "${contextData}" [GEN UI]: If asked for a tool/app, wrap HTML/CSS/JS in :::APP_START::: and :::APP_END:::`; 
         }
 
         window.askGeminiText = async (userText) => { 
             let keys = geminiKeys.split(',').filter(k => k); 
             if (!keys.length) { window.speak("API Key નથી."); isProcessing = false; return; } 
-            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); 
-            
             let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); 
             contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
-            
             try { 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
                     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) 
@@ -659,22 +656,16 @@
                         window.speak(reply); 
                     } 
                 } else { window.speak("જવાબ મળ્યો."); } 
-            } catch (e) { 
-                window.speak("Network Error."); 
-                isProcessing = false; 
-            } 
+            } catch (e) { window.speak("Network Error."); isProcessing = false; } 
         };
         
-        // --- GROQ ---
         window.askGroqText = async (userText) => { 
             if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } 
-            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText);
-
             let messages = [{ role: "system", content: systemInstruction }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; 
             try { 
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
-                    method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages, temperature: 0.7, max_tokens: 2048 }) 
+                    method: "POST", headers: { "Authorization": `Bearer ${groqKey}`, "Content-Type": "application/json" }, body: JSON.stringify({ model: groqModel, messages: messages }) 
                 }); 
                 const data = await res.json(); 
                 if(data.choices) { 
@@ -682,176 +673,60 @@
                     window.chatHistory.push({ role: "user", content: userText }); 
                     window.chatHistory.push({ role: "assistant", content: reply }); 
                     window.speak(reply); 
-                } else { window.speak("જવાબ નથી મળ્યો."); } 
-            } catch (e) { 
-                window.speak("Network Error."); 
-                isProcessing = false; 
-            } 
+                } 
+            } catch (e) { window.speak("Network Error."); isProcessing = false; } 
         };
         
-        // --- VISION ---
         window.askGeminiVision = async (base64Image) => { 
-            let keys = geminiKeys.split(',').filter(k=>k); 
-            if(!keys.length) { window.speak("API Key નથી."); return; } 
+            let keys = geminiKeys.split(',').filter(k=>k); if(!keys.length) return; 
             try { 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
-                    method: "POST", 
-                    headers: { "Content-Type": "application/json" }, 
-                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
+                    method: "POST", headers: { "Content-Type": "application/json" }, 
+                    body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
                 }); 
                 const data = await response.json(); 
-                
-                if(data.error) {
-                    console.error(data.error);
-                    document.getElementById('report-modal').style.display = 'flex';
-                    document.getElementById('report-content-area').value = "GOOGLE ERROR:\n" + data.error.message;
-                    window.speak("ગુગલ એરર.");
-                    window.closeImage();
-                    return;
-                }
-
                 if(data.candidates) { 
                     const text = data.candidates[0].content.parts[0].text; 
                     document.getElementById('report-modal').style.display = 'flex'; 
                     document.getElementById('report-content-area').value = text; 
-                    window.closeImage(); 
-                    if(!silentMode) { window.speak("રિપોર્ટ તૈયાર."); } else { isProcessing = false; playVideo('silent'); } 
-                } else { 
-                    console.log(data); 
-                    window.speak("કોઈ જવાબ મળ્યો."); 
+                    window.closeImage(); window.speak("રિપોર્ટ તૈયાર."); 
                 } 
-            } catch (e) { 
-                console.error(e); 
-                window.speak("Network Error."); 
-            } 
-        };
-        
-        // --- RAG ---
-        window.handleRAGUpload = async (input) => {
-            const file = input.files[0];
-            if (!file) return;
-            window.speak("ફાઈલ વાંચવાનું કામ ચાલુ છે...");
-            document.getElementById('rag-status').style.display = 'block';
-            document.getElementById('rag-status').innerText = '⏳ Reading File...';
-
-            try {
-                let extractedText = "";
-                if (file.type === "application/pdf") {
-                    const arrayBuffer = await file.arrayBuffer();
-                    const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-                    for (let i = 1; i <= pdf.numPages; i++) {
-                        const page = await pdf.getPage(i);
-                        const textContent = await page.getTextContent();
-                        const pageText = textContent.items.map(item => item.str).join(" ");
-                        extractedText += pageText + "\n";
-                        document.getElementById('rag-status').innerText = `Reading Page ${i}/${pdf.numPages}...`;
-                    }
-                } else { extractedText = await file.text(); }
-                window.ragContent = extractedText.replace(/\s+/g, " ").trim();
-                document.getElementById('rag-status').innerText = '✅ RAG Ready';
-                window.speak("ફાઈલ વાંચી."); playVideo('smiling');
-            } catch (e) {
-                console.error(e);
-                document.getElementById('rag-status').style.background = 'red';
-                document.getElementById('rag-status').innerText = '❌ Error';
-                window.speak("ભૂલ થઈ.");
-            }
+            } catch (e) { window.speak("Network Error."); } 
         };
 
-        // --- CAMERA & VISION ---
-        window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
-        
+        window.captureAndAnalyze = async (mode = "user") => { if (!visionStream) { await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
         window.takeActualPhoto = () => {
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
-            const base64Image = canvas.toDataURL('image/jpeg');
-            window.stopVisionCamera(); 
-            playVideo('thinking');
-            generatedImage.src = base64Image; generatedImage.style.display = "block"; imageOverlay.style.display = 'flex';
+            const base64Image = canvas.toDataURL('image/jpeg'); window.stopVisionCamera(); 
+            generatedImage.src = base64Image; imageOverlay.style.display = 'flex';
             window.askGeminiVision(base64Image.split(',')[1]);
         };
         
-        let liveModel = null; let isLiveVisionActive = false;
-        window.startLiveVision = async (btn) => { document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); document.getElementById('archeology-selector').style.display = 'none'; document.getElementById('video-container').style.display = 'none'; if(!silentMode) window.speak("કેમેરો ચાલુ..."); await window.activateVision("environment"); if(!liveModel) { if(!silentMode) window.speak("મોડેલ લોડ થાય છે..."); liveModel = await cocoSsd.load(); } isLiveVisionActive = true; document.getElementById('canvas-capture').style.display = 'block'; window.detectFrame(); };
-        window.detectFrame = () => { if(!isLiveVisionActive) return; const video = document.getElementById('selfie-video'); const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); liveModel.detect(video).then(predictions => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); predictions.forEach(prediction => { ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke(); ctx.font = 'bold 24px Arial'; ctx.fillStyle = '#00ff00'; ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30); ctx.fillStyle = '#000000'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5); }); if(isLiveVisionActive) requestAnimationFrame(window.detectFrame); }); };
-
-        // --- ARCHEOLOGY MENUS ---
-        window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
+        window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); };
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
-        window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageOverlay.style.display = 'flex'; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
-        window.generateMagicImage = (p) => { playVideo('thinking'); imageOverlay.style.display='flex'; generatedImage.style.display="none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { generatedImage.style.display="block"; window.speak("તૈયાર!"); }; };
-        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('graph-container').innerHTML = ''; window.speak("3D બંધ."); };
-        
-        // --- CRITICAL FIX: Force new data on open ---
-        window.open3DVanshavali = () => { 
-            // Force load the data from the current hardcoded JSON to ensure it's the latest
-            if(window.vanshavaliData) {
-                window.activeFamilyTree = window.vanshavaliData;
-                // Sync this new data to the cloud if connected, so next time it loads correctly too
-                if(db && vanshavaliDocRef) {
-                    setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
-                }
-            }
-
-            if(!window.activeFamilyTree) { window.speak("ડેટા નથી."); return; } 
-            document.getElementById('settings-modal').style.display = 'none'; 
-            document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
-            const gData = convertTreeToGraph(window.activeFamilyTree); 
-            const Graph = ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').nodeAutoColorBy('group').linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).onNodeClick(node => { const distance = 40; const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z); Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000); window.speak("આ છે " + node.id + ". " + (node.info || "")); }); 
-            window.speak("3D વંશાવલી ખોલો."); 
-        };
-
-        function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
+        window.generateMagicImage = (p) => { playVideo('thinking'); imageOverlay.style.display='flex'; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + Date.now(); generatedImage.onload = () => { window.speak("તૈયાર!"); }; };
+        window.open3DVanshavali = () => { if(!window.activeFamilyTree) return; document.getElementById('settings-modal').style.display = 'none'; document.getElementById('vanshavali-3d-modal').style.display = 'block'; const gData = convertTreeToGraph(window.activeFamilyTree); ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').onNodeClick(node => window.speak(node.id)); };
+        function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
             recognition = new SpeechRecognition(); recognition.lang = 'gu-IN'; 
-            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = isSilentListening ? "નોંધ લઉં છે..." : "સાંભળું છે..."; }; 
-            recognition.onend = () => { 
-                micBtn.classList.remove('listening'); 
-                if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) try{recognition.start();}catch(e){} 
-                else if(!isProcessing) statusText.innerText = "Tap Mic"; 
-            }; 
-            recognition.onresult = (e) => { 
-                let text = e.results[0][0].transcript; 
-                console.log("🎤:", text); 
-                if(text.trim()) window.processCommand(text); 
-            }; 
+            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = "સાંભળું છે..."; }; 
+            recognition.onend = () => { micBtn.classList.remove('listening'); if (continuousMode && !isAiSpeaking && !isProcessing) try{recognition.start();}catch(e){} }; 
+            recognition.onresult = (e) => { window.processCommand(e.results[0][0].transcript); }; 
         }
         
         window.startConversation = () => { try{recognition.start();}catch(e){} };
-        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
-        window.activateVision = async (mode = "user") => { 
-            try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; } catch(e) { alert("Camera Error: " + e); } 
-        };
-        window.stopVisionCamera = () => { 
-            isLiveVisionActive = false; 
-            document.getElementById('canvas-capture').style.display = 'none'; 
-            const canvas = document.getElementById('canvas-capture'); 
-            const ctx = canvas.getContext('2d'); 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            
-            if(visionStream) {
-                visionStream.getTracks().forEach(t => t.stop());
-            } 
-            
-            selfieVideo.style.display = 'none'; 
-            document.getElementById('video-container').style.display = 'block'; 
-            visionMode = false; 
-            playVideo('silent'); 
-        };
+        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; };
+        window.activateVision = async (mode = "user") => { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; };
+        window.stopVisionCamera = () => { if(visionStream) visionStream.getTracks().forEach(t => t.stop()); selfieVideo.style.display = 'none'; visionStream = null; playVideo('silent'); };
 
-        window.speak = (text, forceSpeak = false) => { 
-            if(silentMode && !forceSpeak) { statusText.innerText = "Silent..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } 
-            const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "Speaking..."; isAiSpeaking = true; 
-            
-            const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; 
-            let voices = window.speechSynthesis.getVoices(); 
-            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); 
-            
-            if(bestVoice) u.voice = bestVoice; 
-            u.onstart = () => { playVideo('talking'); }; 
-            u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; 
+        window.speak = (text) => { 
+            if(silentMode) { isProcessing = false; return; } 
+            isAiSpeaking = true; const u = new SpeechSynthesisUtterance(text.replace(/[*#_]/g, "")); u.lang = 'gu-IN'; 
+            u.onstart = () => playVideo('talking');
+            u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) try{recognition.start();}catch(e){} }; 
             window.speechSynthesis.speak(u); 
         };
     </script>
