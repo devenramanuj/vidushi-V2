@@ -11,7 +11,7 @@
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
     <script src="//unpkg.com/3d-force-graph"></script>
@@ -96,7 +96,6 @@
     <canvas id="canvas-capture"></canvas>
 
     <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
-    
     <input type="file" id="docLoader" accept=".pdf,.txt,.csv,.js,.html,.py" style="display:none;" onchange="window.handleRAGUpload(this)">
 
     <button id="settings-btn" class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
@@ -204,6 +203,18 @@
     <div id="contacts-modal" class="modal"><div style="width:100%; display:flex; justify-content:space-between; color:var(--primary); font-size:20px; font-weight:bold; margin-bottom:20px; border-bottom:1px solid #333; padding-bottom:10px;"><span>સંપર્કો</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
     <div id="image-overlay"><img id="generated-image" src="" alt="Magic Image"><div class="overlay-btns"><button class="save-btn" onclick="window.downloadSelfie()" style="width:auto; padding:10px 20px;">Save</button><button class="save-btn" onclick="window.closeImage()" style="width:auto; padding:10px 20px; background:gray;">Close</button></div></div>
 
+    <!-- Report Modal for Vision -->
+    <div id="report-modal" class="modal">
+        <div class="settings-box" style="text-align: left;">
+            <h3>વિઝન રિપોર્ટ</h3>
+            <textarea id="report-content-area" rows="10" style="width:100%; margin-bottom:10px;"></textarea>
+            <div style="display:flex; gap:10px;">
+                <button class="save-btn" onclick="navigator.clipboard.writeText(document.getElementById('report-content-area').value); window.speak('કોપી થયું');">Copy</button>
+                <button class="save-btn" onclick="document.getElementById('report-modal').style.display='none'" style="background:#444;">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="mic-container">
         <div id="status-text">Tap Mic</div>
         <div class="controls-row">
@@ -212,10 +223,8 @@
         </div>
     </div>
 
-    <!-- DATA INTEGRATION STARTS HERE -->
-    <script>
-        // ફાઈલનું નામ: vanshavali_data.js
-        // આ ફાઈલમાં ફક્ત વંશાવલીનો ડેટા રહેશે.
+    <script type="module">
+        // --- VANSHAVALI DATA (Embedded) ---
         window.vanshavaliData = {
             name: "જગદગુરુ રામાનંદાચાર્યજી", 
             info: "વિ. સં. ૧૩૫૬",
@@ -323,10 +332,7 @@
                 }]
             }]
         };
-    </script>
-    <!-- DATA INTEGRATION ENDS HERE -->
 
-    <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
@@ -355,6 +361,21 @@
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         window.ragContent = ""; 
+
+        // --- HELPER: Format Vanshavali Tree for AI Prompt ---
+        window.formatVanshavaliTree = function(node, level = 0) {
+            if (!node) return "";
+            let indent = "  ".repeat(level);
+            let output = `${indent}- ${node.name}`;
+            if (node.info) output += ` (${node.info})`;
+            output += "\n";
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => {
+                    output += window.formatVanshavaliTree(child, level + 1);
+                });
+            }
+            return output;
+        };
 
         try {
             app = initializeApp(firebaseConfig);
@@ -393,13 +414,33 @@
             } catch (e) { console.error("Sync Error", e); }
         }
         
+        // --- UPDATED: Always load local data first, then sync with cloud ---
         async function loadVanshavaliFromCloud() {
-            if(!db) return;
+            // 1. Load Local Data immediately so 3D works even offline
+            if (window.vanshavaliData) {
+                window.activeFamilyTree = window.vanshavaliData;
+                console.log("Vanshavali loaded from local storage.");
+            }
+
+            if(!db) {
+                console.log("Database not available, using local data.");
+                return;
+            }
+
             try {
                 const docSnap = await getDoc(vanshavaliDocRef);
-                if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
-                else { if(window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
-            } catch(e) { console.error("Vanshavali Error", e); }
+                if (docSnap.exists()) {
+                    // 2. Override with cloud data if exists
+                    window.activeFamilyTree = docSnap.data().tree;
+                    console.log("Vanshavali loaded from Cloud.");
+                } else {
+                    // 3. If cloud is empty, upload local data to cloud
+                    if(window.vanshavaliData) {
+                        await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
+                        console.log("Local Vanshavali synced to Cloud.");
+                    }
+                }
+            } catch(e) { console.error("Vanshavali Error, falling back to local.", e); }
         }
 
         async function saveToCloud() {
@@ -580,7 +621,11 @@
             if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
             
             let familyDataString = ""; 
-            try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
+            try { 
+                if (window.activeFamilyTree) { 
+                    familyDataString = `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}`; 
+                } 
+            } catch (e) { console.error(e); } 
             
             // RAG CONTENT
             let ragContext = "";
@@ -736,7 +781,26 @@
         window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageOverlay.style.display = 'flex'; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageOverlay.style.display='flex'; generatedImage.style.display="none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { generatedImage.style.display="block"; window.speak("તૈયાર!"); }; };
         window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('graph-container').innerHTML = ''; window.speak("3D બંધ."); };
-        window.open3DVanshavali = () => { if(!window.activeFamilyTree) { window.speak("ડેટા નથી."); return; } document.getElementById('settings-modal').style.display = 'none'; document.getElementById('vanshavali-3d-modal').style.display = 'block'; const gData = convertTreeToGraph(window.activeFamilyTree); const Graph = ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').nodeAutoColorBy('group').linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).onNodeClick(node => { const distance = 40; const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z); Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000); window.speak("આ છે " + node.id + ". " + (node.info || "")); }); window.speak("3D વંશાવલી ખોલો."); };
+        
+        // --- CRITICAL FIX: Force new data on open ---
+        window.open3DVanshavali = () => { 
+            // Force load the data from the current hardcoded JSON to ensure it's the latest
+            if(window.vanshavaliData) {
+                window.activeFamilyTree = window.vanshavaliData;
+                // Sync this new data to the cloud if connected, so next time it loads correctly too
+                if(db && vanshavaliDocRef) {
+                    setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
+                }
+            }
+
+            if(!window.activeFamilyTree) { window.speak("ડેટા નથી."); return; } 
+            document.getElementById('settings-modal').style.display = 'none'; 
+            document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
+            const gData = convertTreeToGraph(window.activeFamilyTree); 
+            const Graph = ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').nodeAutoColorBy('group').linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).onNodeClick(node => { const distance = 40; const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z); Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000); window.speak("આ છે " + node.id + ". " + (node.info || "")); }); 
+            window.speak("3D વંશાવલી ખોલો."); 
+        };
+
         function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
