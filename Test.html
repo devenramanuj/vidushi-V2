@@ -3,120 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate 70B & Special Access</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <title>Vidushi AI - Jagadguru Vanshavali</title>
     
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
+    
     <script src="//unpkg.com/3d-force-graph"></script>
+    <script src="//unpkg.com/three"></script>
+    <script src="//unpkg.com/three-spritetext"></script>
 
     <style>
-        /* --- CORE STYLES --- */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; color: white; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; color: white; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
-        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
-        #rag-status { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); background: #008cff; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; z-index: 50; box-shadow: 0 0 10px #008cff; }
         
-        /* UI Elements */
-        .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.5); color: white; border: 1px solid #ff4500; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
-        .settings-box { background: #222; padding: 25px; border-radius: 15px; width: 90%; max-width: 400px; border: 1px solid #ff4500; color: white; text-align: center; max-height: 85vh; overflow-y: auto; }
-        input, select, textarea { width: 100%; padding: 10px; margin: 10px 0; background: #333; color: white; border: 1px solid #555; border-radius: 5px; box-sizing: border-box; }
-        .save-btn { width: 100%; padding: 12px; background: #ff4500; border: none; font-weight: bold; cursor: pointer; color: white; border-radius: 5px; }
+        .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.6); color: white; border: 1px solid #ff4500; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
         
-        .menu-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px; }
-        .menu-btn { background: #333; border: 1px solid #555; color: white; padding: 10px 5px; border-radius: 10px; cursor: pointer; display: flex; flex-direction: column; align-items: center; font-size: 10px; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; align-items: center; justify-content: center; }
+        .settings-box { background: #111; padding: 25px; border-radius: 15px; width: 85%; max-width: 380px; border: 1px solid #ff4500; text-align: center; }
         
-        #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; }
-        .round-btn { width: 65px; height: 65px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; display: flex; justify-content: center; align-items: center; transition: 0.2s; }
-        #mic-btn { background: #ff4500; box-shadow: 0 0 15px #ff4500; }
-        .listening { animation: pulse 1.5s infinite; background: red !important; }
-        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
-        #report-content-area { width: 100%; height: 50vh; background: #111; color: #ddd; padding: 10px; font-family: monospace; }
+        input, select { width: 100%; padding: 10px; margin: 10px 0; background: #222; color: white; border: 1px solid #444; border-radius: 5px; }
+        .save-btn { width: 100%; padding: 12px; background: #ff4500; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 5px; }
+        
+        #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; text-align: center; width: 100%; }
+        .round-btn { width: 65px; height: 65px; border-radius: 50%; border: none; color: white; font-size: 24px; cursor: pointer; background: #ff4500; box-shadow: 0 0 15px #ff4500; }
+        
+        #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 300; }
+        #close-graph { position: fixed; top: 20px; right: 20px; z-index: 310; background: red; color: white; border: none; padding: 10px 15px; border-radius: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div id="rag-status">📄 RAG Active</div>
-    
     <div id="video-container">
-        <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
-        <video id="talking-video" muted loop playsinline><source src="talking.mp4" type="video/mp4"></video>
-        <video id="thinking-video" muted loop playsinline><source src="thinking.mp4" type="video/mp4"></video>
+        <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4"></video>
+        <video id="talking-video" muted loop playsinline><source src="talking.mp4"></video>
     </div>
-    
-    <video id="selfie-video" autoplay playsinline></video>
-    <canvas id="canvas-capture"></canvas>
 
     <button class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
 
     <div id="settings-modal" class="modal">
         <div class="settings-box">
-            <h3>વિદુષી મેનૂ</h3>
-            <div class="menu-grid">
-                <div class="menu-btn" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf"></i> PDF</div>
-                <div class="menu-btn" onclick="window.open3DVanshavali()"><i class="fas fa-project-diagram"></i> 3D વંશ</div>
-                <div class="menu-btn" onclick="window.captureAndAnalyze('environment')"><i class="fas fa-eye"></i> લેન્સ</div>
-                <div class="menu-btn" onclick="alert('ડાયરી હજુ ડેવલપમેન્ટમાં છે')"><i class="fas fa-book"></i> ડાયરી</div>
-            </div>
-
-            <label>AI પ્રદાતા:</label>
-            <select id="providerSelect" onchange="window.toggleProviderSettings()">
-                <option value="gemini">Google Gemini</option>
-                <option value="groq">Groq (Llama 70B)</option>
+            <h3>વિદુષી સેટિંગ્સ</h3>
+            <button class="save-btn" style="background:#333; margin-bottom:10px;" onclick="window.open3DVanshavali()">
+                <i class="fas fa-project-diagram"></i> ૩D વંશાવલી જુઓ
+            </button>
+            
+            <label>AI Model:</label>
+            <select id="geminiModelSelect">
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
+                <option value="llama-3.3-70b-versatile">Groq Llama 70B</option>
             </select>
-
-            <div id="gemini-settings">
-                <select id="geminiModelSelect">
-                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Special)</option>
-                    <option value="gemini-2.5-pro">Gemini 2.5 Pro (Special)</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                </select>
-                <input type="password" id="geminiKeyInput" placeholder="Gemini API Key">
-            </div>
-
-            <div id="groq-settings" style="display:none;">
-                <select id="groqModelSelect">
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Best)</option>
-                    <option value="llama3-70b-8192">Llama 3 70B</option>
-                </select>
-                <input type="password" id="groqKeyInput" placeholder="Groq API Key (gsk_...)">
-            </div>
-
+            
+            <input type="password" id="apiKeyInput" placeholder="API Key અહીં નાખો">
             <input type="text" id="userNameInput" placeholder="તમારું નામ">
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE</button>
         </div>
     </div>
 
-    <div id="report-modal" class="modal">
-        <h3>સ્કેનિંગ રિપોર્ટ</h3>
-        <textarea id="report-content-area" readonly></textarea>
-        <button class="save-btn" onclick="document.getElementById('report-modal').style.display='none'">બંધ કરો</button>
+    <div id="vanshavali-3d-modal">
+        <button id="close-graph" onclick="window.close3DVanshavali()">બંધ કરો</button>
+        <div id="graph-container"></div>
     </div>
-
-    <div id="vanshavali-3d-modal" class="modal" style="padding:0; background:black;">
-        <button onclick="window.close3DVanshavali()" style="position:fixed; top:20px; right:20px; z-index:301; background:red; color:white; border:none; padding:10px;">X</button>
-        <div id="graph-container" style="width:100%; height:100%;"></div>
-    </div>
-
-    <input type="file" id="docLoader" style="display:none;" onchange="window.handleRAGUpload(this)">
 
     <div id="mic-container">
         <div id="status-text" style="margin-bottom:10px;">તૈયાર...</div>
-        <div style="display:flex; gap:20px;">
-            <button id="mic-btn" class="round-btn" onclick="window.startConversation()"><i class="fas fa-microphone"></i></button>
-            <button id="stop-btn" class="round-btn" style="background:#444;" onclick="window.stopConversation()"><i class="fas fa-stop"></i></button>
-        </div>
+        <button id="mic-btn" class="round-btn" onclick="window.startConversation()"><i class="fas fa-microphone"></i></button>
     </div>
 
-    <script type="module">
-        // --- ૧. વંશાવલી ડેટા ---
-        const vanshavaliData = {
+    <script>
+        // --- ૧. શુદ્ધ વંશાવલી ડેટા ---
+        const myFamilyData = {
             name: "જગદગુરુ રામાનંદાચાર્યજી", 
             info: "વિ. સં. ૧૩૫૬",
             children: [{
@@ -184,172 +143,75 @@
             }]
         };
 
-        // --- ૨. સેટિંગ્સ અને લોકલ સ્ટોરેજ ---
-        let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
-        let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
-        let ragContent = "";
-        let isProcessing = false;
-
-        window.openSettings = () => {
-            document.getElementById('settings-modal').style.display = 'flex';
-            document.getElementById('userNameInput').value = userName;
-            document.getElementById('geminiKeyInput').value = localStorage.getItem('vidushi_gemini_key') || "";
-            document.getElementById('groqKeyInput').value = localStorage.getItem('vidushi_groq_key') || "";
-            window.toggleProviderSettings();
-        };
-
-        window.toggleProviderSettings = () => {
-            const p = document.getElementById('providerSelect').value;
-            document.getElementById('gemini-settings').style.display = p === 'gemini' ? 'block' : 'none';
-            document.getElementById('groq-settings').style.display = p === 'groq' ? 'block' : 'none';
-        };
-
-        window.saveSettings = () => {
-            userName = document.getElementById('userNameInput').value;
-            aiProvider = document.getElementById('providerSelect').value;
-            localStorage.setItem('vidushi_username', userName);
-            localStorage.setItem('vidushi_provider', aiProvider);
-            localStorage.setItem('vidushi_gemini_key', document.getElementById('geminiKeyInput').value);
-            localStorage.setItem('vidushi_groq_key', document.getElementById('groqKeyInput').value);
-            localStorage.setItem('vidushi_gemini_model', document.getElementById('geminiModelSelect').value);
-            localStorage.setItem('vidushi_groq_model', document.getElementById('groqModelSelect').value);
+        // --- ૨. ૩D ગ્રાફ ફંક્શન (શુદ્ધ ડેટા સાથે) ---
+        window.open3DVanshavali = () => {
             document.getElementById('settings-modal').style.display = 'none';
-            window.speak("સેટિંગ્સ સેવ થયા છે.");
-        };
-
-        // --- ૩. AI અને API ઈન્ટિગ્રેશન ---
-        window.askAI = async (text) => {
-            if(isProcessing) return;
-            isProcessing = true;
-            playVideo('thinking');
+            document.getElementById('vanshavali-3d-modal').style.display = 'block';
             
-            const context = ragContent ? `\n[PDF Context]: ${ragContent}` : "";
-            const system = `તમે વિદુષી AI છો. વપરાશકર્તાનું નામ ${userName} છે. વંશાવલીની માહિતી: ${JSON.stringify(vanshavaliData)}. ${context} બધો જવાબ ગુજરાતીમાં આપો.`;
-
-            if(aiProvider === 'gemini') {
-                const model = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash";
-                const key = localStorage.getItem('vidushi_gemini_key');
-                try {
-                    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: system + "\nસવાલ: " + text }] }] })
-                    });
-                    const data = await res.json();
-                    window.speak(data.candidates[0].content.parts[0].text);
-                } catch(e) { window.speak("Gemini Error."); isProcessing=false; }
-            } else {
-                const model = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-versatile";
-                const key = localStorage.getItem('vidushi_groq_key');
-                try {
-                    const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                        method: "POST",
-                        headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-                        body: JSON.stringify({ model: model, messages: [{role: "system", content: system}, {role: "user", content: text}] })
-                    });
-                    const data = await res.json();
-                    window.speak(data.choices[0].message.content);
-                } catch(e) { window.speak("Groq Error."); isProcessing=false; }
+            const nodes = [], links = [];
+            function parse(node, parent = null) {
+                const id = node.name;
+                nodes.push({ id: id, info: node.info || "" });
+                if(parent) links.push({ source: parent.name, target: id });
+                if(node.children) node.children.forEach(c => parse(c, node));
             }
+            parse(myFamilyData);
+
+            // ગ્રાફ કન્ટેનરને સાફ કરો
+            document.getElementById('graph-container').innerHTML = '';
+
+            const Graph = ForceGraph3D()(document.getElementById('graph-container'))
+                .graphData({ nodes, links })
+                .nodeAutoColorBy('id')
+                .backgroundColor('#000000')
+                .nodeThreeObject(node => {
+                    // નામ બતાવવા માટે SpriteText નો ઉપયોગ
+                    const sprite = new SpriteText(node.id);
+                    sprite.color = '#ffffff';
+                    sprite.textHeight = 6; // ટેક્સ્ટની સાઈઝ
+                    return sprite;
+                })
+                .nodeThreeObjectExtend(true) // બિંદુ પણ રાખવું અને નામ પણ
+                .onNodeClick(node => {
+                    window.speak(node.id + " " + node.info);
+                });
+
+            // ગ્રાફને સેન્ટરમાં ગોઠવો
+            Graph.d3Force('charge').strength(-150);
         };
 
-        // --- ૪. અવાજ અને કેમેરો ---
-        const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-        recognition.lang = 'gu-IN';
+        window.close3DVanshavali = () => {
+            document.getElementById('vanshavali-3d-modal').style.display = 'none';
+        };
 
-        window.startConversation = () => { recognition.start(); document.getElementById('mic-btn').classList.add('listening'); };
-        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); isProcessing=false; };
-
-        recognition.onresult = (e) => {
-            const text = e.results[0][0].transcript;
-            document.getElementById('status-text').innerText = text;
-            window.askAI(text);
-            document.getElementById('mic-btn').classList.remove('listening');
+        // --- ૩. બેઝિક સેટિંગ્સ ---
+        window.openSettings = () => { document.getElementById('settings-modal').style.display='flex'; };
+        window.saveSettings = () => {
+            localStorage.setItem('vidushi_username', document.getElementById('userNameInput').value);
+            localStorage.setItem('vidushi_key', document.getElementById('apiKeyInput').value);
+            document.getElementById('settings-modal').style.display='none';
+            window.speak("સેટિંગ્સ સેવ થયા.");
         };
 
         window.speak = (text) => {
             const u = new SpeechSynthesisUtterance(text);
             u.lang = 'gu-IN';
-            u.onstart = () => playVideo('talking');
-            u.onend = () => { playVideo('silent'); isProcessing = false; };
+            u.onstart = () => { document.getElementById('talking-video').style.display='block'; };
+            u.onend = () => { document.getElementById('talking-video').style.display='none'; };
             window.speechSynthesis.speak(u);
         };
-
-        function playVideo(id) {
-            document.querySelectorAll('video').forEach(v => v.style.display = 'none');
-            document.getElementById(id + '-video').style.display = 'block';
-            document.getElementById(id + '-video').play();
-        }
-
-        // --- ૫. Smart Lens (Vision) ---
-        window.captureAndAnalyze = async (mode) => {
-            const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
-            const v = document.getElementById('selfie-video');
-            v.srcObject = stream; v.style.display = 'block';
-            window.speak("કેમેરો તૈયાર છે. ૩ સેકન્ડમાં ફોટો લેવાશે.");
-            setTimeout(() => {
-                const c = document.getElementById('canvas-capture');
-                c.width = v.videoWidth; c.height = v.videoHeight;
-                c.getContext('2d').drawImage(v, 0, 0);
-                const base64 = c.toDataURL('image/jpeg').split(',')[1];
-                stream.getTracks().forEach(t => t.stop());
-                v.style.display = 'none';
-                window.analyzeVision(base64);
-            }, 4000);
+        
+        window.startConversation = () => {
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'gu-IN';
+            rec.start();
+            rec.onresult = (e) => {
+                const speech = e.results[0][0].transcript;
+                document.getElementById('status-text').innerText = speech;
+                // અહીં તમે તમારી API Call ઉમેરી શકો છો
+                window.speak("તમે કહ્યું: " + speech);
+            };
         };
-
-        window.analyzeVision = async (base64) => {
-            const key = localStorage.getItem('vidushi_gemini_key');
-            const model = "gemini-1.5-flash"; // Vision માટે ફ્લેશ બેસ્ટ છે
-            playVideo('thinking');
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "આ ફોટામાં શું છે તે ગુજરાતીમાં સમજાવો." }, { inline_data: { mime_type: "image/jpeg", data: base64 } }] }] })
-                });
-                const data = await res.json();
-                const reply = data.candidates[0].content.parts[0].text;
-                document.getElementById('report-modal').style.display = 'flex';
-                document.getElementById('report-content-area').value = reply;
-                window.speak("વિશ્લેષણ પૂરું થયું.");
-            } catch(e) { window.speak("Vision Error."); }
-        };
-
-        // --- ૬. RAG અને 3D વંશાવલી ---
-        window.handleRAGUpload = async (input) => {
-            const file = input.files[0];
-            document.getElementById('rag-status').style.display = 'block';
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
-            let text = "";
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                text += content.items.map(item => item.str).join(" ");
-            }
-            ragContent = text;
-            document.getElementById('rag-status').innerText = '✅ PDF વંચાઈ ગઈ';
-            window.speak("મેં ફાઈલ વાંચી લીધી છે, હવે તમે તેમાંથી સવાલ પૂછી શકો છો.");
-        };
-
-        window.open3DVanshavali = () => {
-            document.getElementById('settings-modal').style.display = 'none';
-            document.getElementById('vanshavali-3d-modal').style.display = 'flex';
-            const nodes = [], links = [];
-            function parse(node, parent = null) {
-                nodes.push({ id: node.name, info: node.info || "" });
-                if(parent) links.push({ source: parent.name, target: node.name });
-                if(node.children) node.children.forEach(c => parse(c, node));
-            }
-            parse(vanshavaliData);
-            ForceGraph3D()(document.getElementById('graph-container'))
-                .graphData({ nodes, links })
-                .nodeAutoColorBy('id')
-                .onNodeClick(node => window.speak(node.id + " " + node.info));
-        };
-
-        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; };
     </script>
 </body>
 </html>
