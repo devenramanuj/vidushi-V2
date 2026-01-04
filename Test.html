@@ -91,6 +91,29 @@
         }
 
         // --- 🧩 ADD NEW FEATURES HERE (નવા ફીચર નીચે ઉમેરવા) ---
+// --- 📖 Diary Feature ---
+function addToDiary() {
+    const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+    rec.lang = 'gu-IN';
+    rec.onstart = () => document.getElementById('status').innerText = "ડાયરી માટે બોલો...";
+    rec.onresult = (e) => {
+        const note = e.results[0][0].transcript;
+        const diary = JSON.parse(localStorage.getItem('my_diary') || "[]");
+        const entry = { date: new Date().toLocaleString(), text: note };
+        diary.push(entry);
+        localStorage.setItem('my_diary', JSON.stringify(diary));
+        document.getElementById('status').innerText = "ડાયરીમાં નોંધાયું: " + note;
+        speak("મેં ડાયરીમાં નોંધી લીધું છે.");
+    };
+    rec.start();
+}
+
+function showDiary() {
+    const diary = JSON.parse(localStorage.getItem('my_diary') || "[]");
+    if(diary.length === 0) return alert("ડાયરી ખાલી છે.");
+    let allNotes = diary.map(n => n.date + ": " + n.text).join("\n\n");
+    alert(allNotes);
+}
 
     </script>
 </body>
