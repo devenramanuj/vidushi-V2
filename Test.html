@@ -12,43 +12,28 @@
     <style>
         :root { --p: #ff4500; --b: #000; }
         body, html { margin: 0; padding: 0; background: var(--b); color: white; font-family: 'Segoe UI', sans-serif; height: 100%; overflow: hidden; }
-        
         #home-page { height: 100vh; width: 100vw; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
         #vidushi-video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
-        
-        .top-nav { position: fixed; top: 20px; right: 20px; z-index: 1000; }
         .mic-container { position: fixed; bottom: 40px; left: 0; width: 100%; z-index: 1000; text-align: center; pointer-events: none; }
         .btn-row { display: flex; justify-content: center; gap: 20px; pointer-events: auto; }
-        
         .mic-btn { width: 85px; height: 85px; border-radius: 50%; background: var(--p); border: 4px solid white; color: white; font-size: 32px; cursor: pointer; box-shadow: 0 0 35px var(--p); display: inline-flex; align-items: center; justify-content: center; }
         .stop-btn { width: 65px; height: 65px; border-radius: 50%; background: #444; border: 3px solid white; color: white; font-size: 24px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
-        
-        #status-text { background: rgba(0,0,0,0.85); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 15px; font-weight: bold; border: 1px solid var(--p); max-width: 85%; pointer-events: auto; }
-
-        /* ⚙️ Full Settings Page */
+        #status-text { background: rgba(0,0,0,0.85); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 15px; font-weight: bold; border: 1px solid var(--p); max-width: 85%; pointer-events: auto; font-size: 14px; }
         #settings-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 2000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .setting-group { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
-        .setting-group h4 { margin: 0 0 10px 0; color: var(--p); border-bottom: 1px solid #333; padding-bottom: 5px; }
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; }
-        
         .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
         .card { background: #111; border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; }
         .card i { color: var(--p); font-size: 22px; margin-bottom: 5px; }
         .card span { font-size: 12px; display: block; }
-        
         .close-btn { background: red; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; }
-        #graph-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 3000; display: none; }
     </style>
 </head>
 <body>
 
     <div id="home-page" onclick="welcomeUser()">
         <video id="vidushi-video" autoplay loop muted playsinline><source id="v-src" src="smiling.mp4" type="video/mp4"></video>
-        
-        <div class="top-nav">
-            <button class="stop-btn" style="width:50px; height:50px;" onclick="event.stopPropagation(); toggleSettings();"><i class="fas fa-cog"></i></button>
-        </div>
-
+        <div style="position:fixed; top:20px; right:20px; z-index:1000;"><button class="stop-btn" style="width:50px; height:50px;" onclick="event.stopPropagation(); toggleSettings();"><i class="fas fa-cog"></i></button></div>
         <div class="mic-container">
             <div id="status-text">જય શ્રી કૃષ્ણ, હું વિદુષી છું</div><br>
             <div class="btn-row">
@@ -58,214 +43,94 @@
         </div>
     </div>
 
-    <div id="graph-container">
-        <button class="close-btn" style="position:fixed; top:20px; right:20px; z-index:3100;" onclick="document.getElementById('graph-container').style.display='none'">X</button>
-        <div id="3d-graph"></div>
-    </div>
-
     <div id="settings-page">
         <button class="close-btn" onclick="toggleSettings()">બંધ કરો</button>
-        <h2 style="color:var(--p);">Vidushi-AI સેટિંગ્સ</h2>
-        
+        <h2 style="color:var(--p);">Vidushi-AI કંટ્રોલ</h2>
         <div class="setting-group">
-            <h4>🤖 AI મોડલ પસંદ કરો</h4>
-            <select id="aiProvider">
-                <option value="gemini">Google Gemini 2.5 Flash</option>
-                <option value="groq">Groq (Llama 3.3 70B)</option>
-            </select>
+            <h4>🤖 AI મોડલ અને કી</h4>
+            <select id="aiProvider"><option value="gemini">Google Gemini 2.5 Flash</option><option value="groq">Groq (Llama 3.3)</option></select>
             <textarea id="apiKey" rows="2" placeholder="Gemini Keys (Comma separated)"></textarea>
             <input type="password" id="groqKey" placeholder="Groq API Key">
         </div>
-
-        <div class="setting-group">
-            <h4>🔥 Firebase API Key</h4>
-            <input type="text" id="fbApiKey" placeholder="Firebase Web API Key">
-        </div>
-
-        <button onclick="saveAllSettings()" style="width:100%; background:var(--p); color:white; padding:15px; border:none; border-radius:10px; font-weight:bold;">સેવ કરો</button>
-
-        <h3 style="margin-top:20px;">૧૨+ સ્પેશિયલ ફીચર્સ</h3>
+        <div class="setting-group"><h4>🔥 Firebase સેટિંગ</h4><input type="text" id="fbApiKey" placeholder="Firebase Web API Key"></div>
+        <button onclick="saveAllSettings()" style="width:100%; background:var(--p); color:white; padding:15px; border:none; border-radius:10px; font-weight:bold;">સાચવો</button>
         <div class="menu-grid">
-            <div class="card" onclick="startLens()"><i class="fas fa-camera"></i><span>૧. સ્માર્ટ લેન્સ</span></div>
-            <div class="card" onclick="show3DTree()"><i class="fas fa-sitemap"></i><span>૨. ૩D વંશાવલી</span></div>
-            <div class="card" onclick="diaryAction('write')"><i class="fas fa-pen-nib"></i><span>૩. ડાયરી લખો</span></div>
+            <div class="card" onclick="startLens()"><i class="fas fa-camera"></i><span>૧. લેન્સ</span></div>
+            <div class="card" onclick="show3DTree()"><i class="fas fa-sitemap"></i><span>૨. વંશાવલી</span></div>
+            <div class="card" onclick="diaryAction('write')"><i class="fas fa-pen"></i><span>૩. ડાયરી લખો</span></div>
             <div class="card" onclick="diaryAction('read')"><i class="fas fa-book"></i><span>૪. ડાયરી વાંચો</span></div>
-            <div class="card" onclick="photoAction('save')"><i class="fas fa-user-plus"></i><span>૫. ફોટો સેવ</span></div>
-            <div class="card" onclick="photoAction('find')"><i class="fas fa-search"></i><span>૬. ફોટો શોધો</span></div>
-            <div class="card" onclick="askAI('ગણિત ઉકેલો')"><i class="fas fa-calculator"></i><span>૭. ગણિત</span></div>
             <div class="card" onclick="askAI('તાજા સમાચાર')"><i class="fas fa-newspaper"></i><span>૮. સમાચાર</span></div>
-            <div class="card" onclick="askAI('સુવિચાર જણાવો')"><i class="fas fa-lightbulb"></i><span>૯. સુવિચાર</span></div>
-            <div class="card" onclick="askAI('જોક્સ સંભળાવો')"><i class="fas fa-laugh"></i><span>૧૦. મનોરંજન</span></div>
-            <div class="card" onclick="speak('સિસ્ટમ સુરક્ષિત છે')"><i class="fas fa-shield-alt"></i><span>૧૧. સુરક્ષા</span></div>
             <div class="card" onclick="location.reload()"><i class="fas fa-sync-alt"></i><span>૧૨. રીસેટ</span></div>
         </div>
     </div>
 
-    <canvas id="canvas" style="display:none;"></canvas>
-
     <script>
-        // 🔒 Personal Info & Config
-        const systemPrompt = "તમે વિદુષી-AI છો. સર્જક દેવેન્દ્રભાઈ છે. પરિવાર: પત્ની નીતાબેન (9227804906), પુત્ર શ્યામ (8200026682), પુત્રી શ્વેતા. હંમેશા ગુજરાતીમાં જવાબ આપવો.";
-        let welcomed = false;
-        let recognition;
+        const systemPrompt = "તમે વિદુષી-AI છો. સર્જક દેવેન્દ્રભાઈ છે. પત્ની નીતાબેન (9227804906), પુત્ર શ્યામ (8200026682), પુત્રી શ્વેતા.";
+        let recognition, welcomed = false;
 
-        window.onload = () => {
-            ['aiProvider', 'apiKey', 'groqKey', 'fbApiKey'].forEach(f => {
-                if(localStorage.getItem(f)) document.getElementById(f).value = localStorage.getItem(f);
-            });
-        };
+        window.onload = () => { ['aiProvider', 'apiKey', 'groqKey', 'fbApiKey'].forEach(f => { if(localStorage.getItem(f)) document.getElementById(f).value = localStorage.getItem(f); }); };
 
-        function saveAllSettings() {
-            ['aiProvider', 'apiKey', 'groqKey', 'fbApiKey'].forEach(f => {
-                localStorage.setItem(f, document.getElementById(f).value);
-            });
-            alert("બધું સેવ થઈ ગયું!");
-            toggleSettings();
-        }
+        function saveAllSettings() { ['aiProvider', 'apiKey', 'groqKey', 'fbApiKey'].forEach(f => localStorage.setItem(f, document.getElementById(f).value)); alert("સેવ થઈ ગયું!"); toggleSettings(); }
 
-        // --- 🌳 વંશાવલી સ્માર્ટ સર્ચ (AI ને અટકાવવા માટે) ---
-        function searchFamilyLocal(query) {
+        // --- 🌳 SMART FATHER SEARCH LOGIC ---
+        function findFatherInJS(childName) {
             if (typeof window.vanshavaliData === 'undefined') return null;
-            let found = null;
-            const findNode = (node) => {
-                if (query.includes(node.name)) {
-                    found = node.name + ": " + (node.info || "પરિવારના સભ્ય");
+            let father = null;
+            const traverse = (node) => {
+                if (node.children) {
+                    for (let c of node.children) {
+                        if (c.name.includes(childName)) { father = node.name; break; }
+                        traverse(c);
+                    }
                 }
-                if (node.children) node.children.forEach(findNode);
             };
-            findNode(window.vanshavaliData);
-            return found;
+            traverse(window.vanshavaliData);
+            return father;
         }
 
-        // --- 🎤 વોઈસ કંટ્રોલ ---
-        function startVoice() {
-            recognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
-            recognition.lang = 'gu-IN';
-            recognition.onresult = (e) => {
-                const q = e.results[0][0].transcript;
-                handleLogic(q);
-            };
-            recognition.start();
-            document.getElementById('status-text').innerText = "સાંભળી રહી છું...";
-        }
-
-        function stopAll() {
-            if(recognition) recognition.stop();
-            window.speechSynthesis.cancel();
-            changeEmotion('smiling');
-            document.getElementById('status-text').innerText = "થોભી ગઈ છું.";
-        }
-
-        function handleLogic(q) {
+        function handleInput(q) {
             document.getElementById('status-text').innerText = q;
-
-            // ૧. વંશાવલી ચેક (પહેલી પ્રાયોરિટી - જેથી મરજીભાઈ જેવા નામ ન આવે)
-            const local = searchFamilyLocal(q);
-            if (local) return finalize(local);
-
-            // ૨. WhatsApp લોજિક
-            if (q.includes("મેસેજ") || q.includes("whatsapp")) {
-                let num = q.includes("નીતા") ? "9227804906" : (q.includes("શ્યામ") ? "8200026682" : null);
-                if(num) { window.open(`https://wa.me/91${num}?text=${encodeURIComponent(q)}`); return speak("WhatsApp કરું છું."); }
+            // ૧. વંશાવલી પિતા ચેક
+            if (q.includes("પિતા") && (q.includes("મારા") || q.includes("દેવેન્દ્રભાઈ"))) {
+                let f = findFatherInJS("દેવેન્દ્રભાઈ");
+                if(f) return finalize("વંશાવલી મુજબ તમારા પિતાનું નામ " + f + " છે.");
             }
-
-            // ૩. બાકી બધું AI ને
+            // ૨. સામાન્ય વંશાવલી સર્ચ
+            if (typeof window.vanshavaliData !== 'undefined') {
+                let res = null;
+                const search = (n) => { if(q.includes(n.name)) res = n.name + ": " + (n.info || "પરિવારના સભ્ય"); if(n.children) n.children.forEach(search); };
+                search(window.vanshavaliData);
+                if(res) return finalize(res);
+            }
+            // ૩. WhatsApp
+            if (q.includes("મેસેજ") || q.includes("whatsapp")) {
+                let n = q.includes("નીતા") ? "9227804906" : (q.includes("શ્યામ") ? "8200026682" : null);
+                if(n) { window.open(`https://wa.me/91${n}?text=${encodeURIComponent(q)}`); return speak("WhatsApp કરું છું."); }
+            }
             askAI(q);
         }
 
         async function askAI(q, img = null) {
             const provider = localStorage.getItem('aiProvider') || 'gemini';
             changeEmotion('thinking');
-            document.getElementById('status-text').innerText = "વિચારી રહી છું...";
-
-            if (provider === 'groq') await callGroq(q);
-            else await callGemini(q, img);
-        }
-
-        async function callGemini(q, img) {
-            const raw = localStorage.getItem('apiKey') || "";
-            const keys = raw.split(',').map(k => k.trim()).filter(k => k);
-            if(!keys.length) return speak("Gemini API કી નથી!");
-            const key = keys[Math.floor(Math.random() * keys.length)];
-
-            let payload = img ? 
-                { contents: [{ parts: [{ text: "આ ફોટો સમજાવો" }, { inline_data: { mime_type: "image/jpeg", data: img } }] }] } :
-                { contents: [{ parts: [{ text: systemPrompt + " પ્રશ્ન: " + q }] }] };
-
+            const key = provider === 'groq' ? localStorage.getItem('groqKey') : localStorage.getItem('apiKey').split(',')[0];
+            if(!key) return speak("કી બાકી છે!");
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
-                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
-                });
+                let url = provider === 'groq' ? "https://api.groq.com/openai/v1/chat/completions" : `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`;
+                let body = provider === 'groq' ? JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{role:"system", content:systemPrompt}, {role:"user", content:q}] }) : JSON.stringify({ contents: [{ parts: [{ text: systemPrompt + " પ્રશ્ન: " + q }] }] });
+                const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", ...(provider==='groq' && {"Authorization": `Bearer ${key}`}) }, body: body });
                 const d = await res.json();
-                finalize(d.candidates[0].content.parts[0].text);
-            } catch (e) { speak("Gemini એરર છે."); }
+                finalize(provider === 'groq' ? d.choices[0].message.content : d.candidates[0].content.parts[0].text);
+            } catch (e) { speak("Error!"); }
         }
 
-        async function callGroq(q) {
-            const key = localStorage.getItem('groqKey');
-            if(!key) return speak("Groq કી નથી.");
-            try {
-                const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: "llama-3.3-70b-versatile",
-                        messages: [{ role: "system", content: systemPrompt }, { role: "user", content: q }]
-                    })
-                });
-                const d = await res.json();
-                finalize(d.choices[0].message.content);
-            } catch (e) { speak("Groq એરર છે."); }
-        }
-
+        function startVoice() { recognition = new (window.webkitSpeechRecognition || window.SpeechRecognition)(); recognition.lang = 'gu-IN'; recognition.onresult = (e) => handleInput(e.results[0][0].transcript); recognition.start(); document.getElementById('status-text').innerText = "સાંભળી રહી છું..."; }
+        function stopAll() { if(recognition) recognition.stop(); window.speechSynthesis.cancel(); changeEmotion('smiling'); document.getElementById('status-text').innerText = "થોભી ગઈ છું."; }
         function finalize(t) { document.getElementById('status-text').innerText = t; speak(t); }
-
-        function speak(text) {
-            window.speechSynthesis.cancel();
-            const utter = new SpeechSynthesisUtterance(text);
-            utter.lang = 'gu-IN';
-            utter.onstart = () => changeEmotion('talking');
-            utter.onend = () => changeEmotion('smiling');
-            window.speechSynthesis.speak(utter);
-        }
-
-        function changeEmotion(emo) {
-            const v = document.getElementById('vidushi-video');
-            const s = document.getElementById('v-src');
-            s.src = emo + ".mp4"; v.load(); v.play();
-        }
-
+        function speak(text) { window.speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(text); u.lang = 'gu-IN'; u.onstart = () => changeEmotion('talking'); u.onend = () => changeEmotion('smiling'); window.speechSynthesis.speak(u); }
+        function changeEmotion(emo) { const v = document.getElementById('vidushi-video'), s = document.getElementById('v-src'); s.src = emo + ".mp4"; v.load(); v.play(); }
         function toggleSettings() { const s = document.getElementById('settings-page'); s.style.display = (s.style.display==='block')?'none':'block'; }
-        
-        function welcomeUser() { if(!welcomed) { speak("જય શ્રી કૃષ્ણ! હું વિદુષી છું. દેવેન્દ્રભાઈએ મને બનાવી છે."); welcomed = true; } }
-
-        // --- 📂 Extra Functions ---
-        function show3DTree() {
-            document.getElementById('graph-container').style.display = 'block';
-            const nodes = [], links = [];
-            const build = (n, p = null) => {
-                nodes.push({ id: n.name }); if(p) links.push({ source: p.name, target: n.name });
-                if(n.children) n.children.forEach(c => build(c, n));
-            };
-            build(window.vanshavaliData || {name: "દેવેન્દ્રભાઈ"});
-            ForceGraph3D()(document.getElementById('3d-graph')).graphData({ nodes, links }).nodeColor(()=>'#ff4500').onNodeClick(n => speak(n.id));
-        }
-
-        async function startLens() {
-            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            const v = document.createElement('video'); v.srcObject = s; v.play();
-            setTimeout(() => {
-                const c = document.getElementById('canvas'); c.width = 640; c.height = 480;
-                c.getContext('2d').drawImage(v, 0, 0, 640, 480);
-                s.getTracks().forEach(t => t.stop());
-                askAI("આ શું છે?", c.toDataURL('image/jpeg').split(',')[1]);
-            }, 3000);
-        }
-
-        function diaryAction(m) {
-            if(m === 'write') { speak("ડાયરીમાં શું લખવું છે?"); setTimeout(startVoice, 2000); }
-            else alert(localStorage.getItem('v_diary') || "ડાયરી ખાલી છે.");
-        }
-        function photoAction(m) { speak("આ ફિચર માટે Firebase સ્ટોરેજ જરૂરી છે."); }
+        function welcomeUser() { if(!welcomed) { speak("જય શ્રી કૃષ્ણ!"); welcomed = true; } }
     </script>
 </body>
 </html>
