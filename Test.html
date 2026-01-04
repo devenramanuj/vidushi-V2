@@ -3,56 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi-AI | Perpetual Build</title>
+    <title>Vidushi-AI | Master Build</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://unpkg.com/3d-force-graph"></script>
     <style>
         :root { --p: #ff4500; --b: #000; }
-        body { background: var(--b); color: white; font-family: sans-serif; margin: 0; padding: 15px; }
+        body { background: var(--b); color: white; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 15px; overflow-x: hidden; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #222; padding-bottom: 10px; }
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .card { background: #111; border: 1px solid #333; padding: 15px; border-radius: 15px; text-align: center; cursor: pointer; }
-        .card i { font-size: 24px; color: var(--p); margin-bottom: 8px; }
-        #status { background: #111; padding: 15px; border-radius: 15px; margin-top: 20px; border-left: 4px solid var(--p); min-height: 40px; }
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .card { background: #111; border: 1px solid #333; padding: 20px; border-radius: 18px; text-align: center; cursor: pointer; transition: 0.3s; }
+        .card:active { transform: scale(0.95); background: #222; }
+        .card i { font-size: 28px; color: var(--p); margin-bottom: 10px; }
+        #status { background: #111; padding: 15px; border-radius: 15px; margin-top: 20px; border-left: 4px solid var(--p); min-height: 50px; line-height: 1.5; }
         input { width: 100%; padding: 12px; margin: 10px 0; background: #222; border: 1px solid #444; color: white; border-radius: 10px; box-sizing: border-box; }
         .hidden { display: none; }
+        #tree-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 2000; }
+        .close-btn { position: fixed; top: 20px; right: 20px; z-index: 2100; background: red; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2 style="color:var(--p)">VIDUSHI-AI</h2>
-        <i class="fas fa-cog" onclick="toggleSettings()"></i>
+        <h2 style="color:var(--p); margin:0;">VIDUSHI-AI</h2>
+        <i class="fas fa-cog" style="font-size:20px;" onclick="toggleSettings()"></i>
     </div>
 
     <div id="settings" class="hidden">
-        <input type="password" id="apiKey" placeholder="Gemini API Key નાખો">
-        <button onclick="saveKey()" style="width:100%; padding:10px; background:var(--p); border:none; color:white; border-radius:10px;">સેવ કરો</button>
+        <input type="password" id="apiKey" placeholder="Gemini API Key અહીં નાખો">
+        <button onclick="saveKey()" style="width:100%; padding:12px; background:var(--p); border:none; color:white; border-radius:10px; font-weight:bold;">સેવ કી (Save)</button>
     </div>
 
     <div class="menu-grid">
         <div class="card" onclick="startVoice()"><i class="fas fa-microphone"></i><br>વાત કરો</div>
-        <div class="card" onclick="startLens()"><i class="fas fa-camera"></i><br>સ્માર્ટ લેન્સ</div>
+        <div class="card" onclick="startLens()"><i class="fas fa-camera"></i><br>લેન્સ સ્કેન</div>
         <div class="card" onclick="addToDiary()"><i class="fas fa-pen-nib"></i><br>ડાયરી લખો</div>
-<div class="card" onclick="showDiary()"><i class="fas fa-book"></i><br>ડાયરી જુઓ</div>
+        <div class="card" onclick="showDiary()"><i class="fas fa-book"></i><br>ડાયરી જુઓ</div>
+        <div class="card" onclick="show3DTree()"><i class="fas fa-sitemap"></i><br>વંશાવલી</div>
+        <div class="card" onclick="savePhotoMemory()"><i class="fas fa-user-plus"></i><br>ફોટો સેવ</div>
+        <div class="card" onclick="findPhoto()"><i class="fas fa-user-circle"></i><br>ફોટો શોધો</div>
+        <div class="card" onclick="solveMath()"><i class="fas fa-calculator"></i><br>ગણિત</div>
+    </div>
 
-        </div>
-
-    <div id="status">સિસ્ટમ તૈયાર છે...</div>
+    <div id="status">વિદુષી-AI તૈયાર છે.</div>
     <canvas id="canvas" class="hidden"></canvas>
 
     <script>
-        // --- ⚙️ કોર એન્જિન (આ ક્યારેય નહીં બદલાય) ---
-        function saveKey() { localStorage.setItem('v_key', document.getElementById('apiKey').value); toggleSettings(); alert("કી સેવ થઈ ગઈ!"); }
+        // --- ⚙️ કોર સિસ્ટમ ---
+        function saveKey() { localStorage.setItem('v_key', document.getElementById('apiKey').value); toggleSettings(); alert("API Key સેવ થઈ ગઈ!"); }
         function toggleSettings() { document.getElementById('settings').classList.toggle('hidden'); }
         function speak(t) { const u = new SpeechSynthesisUtterance(t); u.lang = 'gu-IN'; window.speechSynthesis.speak(u); }
 
         async function askGemini(query, image = null) {
             const key = localStorage.getItem('v_key');
-            if(!key) return alert("પહેલા સેટિંગ્સમાં API Key નાખો!");
+            if(!key) return alert("સેટિંગ્સમાં જઈને API Key નાખો!");
+            document.getElementById('status').innerText = "વિચારી રહી છું...";
             
             let payload = image ? 
-                { contents: [{ parts: [{ text: "Explain this in Gujarati." }, { inline_data: { mime_type: "image/jpeg", data: image } }] }] } :
-                { contents: [{ parts: [{ text: "જવાબ ગુજરાતીમાં આપો: " + query }] }] };
+                { contents: [{ parts: [{ text: "Explain this image in Gujarati." }, { inline_data: { mime_type: "image/jpeg", data: image } }] }] } :
+                { contents: [{ parts: [{ text: "તમે વિદુષી-AI છો. જવાબ ગુજરાતીમાં આપો: " + query }] }] };
 
             try {
                 const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
@@ -62,10 +70,10 @@
                 const txt = data.candidates[0].content.parts[0].text;
                 document.getElementById('status').innerText = txt;
                 speak(txt);
-            } catch (e) { document.getElementById('status').innerText = "ભૂલ આવી! API Key ચેક કરો."; }
+            } catch (e) { document.getElementById('status').innerText = "API ભૂલ! કી ચેક કરો."; }
         }
 
-        // --- 🎤 Voice Feature ---
+        // --- 🎤 Voice & 📷 Lens ---
         function startVoice() {
             const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             rec.lang = 'gu-IN';
@@ -78,14 +86,13 @@
             rec.start();
         }
 
-        // --- 📷 Lens Feature ---
         async function startLens() {
             const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
             const v = document.createElement('video'); v.srcObject = s; v.play();
             document.getElementById('status').innerText = "૩ સેકન્ડમાં સ્કેન થશે...";
             setTimeout(() => {
                 const c = document.getElementById('canvas');
-                c.width = 640; c.height = 480; // Standard resolution
+                c.width = 640; c.height = 480;
                 c.getContext('2d').drawImage(v, 0, 0, 640, 480);
                 const b64 = c.toDataURL('image/jpeg').split(',')[1];
                 s.getTracks().forEach(t => t.stop());
@@ -93,30 +100,94 @@
             }, 3000);
         }
 
-        // --- 🧩 ADD NEW FEATURES HERE (નવા ફીચર નીચે ઉમેરવા) ---
-// --- 📖 Diary Feature ---
-function addToDiary() {
-    const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    rec.lang = 'gu-IN';
-    rec.onstart = () => document.getElementById('status').innerText = "ડાયરી માટે બોલો...";
-    rec.onresult = (e) => {
-        const note = e.results[0][0].transcript;
-        const diary = JSON.parse(localStorage.getItem('my_diary') || "[]");
-        const entry = { date: new Date().toLocaleString(), text: note };
-        diary.push(entry);
-        localStorage.setItem('my_diary', JSON.stringify(diary));
-        document.getElementById('status').innerText = "ડાયરીમાં નોંધાયું: " + note;
-        speak("મેં ડાયરીમાં નોંધી લીધું છે.");
-    };
-    rec.start();
-}
+        // --- 📖 Diary ---
+        function addToDiary() {
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'gu-IN';
+            rec.onstart = () => document.getElementById('status').innerText = "ડાયરી માટે બોલો...";
+            rec.onresult = (e) => {
+                const note = e.results[0][0].transcript;
+                const diary = JSON.parse(localStorage.getItem('my_diary') || "[]");
+                diary.push({ date: new Date().toLocaleString(), text: note });
+                localStorage.setItem('my_diary', JSON.stringify(diary));
+                document.getElementById('status').innerText = "સેવ થયું: " + note;
+                speak("મેં ડાયરીમાં નોંધી લીધું છે.");
+            };
+            rec.start();
+        }
+        function showDiary() {
+            const diary = JSON.parse(localStorage.getItem('my_diary') || "[]");
+            if(!diary.length) return alert("ડાયરી ખાલી છે.");
+            alert(diary.map(n => n.date + ": " + n.text).join("\n\n"));
+        }
 
-function showDiary() {
-    const diary = JSON.parse(localStorage.getItem('my_diary') || "[]");
-    if(diary.length === 0) return alert("ડાયરી ખાલી છે.");
-    let allNotes = diary.map(n => n.date + ": " + n.text).join("\n\n");
-    alert(allNotes);
-}
+        // --- 🌳 3D Family Tree ---
+        const familyData = {
+            name: "જગદગુરુ રામાનંદાચાર્યજી",
+            children: [{ name: "અનંતાનંદજી", children: [{ name: "ગેંડાજી", children: [{ name: "લક્ષ્મીદાસજી", children: [{ name: "માધવદાસજી", children: [{ name: "ખોજીજી", children: [{ name: "મહેન્દ્રદાસજી (પાલડી)", children: [{ name: "પુરણદાસજી બાપુ (ઝીંઝર)", children: [{ name: "દયારામજી", children: [{ name: "જાનકીદાસજી", children: [{ name: "દેવેન્દ્રભાઈ" }] }] }] }] }] }] }] }] }] }]
+        };
+        function show3DTree() {
+            const div = document.createElement('div'); div.id = "tree-overlay";
+            div.innerHTML = '<button class="close-btn" onclick="this.parentElement.remove()">બંધ કરો</button><div id="graph"></div>';
+            document.body.appendChild(div);
+            const nodes = [], links = [];
+            const build = (n, p = null) => {
+                nodes.push({ id: n.name });
+                if(p) links.push({ source: p.name, target: n.name });
+                if(n.children) n.children.forEach(c => build(c, n));
+            };
+            build(familyData);
+            ForceGraph3D()(document.getElementById('graph')).graphData({ nodes, links }).nodeLabel('id').nodeColor(() => '#ff4500');
+            speak("વંશાવલી તૈયાર છે.");
+        }
+
+        // --- 🖼️ Photo Memory ---
+        async function savePhotoMemory() {
+            const name = prompt("આ કોણ છે?"); if(!name) return;
+            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            const v = document.createElement('video'); v.srcObject = s; v.play();
+            setTimeout(() => {
+                const c = document.getElementById('canvas'); c.width = 640; c.height = 480;
+                c.getContext('2d').drawImage(v, 0, 0, 640, 480);
+                const photos = JSON.parse(localStorage.getItem('v_photos') || "{}");
+                photos[name.toLowerCase()] = c.toDataURL('image/jpeg');
+                localStorage.setItem('v_photos', JSON.stringify(photos));
+                s.getTracks().forEach(t => t.stop());
+                speak(name + " નો ફોટો સેવ થયો.");
+            }, 2000);
+        }
+        function findPhoto() {
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'gu-IN'; rec.onstart = () => speak("કોનો ફોટો જોવો છે?");
+            rec.onresult = (e) => {
+                const name = e.results[0][0].transcript.toLowerCase().replace("નો ફોટો બતાવ", "").trim();
+                const photos = JSON.parse(localStorage.getItem('v_photos') || "{}");
+                if(photos[name]) {
+                    const div = document.createElement('div');
+                    div.style = "position:fixed; top:0; left:0; width:100%; height:100%; background:black; z-index:3000; display:flex; flex-direction:column; align-items:center; justify-content:center;";
+                    div.innerHTML = `<img src="${photos[name]}" style="width:90%; border-radius:15px;"><button class="close-btn" onclick="this.parentElement.remove()">બંધ કરો</button>`;
+                    document.body.appendChild(div);
+                } else { speak("ફોટો મળ્યો નથી."); }
+            };
+            rec.start();
+        }
+
+        // --- ➗ Maths ---
+        function solveMath() {
+            const rec = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            rec.lang = 'gu-IN'; rec.onstart = () => speak("દાખલો બોલો");
+            rec.onresult = (e) => {
+                const q = e.results[0][0].transcript;
+                try {
+                    const res = eval(q.replace("ગુણ્યા", "*").replace("વત્તા", "+").replace("ઓછા", "-").replace("ભાગ્યા", "/").match(/[0-9+\-*/.]+/g).join(''));
+                    document.getElementById('status').innerText = q + " = " + res;
+                    speak("જવાબ " + res + " છે.");
+                } catch(err) { askGemini(q); }
+            };
+            rec.start();
+        }
+
+        // --- 🧩 ADD NEW FEATURES HERE ---
 
     </script>
 </body>
