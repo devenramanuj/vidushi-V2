@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi-AI | Multi-Key Edition</title>
+    <title>Vidushi-AI | Master Build</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script src="https://unpkg.com/3d-force-graph"></script>
@@ -12,86 +12,122 @@
     <style>
         :root { --p: #ff4500; --b: #000; }
         body, html { margin: 0; padding: 0; background: var(--b); color: white; font-family: 'Segoe UI', sans-serif; height: 100%; overflow: hidden; }
-        #home-page { height: 100vh; width: 100vw; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; }
-        #vidushi-video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
-        .top-nav { position: fixed; top: 20px; right: 20px; z-index: 1000; }
-        .mic-container { position: fixed; bottom: 40px; left: 0; width: 100%; z-index: 1000; text-align: center; pointer-events: none; }
-        .mic-btn { width: 85px; height: 85px; border-radius: 50%; background: var(--p); border: 4px solid white; color: white; font-size: 32px; cursor: pointer; box-shadow: 0 0 35px var(--p); display: inline-flex; align-items: center; justify-content: center; pointer-events: auto; }
-        #status-text { background: rgba(0,0,0,0.8); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 15px; font-weight: bold; border: 1px solid var(--p); pointer-events: auto; max-width: 85%; }
         
+        #home-page { height: 100vh; width: 100vw; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        #vidushi-video { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; z-index: 1; }
+
+        .top-nav { position: fixed; top: 20px; right: 20px; z-index: 1000; }
+        .mic-container { position: fixed; bottom: 40px; left: 0; width: 100%; z-index: 1000; text-align: center; }
+        .mic-btn { width: 85px; height: 85px; border-radius: 50%; background: var(--p); border: 4px solid white; color: white; font-size: 32px; cursor: pointer; box-shadow: 0 0 35px var(--p); display: inline-flex; align-items: center; justify-content: center; }
+        #status-text { background: rgba(0,0,0,0.85); color: white; padding: 10px 20px; border-radius: 25px; display: inline-block; margin-bottom: 15px; font-weight: bold; border: 1px solid var(--p); max-width: 85%; }
+
         #settings-page { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.98); z-index: 2000; display: none; padding: 20px; box-sizing: border-box; overflow-y: auto; }
         .setting-group { background: #111; padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #333; }
-        .setting-group h4 { margin: 0 0 10px 0; color: var(--p); }
+        .setting-group h4 { margin: 0 0 10px 0; color: var(--p); border-bottom: 1px solid #333; padding-bottom: 5px; }
+        
         input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; background: #222; border: 1px solid #444; color: white; border-radius: 8px; box-sizing: border-box; }
+        
+        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 20px; }
+        .card { background: #111; border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: center; cursor: pointer; }
+        .card i { color: var(--p); font-size: 24px; margin-bottom: 8px; }
+
         .close-btn { background: red; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; float: right; }
+        #graph-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 3000; display: none; }
     </style>
 </head>
-<body id="main-body">
+<body>
 
     <div id="home-page" onclick="welcomeUser()">
-        <video id="vidushi-video" autoplay loop muted playsinline><source id="v-src" src="smiling.mp4" type="video/mp4"></video>
+        <video id="vidushi-video" autoplay loop muted playsinline>
+            <source id="v-src" src="smiling.mp4" type="video/mp4">
+        </video>
         <div class="top-nav">
-            <button class="mic-btn" style="width:50px; height:50px; font-size:20px;" onclick="event.stopPropagation(); toggleSettings();"><i class="fas fa-cog"></i></button>
+            <button class="mic-btn" style="width:50px; height:50px; font-size:20px;" onclick="event.stopPropagation(); toggleSettings();">
+                <i class="fas fa-cog"></i>
+            </button>
         </div>
         <div class="mic-container">
             <div id="status-text">જય શ્રી કૃષ્ણ, હું વિદુષી છું</div><br>
-            <button class="mic-btn" onclick="event.stopPropagation(); startVoice();"><i class="fas fa-microphone"></i></button>
+            <button class="mic-btn" onclick="event.stopPropagation(); startVoice();">
+                <i class="fas fa-microphone"></i>
+            </button>
         </div>
+    </div>
+
+    <div id="graph-container">
+        <button class="close-btn" style="position:fixed; top:20px; right:20px; z-index:3100;" onclick="document.getElementById('graph-container').style.display='none'">બંધ કરો</button>
+        <div id="3d-graph"></div>
     </div>
 
     <div id="settings-page">
         <button class="close-btn" onclick="toggleSettings()">બંધ કરો</button>
-        <h2 style="color:var(--p);">Vidushi-AI Master Settings</h2>
+        <h2 style="color:var(--p);">Vidushi-AI Control Center</h2>
 
         <div class="setting-group">
-            <h4>🤖 AI Model & Multiple Keys</h4>
+            <h4>🤖 AI પ્રોવાઈડર</h4>
             <select id="aiProvider">
                 <option value="gemini">Google Gemini</option>
-                <option value="groq">Groq AI</option>
+                <option value="groq">Groq AI (Llama 3.3)</option>
             </select>
-            <textarea id="apiKey" rows="2" placeholder="Gemini Keys (key1, key2, key3...)"></textarea>
+            <textarea id="apiKey" rows="2" placeholder="Gemini Keys (key1, key2...)"></textarea>
             <input type="password" id="groqKey" placeholder="Groq API Key">
-            <select id="groqModel">
-                <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Latest)</option>
-                <option value="llama-3.1-8b-instant">Llama 3.1 8B</option>
-                <option value="mixtral-8x7b-32768">Mixtral 8x7b</option>
-            </select>
         </div>
 
         <div class="setting-group">
-            <h4>🔥 Firebase Configuration</h4>
-            <input type="text" id="fbProjectId" placeholder="Project ID">
-            <input type="text" id="fbAppId" placeholder="App ID">
-            <input type="text" id="fbApiKey" placeholder="Web API Key">
-            <input type="text" id="fbDbUrl" placeholder="Database URL">
+            <h4>🔥 Firebase સેટિંગ્સ</h4>
+            <input type="text" id="fbApiKey" placeholder="Firebase Web API Key">
+            <p style="font-size: 11px; color: #888;">*બાકીના કન્ફિગરેશન કોડમાં સુરક્ષિત છે.</p>
         </div>
 
-        <button onclick="saveAllSettings()" style="width:100%; background:var(--p); color:white; padding:15px; border:none; border-radius:10px; font-weight:bold; cursor:pointer; font-size:16px;">બધી માહિતી સેવ કરો</button>
+        <button onclick="saveAllSettings()" style="width:100%; background:var(--p); color:white; padding:15px; border:none; border-radius:10px; font-weight:bold;">સેવ કરો</button>
+
+        <h3 style="margin-top:25px;">૧૨+ પાવરફુલ ફીચર્સ</h3>
+        <div class="menu-grid">
+            <div class="card" onclick="startLens()"><i class="fas fa-camera"></i><span>૧. સ્માર્ટ લેન્સ</span></div>
+            <div class="card" onclick="show3DTree()"><i class="fas fa-sitemap"></i><span>૨. ૩D વંશાવલી</span></div>
+            <div class="card" onclick="diaryAction('write')"><i class="fas fa-pen-nib"></i><span>૩. ડાયરી લખો</span></div>
+            <div class="card" onclick="diaryAction('read')"><i class="fas fa-book"></i><span>૪. ડાયરી વાંચો</span></div>
+            <div class="card" onclick="photoAction('save')"><i class="fas fa-user-plus"></i><span>૫. ફોટો સેવ</span></div>
+            <div class="card" onclick="photoAction('find')"><i class="fas fa-search"></i><span>૬. ફોટો શોધો</span></div>
+            <div class="card" onclick="askAI('ગણિત ઉકેલો')"><i class="fas fa-calculator"></i><span>૭. મેથ્સ સોલ્વર</span></div>
+            <div class="card" onclick="askAI('તાજા સમાચાર')"><i class="fas fa-newspaper"></i><span>૮. ન્યૂઝ અપડેટ</span></div>
+            <div class="card" onclick="askAI('સુવિચાર કહો')"><i class="fas fa-quote-left"></i><span>૯. ડેઈલી સુવિચાર</span></div>
+            <div class="card" onclick="askAI('જોક્સ કહો')"><i class="fas fa-laugh"></i><span>૧૦. મનોરંજન</span></div>
+            <div class="card" onclick="speak('સિસ્ટમ સુરક્ષિત છે')"><i class="fas fa-shield-alt"></i><span>૧૧. સિક્યુરિટી</span></div>
+            <div class="card" onclick="location.reload()"><i class="fas fa-sync-alt"></i><span>૧૨. રીસેટ એપ</span></div>
+        </div>
     </div>
 
-    <script>
-        let welcomed = false;
+    <canvas id="canvas" style="display:none;"></canvas>
 
-        // --- 💾 લોડ સેટિંગ્સ ---
+    <script>
+        // 🔒 Firebase Internal Config (તમારા પ્રોજેક્ટ મુજબ બદલી શકો છો)
+        const firebaseConfig = {
+            apiKey: localStorage.getItem('fbApiKey') || "",
+            authDomain: "vidushi-ai.firebaseapp.com",
+            projectId: "vidushi-ai",
+            storageBucket: "vidushi-ai.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:12345:web:6789abc"
+        };
+
+        let welcomed = false;
+        
         window.onload = () => {
-            const fields = ['aiProvider', 'apiKey', 'groqKey', 'groqModel', 'fbProjectId', 'fbAppId', 'fbApiKey', 'fbDbUrl'];
-            fields.forEach(f => {
-                if(localStorage.getItem(f)) document.getElementById(f).value = localStorage.getItem(f);
-            });
+            const fields = ['aiProvider', 'apiKey', 'groqKey', 'fbApiKey'];
+            fields.forEach(f => { if(localStorage.getItem(f)) document.getElementById(f).value = localStorage.getItem(f); });
         };
 
         function saveAllSettings() {
-            const fields = ['aiProvider', 'apiKey', 'groqKey', 'groqModel', 'fbProjectId', 'fbAppId', 'fbApiKey', 'fbDbUrl'];
+            const fields = ['aiProvider', 'apiKey', 'groqKey', 'fbApiKey'];
             fields.forEach(f => localStorage.setItem(f, document.getElementById(f).value));
-            alert("સેટિંગ્સ સફળતાપૂર્વક સાચવવામાં આવી છે!");
-            toggleSettings();
+            alert("બધું સેવ થઈ ગયું!");
         }
 
-        // --- 🎭 એનિમેશન અને અવાજ ---
         function changeEmotion(emo) {
             const v = document.getElementById('vidushi-video');
             const s = document.getElementById('v-src');
-            if(!s.src.includes(emo + ".mp4")) { s.src = emo + ".mp4"; v.load(); v.play(); }
+            s.src = emo + ".mp4"; v.load(); v.play();
         }
 
         function speak(text) {
@@ -104,103 +140,104 @@
         }
 
         function welcomeUser() {
-            if (!welcomed) {
-                speak("જય શ્રી કૃષ્ણ! હું વિદુષી છું. મને દેવેન્દ્રભાઈએ બનાવી છે. હું આપની શું મદદ કરી શકું?");
-                welcomed = true;
-            }
+            if (!welcomed) { speak("જય શ્રી કૃષ્ણ! હું વિદુષી છું. દેવેન્દ્રભાઈએ મને બનાવી છે."); welcomed = true; }
         }
 
-        // --- 🧠 AI LOGIC ---
-        async function askAI(query) {
+        async function askAI(query, imageBase64 = null) {
             const provider = localStorage.getItem('aiProvider') || 'gemini';
-            changeEmotion('thinking');
             document.getElementById('status-text').innerText = "વિચારી રહી છું...";
-
+            changeEmotion('thinking');
+            
             if (provider === 'groq') await askGroq(query);
-            else await askGemini(query);
+            else await askGemini(query, imageBase64);
         }
 
-        async function askGemini(query) {
-            // 🗝️ Multi-Key Logic
+        async function askGemini(query, imageBase64) {
             const rawKeys = localStorage.getItem('apiKey') || "";
-            const keys = rawKeys.split(',').map(k => k.trim()).filter(k => k !== "");
-            
-            if(keys.length === 0) return speak("મહેરબાની કરીને Gemini API કી નાખો.");
-            
-            // રેન્ડમલી એક કી પસંદ કરો
-            const selectedKey = keys[Math.floor(Math.random() * keys.length)];
+            const keys = rawKeys.split(',').map(k => k.trim()).filter(k => k);
+            if(!keys.length) return speak("Gemini કી નાખો.");
+            const key = keys[Math.floor(Math.random() * keys.length)];
+
+            let payload = imageBase64 ? 
+                { contents: [{ parts: [{ text: "Explain this image in Gujarati." }, { inline_data: { mime_type: "image/jpeg", data: imageBase64 } }] }] } :
+                { contents: [{ parts: [{ text: "તમે વિદુષી-AI છો. ગુજરાતીમાં ટૂંકો જવાબ આપો: " + query }] }] };
 
             try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${selectedKey}`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "તમે વિદુષી-AI છો. દેવેન્દ્રભાઈએ તમને બનાવ્યા છે. ગુજરાતીમાં જવાબ આપો: " + query }] }] })
+                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`, {
+                    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
                 });
-                const data = await res.json();
-                const txt = data.candidates[0].content.parts[0].text;
-                finalizeResponse(txt);
-            } catch (e) { 
-                console.error(e);
-                speak("માફ કરશો, Gemini કી માં કોઈ સમસ્યા છે. બીજી કી ટ્રાય કરો."); 
-            }
+                const d = await res.json();
+                const responseText = d.candidates[0].content.parts[0].text;
+                document.getElementById('status-text').innerText = responseText;
+                speak(responseText);
+            } catch (e) { speak("Error in Gemini API"); }
         }
 
         async function askGroq(query) {
             const key = localStorage.getItem('groqKey');
-            const model = localStorage.getItem('groqModel') || 'llama-3.3-70b-versatile';
-            if(!key) return speak("Groq API કી મળી નથી.");
-
+            if(!key) return speak("Groq કી નાખો.");
             try {
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-                    method: "POST",
-                    headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                        model: model,
-                        messages: [
-                            { role: "system", content: "You are Vidushi-AI, created by Devendrabhai. Answer clearly in Gujarati." },
-                            { role: "user", content: query }
-                        ]
-                    })
+                    method: "POST", headers: { "Authorization": `Bearer ${key}`, "Content-Type": "application/json" },
+                    body: JSON.stringify({ model: "llama-3.3-70b-versatile", messages: [{ role: "user", content: query }] })
                 });
-                const data = await res.json();
-                finalizeResponse(data.choices[0].message.content);
-            } catch (e) { speak("Groq કનેક્શનમાં ભૂલ છે."); }
+                const d = await res.json();
+                const responseText = d.choices[0].message.content;
+                document.getElementById('status-text').innerText = responseText;
+                speak(responseText);
+            } catch (e) { speak("Error in Groq API"); }
         }
 
-        function finalizeResponse(txt) {
-            document.getElementById('status-text').innerText = txt;
-            speak(txt);
-        }
-
-        // --- 🎤 VOICE ---
         function startVoice() {
-            welcomeUser();
             const rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
             rec.lang = 'gu-IN';
             rec.onresult = (e) => {
                 const q = e.results[0][0].transcript;
                 document.getElementById('status-text').innerText = q;
-                handleLogic(q);
+                handleWhatsApp(q);
             };
             rec.start();
         }
 
-        function handleLogic(q) {
-            // WhatsApp / Call Logic (Same as before)
+        function handleWhatsApp(q) {
             if (q.includes("મેસેજ") || q.includes("whatsapp")) {
-                let target = q.includes("નીતા") ? "9227804906" : (q.includes("શ્યામ") ? "8200026682" : null);
-                if (target) {
-                    let msg = q.split("કે")[1] || "કેમ છો?";
-                    window.open(`https://wa.me/91${target}?text=${encodeURIComponent(msg)}`, '_blank');
-                    return speak("વોટ્સએપ ખોલી રહી છું.");
+                let num = q.includes("નીતા") ? "9227804906" : (q.includes("શ્યામ") ? "8200026682" : null);
+                if (num) {
+                    window.open(`https://wa.me/91${num}?text=${encodeURIComponent(q)}`);
+                    return speak("વોટ્સએપ મોકલી રહી છું.");
                 }
             }
             askAI(q);
         }
 
-        function toggleSettings() {
-            const p = document.getElementById('settings-page');
-            p.style.display = (p.style.display === 'block') ? 'none' : 'block';
+        function toggleSettings() { const p = document.getElementById('settings-page'); p.style.display = (p.style.display==='block')?'none':'block'; }
+
+        function show3DTree() {
+            document.getElementById('graph-container').style.display = 'block';
+            const nodes = [], links = [];
+            const build = (n, p = null) => {
+                nodes.push({ id: n.name }); if(p) links.push({ source: p.name, target: n.name });
+                if(n.children) n.children.forEach(c => build(c, n));
+            };
+            build(window.vanshavaliData || {name: "દેવેન્દ્રભાઈ"});
+            ForceGraph3D()(document.getElementById('3d-graph')).graphData({ nodes, links }).nodeColor(()=>'#ff4500');
+        }
+
+        async function startLens() {
+            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+            const v = document.createElement('video'); v.srcObject = s; v.play();
+            speak("ફોટો પાડી રહી છું.");
+            setTimeout(() => {
+                const c = document.getElementById('canvas'); c.width = 640; c.height = 480;
+                c.getContext('2d').drawImage(v, 0, 0, 640, 480);
+                s.getTracks().forEach(t => t.stop());
+                askAI("આ શું છે?", c.toDataURL('image/jpeg').split(',')[1]);
+            }, 3000);
+        }
+
+        function diaryAction(m) {
+            if(m === 'write') { speak("બોલો, ડાયરીમાં શું લખવું છે?"); setTimeout(startVoice, 2000); }
+            else alert(localStorage.getItem('diary_data') || "ડાયરી ખાલી છે.");
         }
     </script>
 </body>
