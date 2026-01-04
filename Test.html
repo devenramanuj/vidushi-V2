@@ -3,246 +3,210 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Final Pro</title>
+    <title>Vidushi AI - Firebase Professional Edition</title>
     
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-    <script src="https://unpkg.com/three"></script>
-    <script src="https://unpkg.com/three-spritetext"></script>
-    <script src="https://unpkg.com/3d-force-graph"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three-spritetext@1.8.2/dist/three-spritetext.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
 
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; color: white; }
-        #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
-        #silent-video { display: block; }
+        :root { --primary: #ff4500; --bg: #000; --card: #111; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; color: white; }
         
-        .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.7); color: white; border: 1px solid #ff4500; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 200; flex-direction: column; align-items: center; padding: 20px; box-sizing: border-box; overflow-y: auto; }
-        .settings-box { background: #111; padding: 20px; border-radius: 15px; width: 100%; max-width: 400px; border: 1px solid #ff4500; }
-        
-        .menu-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; }
-        .menu-item { background: #222; padding: 15px; border-radius: 10px; border: 1px solid #444; text-align: center; cursor: pointer; }
-        
-        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; color: white; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
-        .save-btn { width: 100%; padding: 15px; background: #ff4500; color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 15px; }
-        
-        h4 { margin: 15px 0 5px; color: #ff4500; text-align: left; border-bottom: 1px solid #333; padding-bottom: 5px; }
+        /* UI Elements */
+        .side-btn { position: fixed; top: 20px; right: 20px; z-index: 100; background: rgba(255,69,0,0.2); color: white; border: 1px solid var(--primary); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: 0.3s; }
+        .side-btn:hover { background: var(--primary); box-shadow: 0 0 15px var(--primary); }
 
-        #mic-container { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%); z-index: 20; text-align: center; width: 100%; }
-        .round-btn { width: 70px; height: 70px; border-radius: 50%; border: none; color: white; font-size: 28px; cursor: pointer; background: #ff4500; box-shadow: 0 0 20px #ff4500; }
-        
+        /* Modal / Settings */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 200; align-items: center; justify-content: center; overflow-y: auto; }
+        .settings-box { background: var(--card); padding: 25px; border-radius: 20px; width: 90%; max-width: 400px; border: 1px solid var(--primary); box-shadow: 0 0 30px rgba(255,69,0,0.2); }
+        h3, h4 { color: var(--primary); text-align: center; margin-top: 0; }
+        label { font-size: 14px; color: #aaa; }
+        input, select { width: 100%; padding: 12px; margin: 8px 0; background: #222; color: white; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
+        .btn-action { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 8px; margin-top: 10px; transition: 0.2s; }
+        .btn-action:active { transform: scale(0.98); }
+
+        /* Mic Button */
+        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 50; text-align: center; }
+        .mic-btn { width: 80px; height: 80px; border-radius: 50%; border: none; color: white; font-size: 32px; background: var(--primary); box-shadow: 0 0 25px var(--primary); cursor: pointer; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0.7); } 70% { box-shadow: 0 0 0 20px rgba(255, 69, 0, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 69, 0, 0); } }
+
+        /* 3D Graph Container */
         #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: black; z-index: 300; }
-        #close-graph { position: fixed; top: 20px; right: 20px; z-index: 310; background: red; color: white; border: none; padding: 12px; border-radius: 50%; width: 45px; height: 45px; font-weight: bold; }
-        
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
+        #close-graph { position: fixed; top: 20px; right: 20px; z-index: 310; background: #ff0000; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        #status-text { background: rgba(255,255,255,0.1); padding: 5px 15px; border-radius: 20px; margin-bottom: 15px; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4"></video>
-    <video id="talking-video" muted loop playsinline><source src="talking.mp4"></video>
-
-    <video id="selfie-video" autoplay playsinline></video>
-    <canvas id="canvas-capture" style="display:none;"></canvas>
-
-    <button class="side-btn" onclick="window.openSettings()"><i class="fas fa-cog"></i></button>
+    <button class="side-btn" onclick="window.toggleSettings(true)"><i class="fas fa-cog"></i></button>
 
     <div id="settings-modal" class="modal">
         <div class="settings-box">
-            <h2 style="color:#ff4500; margin-top:0;">વિદુષી પ્રો સેટિંગ્સ</h2>
+            <h3>વિદુષી AI સેટિંગ્સ</h3>
+            <button class="btn-action" style="background:#333; margin-bottom: 15px;" onclick="window.open3DVanshavali()">
+                <i class="fas fa-project-diagram"></i> ૩D વંશાવલી જુઓ
+            </button>
+            <hr style="border: 0.5px solid #333;">
             
-            <div class="menu-grid">
-                <div class="menu-item" onclick="window.open3DVanshavali()"><i class="fas fa-project-diagram"></i><br>૩D વંશ</div>
-                <div class="menu-item" onclick="window.startLens()"><i class="fas fa-eye"></i><br>લેન્સ (Lens)</div>
-                <div class="menu-item" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf"></i><br>RAG (PDF)</div>
-                <div class="menu-item" onclick="alert('ડાયરી મોડ્યુલ લોડ થાય છે...')"><i class="fas fa-book"></i><br>ડાયરી</div>
+            <label>AI Model:</label>
+            <select id="modelSelect">
+                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+                <option value="llama-3.3-70b-versatile">Groq Llama 70B</option>
+            </select>
+
+            <label>AI API Key:</label>
+            <input type="password" id="apiKeyInput" placeholder="તમારી AI API Key">
+
+            <label>તમારું નામ:</label>
+            <input type="text" id="userNameInput" placeholder="દા.ત. શિવાનંદ">
+
+            <div style="background: #1a1a1a; padding: 10px; border-radius: 10px; margin-top: 15px;">
+                <h4>સુરક્ષા (Firebase API Key)</h4>
+                <p style="font-size: 11px; color: #888;">*આ કી બ્રાઉઝરમાં સુરક્ષિત રીતે સેવ થશે.</p>
+                <input type="password" id="fbApiKey" placeholder="Firebase API Key દાખલ કરો">
             </div>
 
-            <h4>૧. AI સેટિંગ્સ (Gemini / Groq)</h4>
-            <select id="geminiModelSelect">
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash (Special)</option>
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Special)</option>
-                <option value="llama-3.3-70b-versatile">Groq Llama 3.3 70B</option>
-            </select>
-            <input type="password" id="apiKeyInput" placeholder="AI API Key (Gemini/Groq)">
-
-            <h4>૨. Firebase સેટિંગ્સ (ડેટા સ્ટોરેજ)</h4>
-            <input type="text" id="fbApiKey" placeholder="Firebase API Key">
-            <input type="text" id="fbProjectId" placeholder="Firebase Project ID">
-            <input type="text" id="fbDatabaseUrl" placeholder="Database URL">
-
-            <h4>૩. પ્રોફાઇલ</h4>
-            <input type="text" id="userNameInput" placeholder="તમારું નામ">
-
-            <button class="save-btn" onclick="window.saveSettings()">સેવ અને બંધ કરો</button>
+            <button class="btn-action" onclick="window.saveSettings()">સાચવો અને કનેક્ટ કરો</button>
+            <button class="btn-action" style="background:transparent; color:#888;" onclick="window.toggleSettings(false)">બંધ કરો</button>
         </div>
     </div>
 
     <div id="vanshavali-3d-modal">
-        <button id="close-graph" onclick="window.close3DVanshavali()">X</button>
+        <button id="close-graph" onclick="window.close3DVanshavali()">બંધ કરો</button>
         <div id="graph-container"></div>
     </div>
 
-    <input type="file" id="docLoader" style="display:none;" onchange="window.handleRAGUpload(this)">
-
     <div id="mic-container">
-        <div id="status-text" style="margin-bottom:10px; font-weight:bold;">તૈયાર...</div>
-        <button id="mic-btn" class="round-btn" onclick="window.startConversation()"><i class="fas fa-microphone"></i></button>
+        <div id="status-text">તૈયાર... બોલવા માટે દબાવો</div>
+        <button id="mic-btn" class="mic-btn" onclick="window.listen()"><i class="fas fa-microphone"></i></button>
     </div>
 
     <script>
-        // ૧. જગદગુરુ રામાનંદાચાર્યજીની વંશાવલી (ડેટા)
-        const myFamilyData = {
+        let db;
+
+        // ૧. Firebase Configuration (બાકીના સેટિંગ્સ અહીં કોડમાં છે)
+        const firebaseBaseConfig = {
+            projectId: "તમારો-પ્રોજેક્ટ-આઈડી", // અહીં તમારો પ્રોજેક્ટ આઈડી લખો
+            databaseURL: "https://તમારો-પ્રોજેક્ટ.firebaseio.com", // અહીં તમારો DB URL લખો
+            appId: "૧:૧૨૩૪૫:web:abc", // અહીં તમારો App ID લખો
+            storageBucket: "તમારો-પ્રોજેક્ટ.appspot.com"
+        };
+
+        // ૨. Firebase Initialize (Settings માંથી API Key લઈને)
+        window.initFirebase = () => {
+            const secureKey = localStorage.getItem('fb_api_key');
+            if (secureKey && !firebase.apps.length) {
+                const finalConfig = { ...firebaseBaseConfig, apiKey: secureKey };
+                firebase.initializeApp(finalConfig);
+                db = firebase.database();
+                console.log("✅ Firebase Connected!");
+            }
+        };
+
+        // ૩. ૩D વંશાવલી ડેટા
+        const vData = { 
             name: "જગદગુરુ રામાનંદાચાર્યજી", 
-            info: "વિ. સં. ૧૩૫૬",
-            children: [{
-                name: "અનંતાનંદજી", 
-                children: [{
-                    name: "ગેંડાજી", 
-                    children: [{
-                        name: "લક્ષ્મીદાસજી", 
-                        children: [{
-                            name: "માધવદાસજી", 
-                            children: [{
-                                name: "ખોજીજી", 
-                                children: [{
-                                    name: "મહેન્દ્રદાસજી", 
-                                    info: "પાલડી-મારવાડ (૧૪૯૫)", 
-                                    children: [{
-                                        name: "પુરણદાસજી બાપુ", 
-                                        info: "ઝીંઝર સમાધિ (૧૯૩૧)", 
-                                        children: [
-                                            {
-                                                name: "ગંગારામજી", 
-                                                children: [
-                                                    { 
-                                                        name: "આશારામજી", 
-                                                        children: [
-                                                            { name: "ગિરધરદાસજી", children: [{ name: "હરીરામજી" }] }, 
-                                                            { name: "મોજીરમજી", children: [{ name: "જેજેરામ", children: [{ name: "ગૌતમ" }] }] }, 
-                                                            { name: "સીતારામજી", children: [{ name: "પ્રભુદાસ" }, { name: "રાજુભાઈ" }] }
-                                                        ]
-                                                    },
-                                                    { 
-                                                        name: "વ્રજેશરામજી", 
-                                                        children: [
-                                                            { name: "ભગવાનદાસજી", info: "ગાંગોદ", children: [{ name: "બાબુરામજી" }, { name: "ઈશ્વરદાસજી" }] }, 
-                                                            { name: "તુલસીદાસજી", info: "રોજકા", children: [{ name: "મનસુખભાઈ" }, { name: "વિમુભાઈ" }, { name: "પરશુરામ" }] }
-                                                        ]
-                                                    }
-                                                ]
-                                            },
-                                            {
-                                                name: "રઘુરામજી", 
-                                                children: [{
-                                                    name: "દયારામજી", 
-                                                    info: "દિવાળીબેન (ઝમરાળા)", 
-                                                    children: [
-                                                        { name: "કાશીરામજી", info: "રામપુર" }, 
-                                                        { name: "વશરામજી", info: "સંખેજ" }, 
-                                                        { 
-                                                            name: "જાનકીદાસજી", 
-                                                            info: "ઝીંઝર", 
-                                                            children: [
-                                                                { name: "મનહરલાલ" }, { name: "પ્રતાપભાઈ" }, { name: "વૈકુંઠભાઈ" }, { name: "સતીષભાઈ" }, { name: "દેવેન્દ્રભાઈ" }
-                                                            ]
-                                                        }
-                                                    ]
-                                                }]
-                                            }
-                                        ]
-                                    }]
-                                }]
-                            }]
-                        }]
-                    }]
-                }]
-            }]
+            children: [
+                { name: "અનંતાનંદજી", children: [
+                    { name: "ગેંડાજી", children: [
+                        { name: "લક્ષ્મીદાસજી", children: [{ name: "માધવદાસજી" }] }
+                    ]}
+                ]}
+            ] 
         };
 
-        // ૨. ૩D ગ્રાફ ફંક્શન - મોબાઇલ ફિક્સ સાથે
         window.open3DVanshavali = () => {
-            document.getElementById('settings-modal').style.display = 'none';
+            window.toggleSettings(false);
             document.getElementById('vanshavali-3d-modal').style.display = 'block';
-            
             const elem = document.getElementById('graph-container');
-            elem.innerHTML = ""; // સાફ કરો
-            elem.style.width = '100vw';
-            elem.style.height = '100vh';
+            elem.innerHTML = ""; // ક્લિયર જૂનો ગ્રાફ
 
-            setTimeout(() => {
-                const nodes = [], links = [];
-                function parse(node, parent = null) {
-                    nodes.push({ id: node.name, info: node.info || "" });
-                    if(parent) links.push({ source: parent.name, target: node.name });
-                    if(node.children) node.children.forEach(c => parse(c, node));
-                }
-                parse(myFamilyData);
-
-                const Graph = ForceGraph3D()(elem)
-                    .graphData({ nodes, links })
-                    .nodeAutoColorBy('id')
-                    .backgroundColor('#000000')
-                    .showNavInfo(false)
-                    .nodeThreeObject(node => {
-                        const sprite = new SpriteText(node.id);
-                        sprite.color = '#ffffff';
-                        sprite.textHeight = 5;
-                        return sprite;
-                    })
-                    .nodeThreeObjectExtend(true);
-            }, 300);
-        };
-
-        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; };
-
-        // ૩. સેટિંગ્સ મેનેજમેન્ટ
-        window.openSettings = () => {
-            document.getElementById('settings-modal').style.display = 'flex';
-            document.getElementById('userNameInput').value = localStorage.getItem('vidushi_username') || "";
-            document.getElementById('apiKeyInput').value = localStorage.getItem('vidushi_key') || "";
-            document.getElementById('fbApiKey').value = localStorage.getItem('fb_key') || "";
-            document.getElementById('fbProjectId').value = localStorage.getItem('fb_id') || "";
-            document.getElementById('fbDatabaseUrl').value = localStorage.getItem('fb_db') || "";
-        };
-
-        window.saveSettings = () => {
-            localStorage.setItem('vidushi_username', document.getElementById('userNameInput').value);
-            localStorage.setItem('vidushi_key', document.getElementById('apiKeyInput').value);
-            localStorage.setItem('fb_key', document.getElementById('fbApiKey').value);
-            localStorage.setItem('fb_id', document.getElementById('fbProjectId').value);
-            localStorage.setItem('fb_db', document.getElementById('fbDatabaseUrl').value);
-            document.getElementById('settings-modal').style.display = 'none';
-            alert("સેટિંગ્સ સેવ થયા છે!");
-        };
-
-        // ૪. Lens અને બેઝિક ફંક્શન્સ
-        window.startLens = async () => {
-            document.getElementById('settings-modal').style.display = 'none';
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-                const v = document.getElementById('selfie-video');
-                v.srcObject = stream; v.style.display = 'block';
-                setTimeout(() => {
-                    stream.getTracks().forEach(t => t.stop());
-                    v.style.display = 'none';
-                    alert("Lens સ્કેન પૂરું થયું.");
-                }, 4000);
-            } catch(e) { alert("કેમેરા એરર: " + e); }
-        };
-
-        window.startConversation = () => {
-            const rec = new (window.webkitSpeechRecognition || window.SpeechRecognition)();
-            rec.lang = 'gu-IN';
-            rec.start();
-            rec.onresult = (e) => {
-                const text = e.results[0][0].transcript;
-                document.getElementById('status-text').innerText = text;
+            const nodes = [], links = [];
+            const parse = (n, p = null) => {
+                nodes.push({ id: n.name });
+                if(p) links.push({ source: p.name, target: n.name });
+                if(n.children) n.children.forEach(c => parse(c, n));
             };
+            parse(vData);
+
+            const Graph = ForceGraph3D()(elem)
+                .graphData({ nodes, links })
+                .backgroundColor('#000000')
+                .nodeThreeObject(node => {
+                    const sprite = new SpriteText(node.id);
+                    sprite.color = '#ff4500';
+                    sprite.textHeight = 6;
+                    return sprite;
+                }).nodeThreeObjectExtend(true)
+                .linkColor(() => '#444');
         };
+
+        window.close3DVanshavali = () => document.getElementById('vanshavali-3d-modal').style.display = 'none';
+
+        // ૪. Settings Save
+        window.saveSettings = () => {
+            const fbKey = document.getElementById('fbApiKey').value;
+            const aiKey = document.getElementById('apiKeyInput').value;
+            const uName = document.getElementById('userNameInput').value;
+
+            if(!fbKey) { alert("મહેરબાની કરીને Firebase API Key નાખો!"); return; }
+
+            localStorage.setItem('fb_api_key', fbKey);
+            localStorage.setItem('api_key', aiKey);
+            localStorage.setItem('user_name', uName);
+
+            window.initFirebase();
+            window.toggleSettings(false);
+            alert("સેટિંગ્સ સફળતાપૂર્વક સાચવવામાં આવ્યા છે!");
+        };
+
+        window.toggleSettings = (show) => {
+            document.getElementById('settings-modal').style.display = show ? 'flex' : 'none';
+            if(show) {
+                document.getElementById('fbApiKey').value = localStorage.getItem('fb_api_key') || "";
+                document.getElementById('apiKeyInput').value = localStorage.getItem('api_key') || "";
+                document.getElementById('userNameInput').value = localStorage.getItem('user_name') || "";
+            }
+        };
+
+        // ૫. Voice Recognition & Firebase Save
+        window.listen = () => {
+            if (!db) { alert("પહેલા સેટિંગ્સમાં જઈ Firebase કનેક્ટ કરો!"); return; }
+
+            const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+            recognition.lang = 'gu-IN';
+            
+            document.getElementById('status-text').innerText = "સાંભળી રહ્યું છે...";
+            document.getElementById('mic-btn').style.background = "red";
+
+            recognition.onresult = (event) => {
+                const text = event.results[0][0].transcript;
+                document.getElementById('status-text').innerText = "તમે બોલ્યા: " + text;
+                
+                // Firebase માં સેવ કરો
+                const userName = localStorage.getItem('user_name') || "અજાણ્યો";
+                db.ref('vidushi_diary/' + userName).push({
+                    message: text,
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                }).then(() => {
+                    console.log("Data Saved to Firebase");
+                });
+            };
+
+            recognition.onend = () => {
+                document.getElementById('mic-btn').style.background = "#ff4500";
+            };
+            
+            recognition.start();
+        };
+
+        // પેજ લોડ વખતે Firebase શરૂ કરો
+        window.onload = window.initFirebase;
     </script>
 </body>
 </html>
