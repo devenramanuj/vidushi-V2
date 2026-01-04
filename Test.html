@@ -3,10 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi Supreme - 10-in-1 AI</title>
+    <title>Vidushi-AI | Supreme</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-storage-compat.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.145.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three-spritetext@1.8.2/dist/three-spritetext.min.js"></script>
@@ -18,37 +19,36 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; color: white; }
         
         .header-ui { position: fixed; top: 15px; width: 100%; display: flex; justify-content: space-between; padding: 0 15px; box-sizing: border-box; z-index: 100; }
-        .side-btn { background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--primary); width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px var(--primary); font-size: 14px; }
+        .side-btn { background: rgba(0,0,0,0.8); color: white; border: 1px solid var(--primary); width: 42px; height: 42px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 8px var(--primary); }
         
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 200; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box; }
         .box { background: var(--card); padding: 20px; border-radius: 20px; width: 100%; max-width: 450px; border: 1px solid var(--primary); max-height: 85vh; overflow-y: auto; }
         
-        .btn-action { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 10px; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 14px; }
+        .btn-action { width: 100%; padding: 12px; background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; border-radius: 10px; margin-top: 8px; display: flex; align-items: center; justify-content: center; gap: 8px; }
         input, select { width: 100%; padding: 10px; margin: 5px 0; background: #222; color: white; border: 1px solid #444; border-radius: 8px; box-sizing: border-box; }
 
         #main-hub { position: fixed; bottom: 30px; width: 100%; text-align: center; z-index: 50; }
         .mic-btn { width: 85px; height: 85px; border-radius: 50%; border: none; color: white; font-size: 32px; background: var(--primary); box-shadow: 0 0 25px var(--primary); cursor: pointer; }
         #status-display { margin-bottom: 15px; font-size: 15px; color: var(--primary); padding: 0 20px; min-height: 40px; }
         
-        .list-item { background: #1a1a1a; padding: 12px; border-radius: 10px; margin-bottom: 10px; border-left: 5px solid var(--primary); font-size: 13px; }
-        #canvas-hidden { display: none; }
+        #photo-viewer { display:none; max-width:100%; border-radius:15px; border:2px solid var(--primary); margin-top:10px; }
     </style>
 </head>
 <body>
 
     <div class="header-ui">
-        <div style="font-weight: bold; color: var(--primary); font-size: 18px;">VIDUSHI SUPREME</div>
-        <div style="display: flex; gap: 6px;">
-            <button title="ડાયરી" class="side-btn" onclick="window.showRecords('diary')"><i class="fas fa-book"></i></button>
-            <button title="કોલ બુક" class="side-btn" onclick="window.showRecords('call_book')"><i class="fas fa-phone"></i></button>
-            <button title="વંશાવલી" class="side-btn" onclick="window.open3DVanshavali()"><i class="fas fa-sitemap"></i></button>
-            <button title="સેટિંગ્સ" class="side-btn" onclick="window.toggleModal('settings-modal', true)"><i class="fas fa-cog"></i></button>
+        <div style="font-weight: bold; color: var(--primary); font-size: 20px;">VIDUSHI-AI</div>
+        <div style="display: flex; gap: 8px;">
+            <button class="side-btn" onclick="window.showRecords('diary')"><i class="fas fa-book"></i></button>
+            <button class="side-btn" onclick="window.showRecords('call_book')"><i class="fas fa-phone"></i></button>
+            <button class="side-btn" onclick="window.toggleModal('settings-modal', true)"><i class="fas fa-cog"></i></button>
         </div>
     </div>
 
     <div id="records-modal" class="modal">
         <div class="box">
-            <h3 id="records-title" style="color:var(--primary);">રેકોર્ડ્સ</h3>
+            <h3 id="records-title" style="color:var(--primary);">વિગત</h3>
+            <img id="photo-viewer" src="" alt="Photo">
             <div id="records-list"></div>
             <button class="btn-action" style="background:#333;" onclick="window.toggleModal('records-modal', false)">બંધ કરો</button>
         </div>
@@ -56,83 +56,49 @@
 
     <div id="settings-modal" class="modal">
         <div class="box">
-            <h3 style="color:var(--primary);">ટૂલ્સ અને સેટિંગ્સ</h3>
-            <button class="btn-action" onclick="window.startSmartLens()"><i class="fas fa-camera"></i> સ્માર્ટ વિઝન (શિલાલેખ/ટ્રાન્સલેશન)</button>
+            <h3 style="color:var(--primary);">Vidushi-AI Tools</h3>
+            <button class="btn-action" onclick="window.startSmartLens()"><i class="fas fa-camera"></i> સ્માર્ટ લેન્સ (Gemini 2.5)</button>
+            <button class="btn-action" onclick="window.open3DVanshavali()"><i class="fas fa-sitemap"></i> ૩D વંશાવલી</button>
             
-            <label class="btn-action" style="background:#222; cursor:pointer;">
-                <i class="fas fa-file-pdf"></i> PDF/ડોક્યુમેન્ટ એનાલિસિસ
-                <input type="file" id="docPicker" style="display:none;" accept=".pdf,.txt" onchange="window.analyzeDocument(this)">
-            </label>
+            <div style="margin:15px 0; border:1px dashed var(--primary); padding:10px; border-radius:10px;">
+                <label>ફોટો મેમરી (Upload):</label>
+                <input type="file" id="photoUpload" accept="image/*">
+                <input type="text" id="photoPersonName" placeholder="વ્યક્તિનું નામ">
+                <button class="btn-action" style="background:#28a745;" onclick="window.uploadPhoto()"><i class="fas fa-cloud-upload-alt"></i> ફોટો સેવ કરો</button>
+            </div>
 
-            <hr style="border:0.5px solid #333; margin:15px 0;">
-            <select id="modelSelect">
-                <option value="gemini-2.5-pro">Gemini 2.5 Pro (Best)</option>
-                <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
-            </select>
+            <hr style="border:0.5px solid #333;">
             <input type="password" id="apiKeyInput" placeholder="Gemini API Key">
             <input type="password" id="fbApiKey" placeholder="Firebase API Key">
             <input type="text" id="userNameInput" placeholder="તમારું નામ">
             
-            <div style="margin-top:10px;">
-                <label>વોઈસ સેટિંગ્સ (પિચ અને સ્પીડ):</label>
-                <input type="range" id="voicePitch" min="0.5" max="2" value="1" step="0.1">
-                <input type="range" id="voiceRate" min="0.5" max="2" value="1" step="0.1">
-            </div>
+            <label>વોઈસ પિચ & સ્પીડ:</label>
+            <input type="range" id="voicePitch" min="0.5" max="2" value="1" step="0.1">
+            <input type="range" id="voiceRate" min="0.5" max="2" value="1" step="0.1">
 
-            <button class="btn-action" onclick="window.saveSettings()">સેવ કરો</button>
+            <button class="btn-action" onclick="window.saveSettings()">સેટિંગ્સ સેવ કરો</button>
             <button class="btn-action" style="background:transparent; color:#666;" onclick="window.toggleModal('settings-modal', false)">બંધ કરો</button>
         </div>
     </div>
 
     <div id="vanshavali-3d-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#000; z-index:300;">
-        <button style="position:fixed; top:20px; right:20px; z-index:310; background:red; color:white; border:none; padding:12px 20px; border-radius:10px;" onclick="window.close3DVanshavali()">X</button>
+        <button style="position:fixed; top:20px; right:20px; z-index:310; background:red; color:white; border:none; padding:12px; border-radius:10px;" onclick="window.close3DVanshavali()">X</button>
         <div id="graph-container"></div>
     </div>
 
     <div id="main-hub">
-        <div id="status-display">વિદુષી આપના આદેશની પ્રતીક્ષામાં છે...</div>
+        <div id="status-display">Vidushi-AI Ready...</div>
         <button class="mic-btn" onclick="window.listen()"><i class="fas fa-microphone"></i></button>
     </div>
 
     <canvas id="canvas-hidden"></canvas>
 
     <script>
-        let db;
+        let db, storage;
         const fbBase = {
             projectId: "devenramanuj", 
             storageBucket: "devenramanuj.appspot.com",
-            messagingSenderId: "1032333036814",
-            appId: "1:1032333036814:web:65622a57173e63f596825c",
             databaseURL: "https://devenramanuj-default-rtdb.firebaseio.com"
-        };
-
-        const vData = {
-            name: "જગદગુરુ રામાનંદાચાર્યજી",
-            children: [{
-                name: "અનંતાનંદજી",
-                children: [{
-                    name: "ગેંડાજી",
-                    children: [{
-                        name: "લક્ષ્મીદાસજી",
-                        children: [{
-                            name: "માધવદાસજી",
-                            children: [{
-                                name: "ખોજીજી",
-                                children: [{
-                                    name: "મહેન્દ્રદાસજી (પાલડી)",
-                                    children: [{
-                                        name: "પુરણદાસજી બાપુ (ઝીંઝર)",
-                                        children: [
-                                            { name: "ગંગારામજી", children: [{ name: "આશારામજી", children: [{ name: "ગૌતમ" }, { name: "ગિરધરદાસજી" }] }]},
-                                            { name: "રઘુરામજી", children: [{ name: "દયારામજી", children: [{ name: "જાનકીદાસજી", children: [{ name: "દેવેન્દ્રભાઈ" }] }] }]}
-                                        ]
-                                    }]
-                                }]
-                            }]
-                        }]
-                    }]
-                }]
-            }]
         };
 
         window.initFirebase = () => {
@@ -140,128 +106,71 @@
             if (key && !firebase.apps.length) {
                 firebase.initializeApp({ ...fbBase, apiKey: key });
                 db = firebase.database();
+                storage = firebase.storage();
             }
         };
 
+        // --- Photo Memory Logic ---
+        window.uploadPhoto = () => {
+            const file = document.getElementById('photoUpload').files[0];
+            const name = document.getElementById('photoPersonName').value.trim();
+            if(!file || !name) return alert("ફોટો અને નામ બંને જરૂરી છે!");
+
+            window.speak("ફોટો સેવ થઈ રહ્યો છે...");
+            const ref = storage.ref(`photos/${name}_${Date.now()}.jpg`);
+            ref.put(file).then(snapshot => {
+                snapshot.ref.getDownloadURL().then(url => {
+                    db.ref('photo_memory/' + name.toLowerCase()).set({ url: url, name: name });
+                    window.speak(`${name} નો ફોટો સેવ થઈ ગયો છે.`);
+                });
+            });
+        };
+
+        window.showPhoto = (name) => {
+            db.ref('photo_memory/' + name.toLowerCase()).once('value', snap => {
+                const data = snap.val();
+                if(data) {
+                    window.toggleModal('records-modal', true);
+                    document.getElementById('records-title').innerText = data.name + " નો ફોટો";
+                    const img = document.getElementById('photo-viewer');
+                    img.src = data.url; img.style.display = 'block';
+                    window.speak("આ રહ્યો " + data.name + " નો ફોટો.");
+                } else {
+                    window.speak("માફ કરજો, આ નામનો ફોટો મળ્યો નથી.");
+                }
+            });
+        };
+
+        // --- Core Logic ---
         window.listen = () => {
             const r = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
             r.lang = 'gu-IN';
-            r.onresult = async (e) => {
+            r.onresult = (e) => {
                 const q = e.results[0][0].transcript;
                 document.getElementById('status-display').innerText = q;
-                
-                // 1. Math Check
-                if(/\d/.test(q) && (q.includes("વત્તા") || q.includes("ગુણ્યા"))) {
-                    try {
-                        let exp = q.replace(/વત્તા/g, '+').replace(/ઓછા/g, '-').replace(/ગુણ્યા/g, '*').replace(/ભાગ્યા/g, '/');
-                        window.speak("જવાબ " + math.evaluate(exp) + " છે.");
-                        return;
-                    } catch(e) {}
-                }
 
-                // 2. Diary/CallBook Logic
-                if(q.includes("ડાયરી") || q.includes("નોંધો")) {
-                    db.ref('diary/' + (localStorage.getItem('user_name') || 'Admin')).push({ msg: q, time: Date.now() });
-                    window.speak("ડાયરીમાં સેવ કર્યું.");
-                } else if(q.includes("લાઈવ") || q.includes("શોધો")) {
-                    window.speak("હું લાઈવ માહિતી શોધી રહી છું...");
-                    window.askGemini(q, true); // True for web search
+                if(q.includes("ફોટો બતાવ")) {
+                    const name = q.replace("નો ફોટો બતાવ", "").replace("વિદુષી", "").trim();
+                    window.showPhoto(name);
+                } else if(q.includes("ડાયરી")) {
+                    db.ref('diary/Admin').push({ msg: q });
+                    window.speak("ડાયરીમાં નોંધ કરી લીધી.");
                 } else {
-                    window.askGemini(q, false);
+                    window.askGemini(q);
                 }
             };
             r.start();
         };
 
-        window.askGemini = async (q, isSearch) => {
-            const m = document.getElementById('modelSelect').value;
-            const prompt = isSearch ? `Search internet and answer in Gujarati: ${q}` : `તમે વિદુષી છો. જવાબ ગુજરાતીમાં આપો: ${q}`;
-            try {
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${localStorage.getItem('api_key')}`, {
-                    method: 'POST',
-                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
-                });
-                const d = await res.json();
-                const text = d.candidates[0].content.parts[0].text;
-                window.speak(text);
-                document.getElementById('status-display').innerText = text;
-            } catch(e) { window.speak("કનેક્શન ચેક કરો."); }
-        };
-
-        window.analyzeDocument = async (input) => {
-            const file = input.files[0];
-            window.speak("ફાઇલ વાંચી રહી છું...");
-            const reader = new FileReader();
-            reader.onload = async (e) => {
-                const b64 = e.target.result.split(',')[1];
-                const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${localStorage.getItem('api_key')}`, {
-                    method: 'POST',
-                    body: JSON.stringify({ contents: [{ parts: [{ text: "આ ફાઇલનો સારાંશ ગુજરાતીમાં આપો." }, { inline_data: { mime_type: "application/pdf", data: b64 } }] }] })
-                });
-                const d = await res.json();
-                const text = d.candidates[0].content.parts[0].text;
-                window.speak(text);
-                document.getElementById('status-display').innerText = text;
-            };
-            reader.readAsDataURL(file);
-        };
-
-        window.startSmartLens = async () => {
-            window.toggleModal('settings-modal', false);
-            const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-            const v = document.createElement('video');
-            v.style = "position:fixed;top:0;left:0;width:100%;height:100%;z-index:500;object-fit:cover;";
-            v.srcObject = s; v.autoplay = true; document.body.appendChild(v);
-            setTimeout(() => {
-                const c = document.getElementById('canvas-hidden');
-                c.width = v.videoWidth; c.height = v.videoHeight;
-                c.getContext('2d').drawImage(v, 0, 0);
-                const b64 = c.toDataURL('image/jpeg').split(',')[1];
-                s.getTracks().forEach(t => t.stop()); v.remove();
-                window.analyzeVision(b64);
-            }, 5000);
-        };
-
-        window.analyzeVision = async (img) => {
-            window.speak("વિશ્લેષણ અને ભાષાંતર કરી રહી છું...");
+        window.askGemini = async (q) => {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro:generateContent?key=${localStorage.getItem('api_key')}`, {
                 method: 'POST',
-                body: JSON.stringify({ contents: [{ parts: [{ text: "Translate any text found and explain objects in Gujarati." }, { inline_data: { mime_type: "image/jpeg", data: img } }] }] })
+                body: JSON.stringify({ contents: [{ parts: [{ text: "જવાબ ગુજરાતીમાં આપો: " + q }] }] })
             });
             const d = await res.json();
             const text = d.candidates[0].content.parts[0].text;
             window.speak(text);
             document.getElementById('status-display').innerText = text;
-        };
-
-        window.showRecords = (type) => {
-            const path = type === 'diary' ? 'diary' : 'call_book';
-            window.toggleModal('records-modal', true);
-            db.ref(path + '/' + (localStorage.getItem('user_name') || 'Admin')).limitToLast(10).once('value', snap => {
-                const list = document.getElementById('records-list'); list.innerHTML = "";
-                snap.forEach(c => {
-                    const item = document.createElement('div'); item.className = "list-item";
-                    item.innerText = c.val().msg || c.val().purpose; list.prepend(item);
-                });
-            });
-        };
-
-        window.open3DVanshavali = () => {
-            window.toggleModal('settings-modal', false);
-            document.getElementById('vanshavali-3d-modal').style.display = 'block';
-            const nodes = [], links = [];
-            const parse = (n, p = null) => {
-                nodes.push({ id: n.name });
-                if(p) links.push({ source: p.name, target: n.name });
-                if(n.children) n.children.forEach(c => parse(c, n));
-            };
-            parse(vData);
-            setTimeout(() => {
-                ForceGraph3D()(document.getElementById('graph-container'))
-                    .graphData({ nodes, links }).backgroundColor('#000')
-                    .nodeThreeObject(node => { const s = new SpriteText(node.id); s.color = '#ff4500'; s.textHeight = 6; return s; })
-                    .nodeThreeObjectExtend(true);
-            }, 500);
         };
 
         window.speak = (t) => {
@@ -280,8 +189,11 @@
             window.initFirebase(); window.toggleModal('settings-modal', false);
         };
 
-        window.toggleModal = (id, s) => document.getElementById(id).style.display = s ? 'flex' : 'none';
-        window.close3DVanshavali = () => document.getElementById('vanshavali-3d-modal').style.display = 'none';
+        window.toggleModal = (id, s) => {
+            document.getElementById(id).style.display = s ? 'flex' : 'none';
+            if(!s) document.getElementById('photo-viewer').style.display = 'none';
+        };
+
         window.onload = window.initFirebase;
     </script>
 </body>
