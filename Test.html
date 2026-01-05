@@ -199,14 +199,42 @@
         };
 
         // --- 3D વંશાવલી ---
-        window.open3DVanshavali = () => {
-            document.getElementById('vanshavali-3d-modal').style.display = 'block';
-            const gData = convertTreeToGraph(window.activeFamilyTree);
-            ForceGraph3D()(document.getElementById('graph-container'))
-                .graphData(gData)
-                .nodeAutoColorBy('group')
-                .onNodeClick(node => window.speak("આ છે " + node.id));
-        };
+        // --- 3D વંશાવલી રિપેર કરેલું ફંક્શન ---
+window.open3DVanshavali = () => {
+    const modal = document.getElementById('vanshavali-3d-modal');
+    const container = document.getElementById('graph-container');
+    
+    // મોડલ ખોલો
+    modal.style.display = 'block';
+    
+    // જૂનો ગ્રાફ સાફ કરો જેથી નવો લોડ થાય
+    container.innerHTML = ''; 
+
+    // ખાતરી કરો કે ડેટા ઉપલબ્ધ છે
+    const treeData = window.activeFamilyTree || window.vanshavaliData;
+
+    if(!treeData) {
+        window.speak("ક્ષમા કરજો વંશાવલીનો ડેટા મળ્યો નથી");
+        return;
+    }
+
+    // ડેટાને ગ્રાફ ફોર્મેટમાં ફેરવો
+    const gData = convertTreeToGraph(treeData);
+
+    // 3D ગ્રાફ રન્ડર કરો
+    const Graph = ForceGraph3D()(container)
+        .graphData(gData)
+        .nodeLabel('id')
+        .nodeAutoColorBy('group')
+        .linkDirectionalArrowLength(3.5)
+        .linkDirectionalArrowRelPos(1)
+        .onNodeClick(node => {
+            window.speak("આ છે " + node.id);
+        });
+
+    window.speak("વંશાવલીનું બ્રહ્માંડ તૈયાર છે");
+};
+
 
         window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; };
 
