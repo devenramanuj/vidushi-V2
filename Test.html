@@ -18,7 +18,7 @@
 
     <style>
         /* --- CORE VARIABLES --- */
-        :root { --primary: #ff4500; --secondary: #008cff; --accent: #d4af37; --bg: #0a0a0a; --glass: rgba(30,30,30,0.9); }
+        :root { --primary: #ff4500; --secondary: #008cff; --accent: #d4af37; --bg: #0a0a0a; --glass: rgba(30,30,30,0.9); --list-bg: #1a1a1a; --list-item-bg: #252525; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg); font-family: 'Segoe UI', sans-serif; user-select: none; color: white; }
 
@@ -72,13 +72,79 @@
         #app-viewer-header { padding: 15px; background: #222; border-bottom: 2px solid var(--primary); display: flex; justify-content: space-between; color: white; font-weight: bold; }
         #app-render-area { flex: 1; width: 100%; background: white; overflow: auto; position: relative; }
 
-        /* 3D UNIVERSE */
-        #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
-        #graph-container { width: 100%; height: 100%; }
-        #close-3d-btn { position: fixed; top: 20px; right: 20px; background: var(--primary); color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; border-radius: 5px; cursor: pointer; }
+        /* --- 3D & LIST VANSHAVALI MODAL STYLES --- */
+        #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; flex-direction: column; }
+        
+        /* Tabs Header */
+        .vanshavali-header {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px 15px; 
+            background: #111; 
+            border-bottom: 1px solid #333;
+            z-index: 310;
+        }
+        .vanshavali-title { color: var(--accent); font-weight: bold; font-size: 16px; }
+        
+        .view-tabs { display: flex; gap: 5px; background: #222; padding: 4px; border-radius: 20px; }
+        .view-tab-btn {
+            background: transparent; border: none; color: #aaa; padding: 6px 16px; border-radius: 15px; font-size: 12px; cursor: pointer; transition: 0.3s;
+        }
+        .view-tab-btn.active { background: var(--accent); color: black; font-weight: bold; }
+        .close-tab-btn { background: #333; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; }
+
+        /* Container Areas */
+        #graph-container { width: 100%; height: 100%; display: none; }
+        #vanshavali-list-container { 
+            width: 100%; 
+            height: 100%; 
+            overflow-y: auto; 
+            padding: 20px; 
+            display: block; 
+            background: #0a0a0a;
+        }
+
+        /* --- ATTRACTIVE LIST UI STYLES --- */
+        .tree-list-node {
+            margin-bottom: 8px;
+            position: relative;
+            animation: slideIn 0.3s ease-out;
+        }
+        /* Indentation Line */
+        .tree-list-node::before {
+            content: ''; position: absolute; left: 10px; top: 30px; bottom: -10px; width: 1px; background: #444;
+        }
+        .tree-list-node:last-child::before { display: none; }
+        
+        .node-card {
+            background: var(--list-item-bg);
+            margin-left: 20px; /* Indentation for hierarchy */
+            padding: 12px;
+            border-radius: 8px;
+            border-left: 4px solid var(--secondary);
+            position: relative;
+            transition: transform 0.2s, background 0.2s;
+            cursor: pointer;
+        }
+        /* Connector line to parent */
+        .node-card::before {
+            content: ''; position: absolute; left: -21px; top: 50%; width: 15px; height: 1px; background: #444;
+        }
+
+        .node-card:active { transform: scale(0.98); background: #333; }
+        
+        .node-name { font-size: 16px; font-weight: bold; color: #fff; display: block; }
+        .node-info { font-size: 12px; color: var(--accent); margin-top: 4px; display: block; }
+        
+        /* Root node style */
+        .root-node > .node-card { margin-left: 0; border-left-color: var(--accent); background: #2a2a2a; }
+        .root-node > .node-card::before { display: none; }
+        .root-node::before { display: none; }
 
         @keyframes pulse { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0.7); } 70% { transform: scale(1.1); box-shadow: 0 0 0 10px rgba(255, 0, 0, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 0, 0, 0); } }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
     </style>
 </head>
 <body>
@@ -92,7 +158,7 @@
         <video id="angry-video" muted loop playsinline><source src="angry.mp4" type="video/mp4"></video>
     </div>
     
-    <video id="selfie-video" autoplay playsinline></video>
+    <video id="selfie-video" autoplay playsinline muted></video>
     <canvas id="canvas-capture"></canvas>
 
     <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
@@ -108,8 +174,20 @@
         <div id="app-render-area"></div>
     </div>
 
+    <!-- UPDATED VANSHAVALI MODAL -->
     <div id="vanshavali-3d-modal">
-        <button id="close-3d-btn" onclick="window.close3DVanshavali()">🔙 પાછા (Back)</button>
+        <div class="vanshavali-header">
+            <div class="view-tabs">
+                <button class="view-tab-btn active" id="btn-list-view" onclick="window.switchVanshavaliView('list')">📋 યાદી</button>
+                <button class="view-tab-btn" id="btn-3d-view" onclick="window.switchVanshavaliView('3d')">🌌 3D</button>
+            </div>
+            <button class="close-tab-btn" onclick="window.close3DVanshavali()">✖</button>
+        </div>
+        
+        <!-- List Container (Default) -->
+        <div id="vanshavali-list-container"></div>
+        
+        <!-- 3D Container (Hidden initially for performance) -->
         <div id="graph-container"></div>
     </div>
 
@@ -526,11 +604,9 @@
         };
         window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
         
-        // IMPROVED LOGIC: Treat 'આખો' (Open) and 'સેટિંગ્સ' (Settings) as request for Archeology
         window.openArcheologyMenu = () => { 
             document.getElementById('settings-modal').style.display = 'none'; 
             document.getElementById('archeology-selector').style.display = 'flex'; 
-            // Ensure the 'History' mode is selected by default when opening
             window.setVisionMode('history', document.querySelector('.mode-btn')); 
         };
         
@@ -552,7 +628,6 @@
             currentMood = document.getElementById('moodSelect').value; 
             let firebaseKey = document.getElementById('firebaseKeyInput').value.trim();
 
-            // Save all to LocalStorage
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
             localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
@@ -560,7 +635,6 @@
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseKey);
 
-            // Save to Cloud
             try { await saveToCloud(); } catch(e) { console.warn("Cloud save failed, but local saved."); }
             
             document.getElementById('settings-modal').style.display = 'none'; 
@@ -588,13 +662,11 @@
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી."); return true; } return false; }
         
-        // --- MAIN COMMAND LOGIC ---
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
             
-            // IMPROVED: If user says 'આખો' or similar, treat it as 'Archeology' request
             if(cmd.includes("આખો") || cmd.includes("સેટિંગ્સ")) {
                 document.getElementById('settings-modal').style.display = 'none'; 
                 document.getElementById('archeology-selector').style.display = 'flex';
@@ -615,7 +687,6 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
-        // --- SYSTEM PROMPT ---
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
@@ -627,7 +698,6 @@
                 } 
             } catch (e) { console.error(e); } 
             
-            // RAG CONTENT
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
                 const safeContent = window.ragContent.substring(0, 500000); 
@@ -665,7 +735,6 @@
             } 
         };
         
-        // --- GROQ ---
         window.askGroqText = async (userText) => { 
             if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } 
             
@@ -689,7 +758,6 @@
             } 
         };
         
-        // --- VISION ---
         window.askGeminiVision = async (base64Image) => { 
             let keys = geminiKeys.split(',').filter(k=>k); 
             if(!keys.length) { window.speak("API Key નથી."); return; } 
@@ -726,7 +794,6 @@
             } 
         };
         
-        // --- RAG ---
         window.handleRAGUpload = async (input) => {
             const file = input.files[0];
             if (!file) return;
@@ -758,10 +825,25 @@
             }
         };
 
-        // --- CAMERA & VISION ---
-        window.captureAndAnalyze = async (mode = "user") => { if (visionStream && currentCameraMode !== mode) { window.stopVisionCamera(); } if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); await window.activateVision(mode); setTimeout(window.takeActualPhoto, 3000); } else { window.takeActualPhoto(); } };
+        // --- UPDATED: FIX FOR CAMERA ---
+        window.captureAndAnalyze = async (mode = "user") => { 
+            // Stop existing stream first to avoid conflicts
+            window.stopVisionCamera();
+            
+            window.speak(mode === "user" ? "સેલ્ફી કેમેરો ઓપન થાય છે..." : "પાછળનો કેમેરો ઓપન થાય છે..."); 
+            
+            try {
+                await window.activateVision(mode);
+                // Wait 3 seconds for user to focus then capture
+                setTimeout(window.takeActualPhoto, 3000); 
+            } catch (e) {
+                console.error(e);
+                window.speak("કેમેરો ઓપન કરવામાં ભૂલ.");
+            }
+        };
         
         window.takeActualPhoto = () => {
+            if(!selfieVideo.srcObject) return; // Safety check
             canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             const base64Image = canvas.toDataURL('image/jpeg');
@@ -772,22 +854,143 @@
         };
         
         let liveModel = null; let isLiveVisionActive = false;
-        window.startLiveVision = async (btn) => { document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); document.getElementById('archeology-selector').style.display = 'none'; document.getElementById('video-container').style.display = 'none'; if(!silentMode) window.speak("કેમેરો ચાલુ..."); await window.activateVision("environment"); if(!liveModel) { if(!silentMode) window.speak("મોડેલ લોડ થાય છે..."); liveModel = await cocoSsd.load(); } isLiveVisionActive = true; document.getElementById('canvas-capture').style.display = 'block'; window.detectFrame(); };
-        window.detectFrame = () => { if(!isLiveVisionActive) return; const video = document.getElementById('selfie-video'); const canvas = document.getElementById('canvas-capture'); const ctx = canvas.getContext('2d'); canvas.width = video.videoWidth; canvas.height = video.videoHeight; ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); liveModel.detect(video).then(predictions => { ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); predictions.forEach(prediction => { ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke(); ctx.font = 'bold 24px Arial'; ctx.fillStyle = '#00ff00'; ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30); ctx.fillStyle = '#000000'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5); }); if(isLiveVisionActive) requestAnimationFrame(window.detectFrame); }); };
+        window.startLiveVision = async (btn) => { 
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); 
+            if(btn) btn.classList.add('active'); 
+            document.getElementById('archeology-selector').style.display = 'none'; 
+            document.getElementById('video-container').style.display = 'none'; 
+            
+            if(!silentMode) window.speak("લાઇવ વિઝન ચાલુ છે..."); 
+            
+            // Stop any existing camera before starting live
+            window.stopVisionCamera();
 
-        // --- ARCHEOLOGY MENUS ---
+            try {
+                await window.activateVision("environment");
+                if(!liveModel) { 
+                    if(!silentMode) window.speak("મોડેલ લોડ થાય છે..."); 
+                    liveModel = await cocoSsd.load(); 
+                } 
+                isLiveVisionActive = true; 
+                document.getElementById('canvas-capture').style.display = 'block'; 
+                window.detectFrame(); 
+            } catch (e) {
+                console.error(e);
+                window.speak("કેમેરો અથવા પરવાનામાં ભૂલ.");
+                document.getElementById('video-container').style.display = 'block';
+            }
+        };
+        
+        window.detectFrame = () => { 
+            if(!isLiveVisionActive) return; 
+            const video = document.getElementById('selfie-video'); 
+            const canvas = document.getElementById('canvas-capture'); 
+            const ctx = canvas.getContext('2d'); 
+            canvas.width = video.videoWidth; canvas.height = video.videoHeight; 
+            
+            ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); 
+            
+            liveModel.detect(video).then(predictions => { 
+                ctx.clearRect(0, 0, canvas.width, canvas.height); 
+                ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); 
+                predictions.forEach(prediction => { 
+                    ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke(); 
+                    ctx.font = 'bold 24px Arial'; ctx.fillStyle = '#00ff00'; 
+                    ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30); 
+                    ctx.fillStyle = '#000000'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5); 
+                }); 
+                if(isLiveVisionActive) requestAnimationFrame(window.detectFrame); 
+            }); 
+        };
+
         window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
         window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageOverlay.style.display = 'flex'; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageOverlay.style.display='flex'; generatedImage.style.display="none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { generatedImage.style.display="block"; window.speak("તૈયાર!"); }; };
-        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('graph-container').innerHTML = ''; window.speak("3D બંધ."); };
         
-        // --- CRITICAL FIX: Force new data on open ---
+        // --- NEW: VANSHAVALI VIEW LOGIC ---
+        window.switchVanshavaliView = (view) => {
+            const listContainer = document.getElementById('vanshavali-list-container');
+            const graphContainer = document.getElementById('graph-container');
+            const listBtn = document.getElementById('btn-list-view');
+            const threeDBtn = document.getElementById('btn-3d-view');
+
+            if(view === 'list') {
+                listContainer.style.display = 'block';
+                graphContainer.style.display = 'none';
+                listBtn.classList.add('active');
+                threeDBtn.classList.remove('active');
+            } else {
+                listContainer.style.display = 'none';
+                graphContainer.style.display = 'block';
+                listBtn.classList.remove('active');
+                threeDBtn.classList.add('active');
+                // Init 3D only when needed to save resources
+                if(!window.vanshavali3DInitialized) {
+                    window.init3DGraph();
+                    window.vanshavali3DInitialized = true;
+                }
+            }
+        };
+
+        // Recursive function to build the attractive list HTML
+        window.renderVanshavaliList = function(node, container) {
+            const nodeDiv = document.createElement('div');
+            nodeDiv.className = 'tree-list-node';
+            
+            const card = document.createElement('div');
+            card.className = 'node-card';
+            if(!node.children || node.children.length === 0) {
+                nodeDiv.classList.add('leaf-node'); // Styling for leaf nodes if needed
+            }
+            if(container === document.getElementById('vanshavali-list-container')) {
+                nodeDiv.classList.add('root-node'); // The very first node
+            }
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'node-name';
+            nameSpan.innerText = node.name;
+            card.appendChild(nameSpan);
+
+            if(node.info) {
+                const infoSpan = document.createElement('span');
+                infoSpan.className = 'node-info';
+                infoSpan.innerText = node.info;
+                card.appendChild(infoSpan);
+            }
+
+            // Click to speak info
+            card.onclick = () => {
+                window.speak(node.name + (node.info ? ". " + node.info : ""));
+            };
+
+            nodeDiv.appendChild(card);
+            container.appendChild(nodeDiv);
+
+            if(node.children && node.children.length > 0) {
+                // Create a wrapper for children to handle indentation logic visually if needed
+                const childrenContainer = document.createElement('div');
+                childrenContainer.style.position = 'relative';
+                
+                node.children.forEach(child => {
+                    window.renderVanshavaliList(child, childrenContainer);
+                });
+                container.appendChild(childrenContainer);
+            }
+        };
+
+        window.close3DVanshavali = () => { 
+            document.getElementById('vanshavali-3d-modal').style.display = 'none'; 
+            document.getElementById('vanshavali-list-container').innerHTML = ''; 
+            document.getElementById('graph-container').innerHTML = ''; 
+            window.vanshavali3DInitialized = false; // Reset 3D init flag
+            window.speak("વંશાવલી બંધ."); 
+        };
+        
+        // --- UPDATED OPEN FUNCTION ---
         window.open3DVanshavali = () => { 
-            // Force load the data from the current hardcoded JSON to ensure it's the latest
             if(window.vanshavaliData) {
                 window.activeFamilyTree = window.vanshavaliData;
-                // Sync this new data to the cloud if connected, so next time it loads correctly too
                 if(db && vanshavaliDocRef) {
                     setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
                 }
@@ -796,10 +999,35 @@
             if(!window.activeFamilyTree) { window.speak("ડેટા નથી."); return; } 
             document.getElementById('settings-modal').style.display = 'none'; 
             document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
-            const gData = convertTreeToGraph(window.activeFamilyTree); 
-            const Graph = ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').nodeAutoColorBy('group').linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).onNodeClick(node => { const distance = 40; const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z); Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000); window.speak("આ છે " + node.id + ". " + (node.info || "")); }); 
-            window.speak("3D વંશાવલી ખોલો."); 
+            
+            // Default to List View
+            window.switchVanshavaliView('list');
+            
+            // Populate List
+            const listContainer = document.getElementById('vanshavali-list-container');
+            listContainer.innerHTML = ''; // Clear previous
+            window.renderVanshavaliList(window.activeFamilyTree, listContainer);
+            
+            window.speak("વંશાવલી ખુલ્લી."); 
         };
+
+        // Separate 3D Init function
+        window.init3DGraph = function() {
+            if(!window.activeFamilyTree) return;
+            const gData = convertTreeToGraph(window.activeFamilyTree); 
+            const Graph = ForceGraph3D()(document.getElementById('graph-container'))
+                .graphData(gData)
+                .nodeLabel('id')
+                .nodeAutoColorBy('group')
+                .linkDirectionalArrowLength(3.5)
+                .linkDirectionalArrowRelPos(1)
+                .onNodeClick(node => { 
+                    const distance = 40; 
+                    const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z); 
+                    Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000); 
+                    window.speak("આ છે " + node.id + ". " + (node.info || "")); 
+                }); 
+        }
 
         function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
 
@@ -821,9 +1049,45 @@
         
         window.startConversation = () => { try{recognition.start();}catch(e){} };
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
+        
+        // --- UPDATED: FIX FOR CAMERA PERMISSIONS ---
         window.activateVision = async (mode = "user") => { 
-            try { visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } }); selfieVideo.srcObject = visionStream; selfieVideo.style.display = 'block'; if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; else selfieVideo.style.transform = "scaleX(1)"; document.getElementById('video-container').style.display = 'none'; visionMode = true; currentCameraMode = mode; } catch(e) { alert("Camera Error: " + e); } 
+            try { 
+                // Check protocol first
+                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                    alert("ભૂલ: કેમેરો માટે HTTPS જરૂરી છે. (Error: Camera requires HTTPS)");
+                    throw new Error("Camera requires HTTPS");
+                }
+
+                const constraints = { 
+                    video: { 
+                        facingMode: mode,
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    } 
+                }; 
+
+                visionStream = await navigator.mediaDevices.getUserMedia(constraints); 
+                selfieVideo.srcObject = visionStream; 
+                selfieVideo.style.display = 'block'; 
+                if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; 
+                else selfieVideo.style.transform = "scaleX(1)"; 
+                
+                document.getElementById('video-container').style.display = 'none'; 
+                visionMode = true; 
+                currentCameraMode = mode; 
+            } catch(e) { 
+                console.error("Camera Error", e);
+                let msg = "કેમેરો એરર.";
+                
+                if(e.name === 'NotAllowedError') msg = "માફી, તમારે કેમેરોનો પરવાનો આપવો પડશે.";
+                if(e.name === 'NotFoundError') msg = "કેમેરો મળ્યો નથી.";
+                
+                alert(msg); 
+                throw e; // Re-throw to handle in calling function
+            } 
         };
+        
         window.stopVisionCamera = () => { 
             isLiveVisionActive = false; 
             document.getElementById('canvas-capture').style.display = 'none'; 
@@ -833,6 +1097,7 @@
             
             if(visionStream) {
                 visionStream.getTracks().forEach(t => t.stop());
+                visionStream = null;
             } 
             
             selfieVideo.style.display = 'none'; 
