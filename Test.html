@@ -501,7 +501,6 @@
         window.permanentMemories = window.permanentMemories || [];
         window.chatHistory = window.chatHistory || [];
         let notes = [], expenses = [], contacts = [], currentCameraMode = "user"; 
-        let visionMode = false; // FIX: Variable declaration
 
         window.formatDate = (timestamp) => {
             if (!timestamp) return "";
@@ -986,9 +985,7 @@
                 else selfieVideo.style.transform = "scaleX(1)"; 
                 
                 document.getElementById('video-container').style.display = 'none'; 
-                visionMode = true; // This line needs visionMode to exist
-                currentCameraMode = mode;
-
+                
                 await selfieVideo.play();
 
             } catch(e) { 
@@ -1015,7 +1012,6 @@
             
             selfieVideo.style.display = 'none'; 
             document.getElementById('video-container').style.display = 'block'; 
-            visionMode = false; 
             playVideo('silent'); 
         };
 
