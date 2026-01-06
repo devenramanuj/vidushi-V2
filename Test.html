@@ -2,7 +2,7 @@
 <html lang="gu">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vidushi AI - Ultimate RAG (Smart Lens Fix)</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -28,8 +28,8 @@
         video.active { opacity: 1; }
         
         /* Overlays */
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1000; border: 4px solid var(--primary); background: #000; }
-        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1100; pointer-events: none; }
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid var(--primary); }
+        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
         
         /* Buttons */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); cursor: pointer; }
@@ -50,7 +50,7 @@
         .list-item { background: #222; padding: 15px; margin-bottom: 8px; border-radius: 8px; border-left: 3px solid var(--primary); color: white; width: 100%; display: flex; justify-content: space-between; align-items: center; }
         
         /* Bottom Controls */
-        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1200; display: flex; flex-direction: column; align-items: center; width: 100%; pointer-events: none; }
+        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; pointer-events: none; }
         #status-text { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; margin-bottom: 15px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); font-size: 13px; pointer-events: auto; }
         .controls-row { display: flex; gap: 20px; pointer-events: auto; }
         .round-btn { border-radius: 50%; border: none; color: white; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
@@ -158,8 +158,7 @@
         <video id="angry-video" muted loop playsinline><source src="angry.mp4" type="video/mp4"></video>
     </div>
     
-    <!-- High z-index video -->
-    <video id="selfie-video" autoplay playsinline muted></video>
+    <video id="selfie-video" autoplay playsinline></video>
     <canvas id="canvas-capture"></canvas>
 
     <input type="file" id="galleryLoader" accept="image/*" style="display:none;" onchange="window.handleGalleryUpload(this)">
@@ -415,6 +414,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -426,6 +426,8 @@
         };
 
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
+        
+        // --- STATE MANAGEMENT ---
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -438,6 +440,7 @@
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         window.ragContent = ""; 
 
+        // --- HELPER: Format Vanshavali Tree for AI Prompt ---
         window.formatVanshavaliTree = function(node, level = 0) {
             if (!node) return "";
             let indent = "  ".repeat(level);
@@ -445,7 +448,9 @@
             if (node.info) output += ` (${node.info})`;
             output += "\n";
             if (node.children && node.children.length > 0) {
-                node.children.forEach(child => { output += window.formatVanshavaliTree(child, level + 1); });
+                node.children.forEach(child => {
+                    output += window.formatVanshavaliTree(child, level + 1);
+                });
             }
             return output;
         };
@@ -458,7 +463,7 @@
             vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
             loadCloudSettings();
             loadVanshavaliFromCloud(); 
-        } catch (err) { console.error("Firebase Error", err); }
+        } catch (err) { console.error("Firebase Error", err); document.getElementById('status-text').innerText = "DB Error: " + err.message; }
 
         async function loadCloudSettings() {
             if(!db) return;
@@ -473,6 +478,7 @@
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
                     if(data.groqModel) groqModel = data.groqModel;
+                    
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
                     localStorage.setItem('vidushi_groq_key', groqKey);
@@ -480,18 +486,41 @@
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
                     localStorage.setItem('vidushi_groq_model', groqModel);
+                    
+                    document.getElementById('status-text').innerText = "Ready";
                 } else { await saveToCloud(); }
             } catch (e) { console.error("Sync Error", e); }
         }
+        
+        // --- UPDATED: Always load local data first, then sync with cloud ---
         async function loadVanshavaliFromCloud() {
-            if (window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; }
-            if(!db) return;
+            // 1. Load Local Data immediately so 3D works even offline
+            if (window.vanshavaliData) {
+                window.activeFamilyTree = window.vanshavaliData;
+                console.log("Vanshavali loaded from local storage.");
+            }
+
+            if(!db) {
+                console.log("Database not available, using local data.");
+                return;
+            }
+
             try {
                 const docSnap = await getDoc(vanshavaliDocRef);
-                if (docSnap.exists()) { window.activeFamilyTree = docSnap.data().tree; } 
-                else { if(window.vanshavaliData) { await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
-            } catch(e) { console.error("Vanshavali Error", e); }
+                if (docSnap.exists()) {
+                    // 2. Override with cloud data if exists
+                    window.activeFamilyTree = docSnap.data().tree;
+                    console.log("Vanshavali loaded from Cloud.");
+                } else {
+                    // 3. If cloud is empty, upload local data to cloud
+                    if(window.vanshavaliData) {
+                        await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
+                        console.log("Local Vanshavali synced to Cloud.");
+                    }
+                }
+            } catch(e) { console.error("Vanshavali Error, falling back to local.", e); }
         }
+
         async function saveToCloud() {
             if(!db) return;
             const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, groqModel: groqModel, lastUpdated: new Date() };
@@ -510,8 +539,10 @@
 
         if (userDocRef) {
             onSnapshot(userDocRef, (docSnap) => {
-                if (docSnap.exists()) { window.permanentMemories = docSnap.data().memories || []; document.getElementById('status-text').innerText = "Tap Mic"; } 
-                else { setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] }); }
+                if (docSnap.exists()) { 
+                    window.permanentMemories = docSnap.data().memories || [];
+                    document.getElementById('status-text').innerText = "Tap Mic";
+                } else { setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે.", "હું દેવેન્દ્રભાઈ દ્વારા બનાવવામાં આવી છું."] }); }
             }, (err) => { document.getElementById('status-text').innerText = "Offline"; });
         }
 
@@ -523,10 +554,10 @@
 
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
-            'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain logic in Gujarati.`,
-            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain formatting as much as possible.`,
-            'object': `Identify main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
-            'summary': `Read text in this document image. Provide a concise summary of main points in Gujarati. Bullet points preferred.`
+            'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain the logic in Gujarati.`,
+            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
+            'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
+            'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
         };
 
         let currentVisionPrompt = visionPrompts['history'];
@@ -544,11 +575,33 @@
             thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video')
         };
 
-        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null;
+        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null, wakeLock = null;
 
         window.onload = () => {
-            playVideo('smiling'); window.speechSynthesis.getVoices();
+            playVideo('smiling'); 
+            window.speechSynthesis.getVoices();
+            
+            // Check camera support on startup
+            window.checkCameraSupport();
+            
             if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
+        };
+
+        // Camera support check function
+        window.checkCameraSupport = () => {
+            const supported = !!navigator.mediaDevices && !!navigator.mediaDevices.getUserMedia;
+            console.log("Camera supported:", supported);
+            
+            if(supported && window.isSecureContext) {
+                navigator.mediaDevices.enumerateDevices()
+                    .then(devices => {
+                        const cameras = devices.filter(d => d.kind === 'videoinput');
+                        console.log("Available cameras:", cameras.length);
+                    })
+                    .catch(err => console.log("Camera enumeration error:", err));
+            }
+            
+            return supported;
         };
 
         function playVideo(type) {
@@ -572,15 +625,18 @@
             window.toggleProviderSettings(); 
         };
         window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
+        
         window.openArcheologyMenu = () => { 
             document.getElementById('settings-modal').style.display = 'none'; 
             document.getElementById('archeology-selector').style.display = 'flex'; 
             window.setVisionMode('history', document.querySelector('.mode-btn')); 
         };
+        
         window.toggleProviderSettings = () => { 
             document.getElementById('gemini-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'block' : 'none'; 
             document.getElementById('groq-settings').style.display = document.getElementById('providerSelect').value === 'gemini' ? 'none' : 'block'; 
         };
+        
         window.saveSettings = async () => { 
             userName = document.getElementById('userNameInput').value.trim() || "સાહેબ"; 
             aiProvider = document.getElementById('providerSelect').value; 
@@ -588,17 +644,21 @@
             geminiModel = document.getElementById('geminiModelSelect').value; 
             groqKey = document.getElementById('groqKeyInput').value.trim(); 
             groqModel = document.getElementById('groqModelSelect').value; 
+            
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value; 
             let firebaseKey = document.getElementById('firebaseKeyInput').value.trim();
+
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
             localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
             localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseKey);
-            try { await saveToCloud(); } catch(e) { console.warn("Cloud save failed."); }
+
+            try { await saveToCloud(); } catch(e) { console.warn("Cloud save failed, but local saved."); }
+            
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
         };
@@ -628,12 +688,14 @@
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
+            
             if(cmd.includes("આખો") || cmd.includes("સેટિંગ્સ")) {
                 document.getElementById('settings-modal').style.display = 'none'; 
                 document.getElementById('archeology-selector').style.display = 'flex';
                 window.setVisionMode('history', document.querySelector('.mode-btn'));
                 return;
             }
+            
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { window.makeCall(text); return; }
             if(cmd.includes("મેસેજ કર")) { window.sendMessage(text); return; }
             if(cmd.includes("ચિત્ર") && cmd.includes("બનાવ")) { window.generateMagicImage(text.replace("ચિત્ર બનાવ","")); return; }
@@ -642,6 +704,7 @@
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
             if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { currentVisionPrompt = visionPrompts['object']; window.captureAndAnalyze("environment"); return; }
+            
             isProcessing = true; statusText.innerText = "Thinking..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
@@ -649,26 +712,32 @@
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
+            
             let familyDataString = ""; 
             try { 
                 if (window.activeFamilyTree) { 
                     familyDataString = `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}`; 
                 } 
             } catch (e) { console.error(e); } 
+            
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
                 const safeContent = window.ragContent.substring(0, 500000); 
                 ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
             }
+
             return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
         }
 
         window.askGeminiText = async (userText) => { 
             let keys = geminiKeys.split(',').filter(k => k); 
             if (!keys.length) { window.speak("API Key નથી."); isProcessing = false; return; } 
+            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); 
+            
             let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); 
             contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
+            
             try { 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
                     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) 
@@ -690,7 +759,9 @@
         
         window.askGroqText = async (userText) => { 
             if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } 
+            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText);
+
             let messages = [{ role: "system", content: systemInstruction }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; 
             try { 
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
@@ -719,6 +790,7 @@
                     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
                 }); 
                 const data = await response.json(); 
+                
                 if(data.error) {
                     console.error(data.error);
                     document.getElementById('report-modal').style.display = 'flex';
@@ -727,13 +799,17 @@
                     window.closeImage();
                     return;
                 }
+
                 if(data.candidates) { 
                     const text = data.candidates[0].content.parts[0].text; 
                     document.getElementById('report-modal').style.display = 'flex'; 
                     document.getElementById('report-content-area').value = text; 
                     window.closeImage(); 
                     if(!silentMode) { window.speak("રિપોર્ટ તૈયાર."); } else { isProcessing = false; playVideo('silent'); } 
-                } else { console.log(data); window.speak("કોઈ જવાબ મળ્યો."); } 
+                } else { 
+                    console.log(data); 
+                    window.speak("કોઈ જવાબ મળ્યો."); 
+                } 
             } catch (e) { 
                 console.error(e); 
                 window.speak("Network Error."); 
@@ -771,56 +847,55 @@
             }
         };
 
-        // --- ROBUST CAMERA LOGIC WITH RETRY ---
         window.captureAndAnalyze = async (mode = "user") => { 
-            window.stopVisionCamera();
-            window.speak(mode === "user" ? "સેલ્ફી કેમેરો ઓપન થાય છે..." : "પાછળનો કેમેરો ઓપન થાય છે..."); 
+            if (visionStream && currentCameraMode !== mode) { 
+                window.stopVisionCamera(); 
+            } 
             
-            try {
-                await window.activateVision(mode);
-                setTimeout(window.takeActualPhoto, 2000); 
-            } catch (e) {
-                console.error("Capture failed", e);
-                window.speak("કેમેરો એરર.");
-            }
+            if (!visionStream || !visionStream.active || selfieVideo.style.display === 'none') { 
+                window.speak(mode === "user" ? "સેલ્ફી કેમેરો..." : "પાછળનો કેમેરો..."); 
+                await window.activateVision(mode); 
+                setTimeout(window.takeActualPhoto, 3000); 
+            } else { 
+                window.takeActualPhoto(); 
+            } 
         };
         
         window.takeActualPhoto = () => {
-            if(!selfieVideo.srcObject) return; 
-            canvas.width = selfieVideo.videoWidth; canvas.height = selfieVideo.videoHeight;
+            canvas.width = selfieVideo.videoWidth; 
+            canvas.height = selfieVideo.videoHeight;
             canvas.getContext('2d').drawImage(selfieVideo, 0, 0);
             const base64Image = canvas.toDataURL('image/jpeg');
             window.stopVisionCamera(); 
             playVideo('thinking');
-            generatedImage.src = base64Image; generatedImage.style.display = "block"; imageOverlay.style.display = 'flex';
+            generatedImage.src = base64Image; 
+            generatedImage.style.display = "block"; 
+            imageOverlay.style.display = 'flex';
             window.askGeminiVision(base64Image.split(',')[1]);
         };
         
-        let liveModel = null; let isLiveVisionActive = false;
+        let liveModel = null; 
+        let isLiveVisionActive = false;
+        
         window.startLiveVision = async (btn) => { 
             document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); 
             if(btn) btn.classList.add('active'); 
             document.getElementById('archeology-selector').style.display = 'none'; 
             document.getElementById('video-container').style.display = 'none'; 
             
-            if(!silentMode) window.speak("લાઇવ વિઝન ચાલુ છે..."); 
+            if(!silentMode) window.speak("કેમેરો ચાલુ..."); 
             
-            window.stopVisionCamera();
-
-            try {
-                await window.activateVision("environment");
-                if(!liveModel) { 
-                    if(!silentMode) window.speak("મોડેલ લોડ થાય છે..."); 
-                    liveModel = await cocoSsd.load(); 
-                } 
-                isLiveVisionActive = true; 
-                document.getElementById('canvas-capture').style.display = 'block'; 
-                window.detectFrame(); 
-            } catch (e) {
-                console.error("Live Vision failed", e);
-                window.speak("કેમેરો અથવા મોડેલ લોડ કરવામાં ભૂલ.");
-                document.getElementById('video-container').style.display = 'block';
-            }
+            // Use improved camera activation
+            await window.activateVision("environment"); 
+            
+            if(!liveModel) { 
+                if(!silentMode) window.speak("મોડેલ લોડ થાય છે..."); 
+                liveModel = await cocoSsd.load(); 
+            } 
+            
+            isLiveVisionActive = true; 
+            document.getElementById('canvas-capture').style.display = 'block'; 
+            window.detectFrame(); 
         };
         
         window.detectFrame = () => { 
@@ -828,28 +903,200 @@
             const video = document.getElementById('selfie-video'); 
             const canvas = document.getElementById('canvas-capture'); 
             const ctx = canvas.getContext('2d'); 
-            canvas.width = video.videoWidth; canvas.height = video.videoHeight; 
-            
-            ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); 
+            canvas.width = video.videoWidth; 
+            canvas.height = video.videoHeight; 
+            ctx.font = '20px Arial'; 
+            ctx.fillStyle = 'red'; 
+            ctx.fillText("SCANNING...", 20, 30); 
             
             liveModel.detect(video).then(predictions => { 
                 ctx.clearRect(0, 0, canvas.width, canvas.height); 
-                ctx.font = '20px Arial'; ctx.fillStyle = 'red'; ctx.fillText("SCANNING...", 20, 30); 
+                ctx.font = '20px Arial'; 
+                ctx.fillStyle = 'red'; 
+                ctx.fillText("SCANNING...", 20, 30); 
+                
                 predictions.forEach(prediction => { 
-                    ctx.beginPath(); ctx.rect(...prediction.bbox); ctx.lineWidth = 4; ctx.strokeStyle = '#00ff00'; ctx.stroke(); 
-                    ctx.font = 'bold 24px Arial'; ctx.fillStyle = '#00ff00'; 
+                    ctx.beginPath(); 
+                    ctx.rect(...prediction.bbox); 
+                    ctx.lineWidth = 4; 
+                    ctx.strokeStyle = '#00ff00'; 
+                    ctx.stroke(); 
+                    ctx.font = 'bold 24px Arial'; 
+                    ctx.fillStyle = '#00ff00'; 
                     ctx.fillRect(prediction.bbox[0], prediction.bbox[1] - 30, ctx.measureText(prediction.class.toUpperCase()).width + 10, 30); 
-                    ctx.fillStyle = '#000000'; ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5); 
+                    ctx.fillStyle = '#000000'; 
+                    ctx.fillText(prediction.class.toUpperCase(), prediction.bbox[0] + 5, prediction.bbox[1] - 5); 
                 }); 
+                
                 if(isLiveVisionActive) requestAnimationFrame(window.detectFrame); 
             }); 
         };
 
-        window.setVisionMode = (mode, btn) => { selectedLensMode = mode; currentVisionPrompt = visionPrompts[mode]; document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); if(btn) btn.classList.add('active'); };
-        window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
-        window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageOverlay.style.display = 'flex'; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
-        window.generateMagicImage = (p) => { playVideo('thinking'); imageOverlay.style.display='flex'; generatedImage.style.display="none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { generatedImage.style.display="block"; window.speak("તૈયાર!"); }; };
+        window.setVisionMode = (mode, btn) => { 
+            selectedLensMode = mode; 
+            currentVisionPrompt = visionPrompts[mode]; 
+            document.querySelectorAll('.mode-btn').forEach(b => b.classList.remove('active')); 
+            if(btn) btn.classList.add('active'); 
+        };
         
+        // FIXED: Camera access function with fallback
+        window.useArcheologyCamera = () => { 
+            document.getElementById('archeology-selector').style.display = 'none'; 
+            
+            // Show status immediately
+            window.speak("કેમેરા ખોલું છે...");
+            statusText.innerText = "કેમેરા લોડ થાય છે...";
+            
+            // Use the improved camera function with direct access
+            window.activateVisionWithFallback("environment").then(() => {
+                // Auto capture after 3 seconds
+                setTimeout(() => {
+                    window.takeActualPhoto();
+                }, 3000);
+            }).catch(err => {
+                console.error("Camera error:", err);
+                window.speak("કેમેરા ખોલી શકાયો નહીં.");
+                document.getElementById('archeology-selector').style.display = 'flex';
+            });
+        };
+        
+        window.handleGalleryUpload = (input) => { 
+            const file = input.files[0]; 
+            if(!file) return; 
+            document.getElementById('archeology-selector').style.display = 'none'; 
+            playVideo('thinking'); 
+            imageOverlay.style.display = 'flex'; 
+            const reader = new FileReader(); 
+            reader.onload = function(e) { 
+                generatedImage.src = e.target.result; 
+                generatedImage.style.display = "block"; 
+                window.askGeminiVision(e.target.result.split(',')[1]); 
+            }; 
+            reader.readAsDataURL(file); 
+        };
+        
+        window.generateMagicImage = (p) => { 
+            playVideo('thinking'); 
+            imageOverlay.style.display='flex'; 
+            generatedImage.style.display="none"; 
+            generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); 
+            generatedImage.onload = () => { 
+                generatedImage.style.display="block"; 
+                window.speak("તૈયાર!"); 
+            }; 
+        };
+        
+        // --- IMPROVED CAMERA FUNCTIONS ---
+        window.activateVision = async (mode = "user") => { 
+            try {
+                // Check for secure context
+                if (!window.isSecureContext) {
+                    throw new Error("કેમેરા માટે secure connection (HTTPS) જરૂરી છે.");
+                }
+                
+                // Check camera support
+                if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                    throw new Error("તમારા બ્રાઉઝરમાં કેમેરા સપોર્ટ નથી.");
+                }
+                
+                // Get available devices first
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                if (videoDevices.length === 0) {
+                    throw new Error("કોઈ કેમેરા ડિવાઇસ મળી નથી.");
+                }
+                
+                // Set constraints based on mode
+                const constraints = {
+                    video: {
+                        facingMode: mode === "user" ? "user" : "environment",
+                        width: { ideal: 1280 },
+                        height: { ideal: 720 }
+                    }
+                };
+                
+                // Get camera stream
+                visionStream = await navigator.mediaDevices.getUserMedia(constraints);
+                selfieVideo.srcObject = visionStream;
+                selfieVideo.style.display = 'block';
+                
+                if(mode === "user") {
+                    selfieVideo.style.transform = "scaleX(-1)";
+                } else {
+                    selfieVideo.style.transform = "scaleX(1)";
+                }
+                
+                document.getElementById('video-container').style.display = 'none';
+                currentCameraMode = mode;
+                
+                // Play video after metadata loaded
+                selfieVideo.onloadedmetadata = () => {
+                    selfieVideo.play().catch(e => console.log("Video play error:", e));
+                };
+                
+                return true;
+                
+            } catch(e) { 
+                console.error("Camera Error:", e);
+                
+                // User-friendly error message
+                let errorMsg = "કેમેરા ઍક્સેસ નથી મળી રહી. ";
+                if(e.name === 'NotAllowedError') {
+                    errorMsg += "કૃપા કરી બ્રાઉઝર પરવાનગી આપો.";
+                } else if(e.name === 'NotFoundError') {
+                    errorMsg += "કેમેરા મળ્યો નથી.";
+                } else if(e.name === 'NotReadableError') {
+                    errorMsg += "કેમેરા વપરાશમાં છે.";
+                } else if(e.name === 'OverconstrainedError') {
+                    errorMsg += "કેમેરા સેટિંગ્સ સપોર્ટ નથી.";
+                }
+                
+                alert(errorMsg);
+                window.speak("કેમેરા એરર.");
+                throw e;
+            } 
+        };
+        
+        // Fallback camera function
+        window.activateVisionWithFallback = async (mode = "user") => {
+            try {
+                await window.activateVision(mode);
+            } catch (firstError) {
+                console.log("First camera failed, trying fallback...");
+                
+                // Try basic constraints as fallback
+                try {
+                    visionStream = await navigator.mediaDevices.getUserMedia({ video: true });
+                    selfieVideo.srcObject = visionStream;
+                    selfieVideo.style.display = 'block';
+                    document.getElementById('video-container').style.display = 'none';
+                    
+                    window.speak("કેમેરા તૈયાર.");
+                } catch (secondError) {
+                    console.error("Fallback also failed:", secondError);
+                    window.speak("કેમેરા ઉપલબ્ધ નથી.");
+                    throw secondError;
+                }
+            }
+        };
+        
+        window.stopVisionCamera = () => { 
+            isLiveVisionActive = false; 
+            document.getElementById('canvas-capture').style.display = 'none'; 
+            const canvas = document.getElementById('canvas-capture'); 
+            const ctx = canvas.getContext('2d'); 
+            ctx.clearRect(0, 0, canvas.width, canvas.height); 
+            
+            if(visionStream) {
+                visionStream.getTracks().forEach(t => t.stop());
+            } 
+            
+            selfieVideo.style.display = 'none'; 
+            document.getElementById('video-container').style.display = 'block'; 
+            playVideo('silent'); 
+        };
+
         // --- NEW: VANSHAVALI VIEW LOGIC ---
         window.switchVanshavaliView = (view) => {
             const listContainer = document.getElementById('vanshavali-list-container');
@@ -867,6 +1114,7 @@
                 graphContainer.style.display = 'block';
                 listBtn.classList.remove('active');
                 threeDBtn.classList.add('active');
+                // Init 3D only when needed to save resources
                 if(!window.vanshavali3DInitialized) {
                     window.init3DGraph();
                     window.vanshavali3DInitialized = true;
@@ -874,14 +1122,19 @@
             }
         };
 
+        // Recursive function to build the attractive list HTML
         window.renderVanshavaliList = function(node, container) {
             const nodeDiv = document.createElement('div');
             nodeDiv.className = 'tree-list-node';
             
             const card = document.createElement('div');
             card.className = 'node-card';
-            if(!node.children || node.children.length === 0) nodeDiv.classList.add('leaf-node'); 
-            if(container === document.getElementById('vanshavali-list-container')) nodeDiv.classList.add('root-node'); 
+            if(!node.children || node.children.length === 0) {
+                nodeDiv.classList.add('leaf-node'); // Styling for leaf nodes if needed
+            }
+            if(container === document.getElementById('vanshavali-list-container')) {
+                nodeDiv.classList.add('root-node'); // The very first node
+            }
 
             const nameSpan = document.createElement('span');
             nameSpan.className = 'node-name';
@@ -895,15 +1148,22 @@
                 card.appendChild(infoSpan);
             }
 
-            card.onclick = () => { window.speak(node.name + (node.info ? ". " + node.info : "")); };
+            // Click to speak info
+            card.onclick = () => {
+                window.speak(node.name + (node.info ? ". " + node.info : ""));
+            };
 
             nodeDiv.appendChild(card);
             container.appendChild(nodeDiv);
 
             if(node.children && node.children.length > 0) {
+                // Create a wrapper for children to handle indentation logic visually if needed
                 const childrenContainer = document.createElement('div');
                 childrenContainer.style.position = 'relative';
-                node.children.forEach(child => { window.renderVanshavaliList(child, childrenContainer); });
+                
+                node.children.forEach(child => {
+                    window.renderVanshavaliList(child, childrenContainer);
+                });
                 container.appendChild(childrenContainer);
             }
         };
@@ -912,25 +1172,35 @@
             document.getElementById('vanshavali-3d-modal').style.display = 'none'; 
             document.getElementById('vanshavali-list-container').innerHTML = ''; 
             document.getElementById('graph-container').innerHTML = ''; 
-            window.vanshavali3DInitialized = false; 
+            window.vanshavali3DInitialized = false; // Reset 3D init flag
             window.speak("વંશાવલી બંધ."); 
         };
         
+        // --- UPDATED OPEN FUNCTION ---
         window.open3DVanshavali = () => { 
             if(window.vanshavaliData) {
                 window.activeFamilyTree = window.vanshavaliData;
-                if(db && vanshavaliDocRef) setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
+                if(db && vanshavaliDocRef) {
+                    setDoc(vanshavaliDocRef, { tree: window.vanshavaliData });
+                }
             }
+
             if(!window.activeFamilyTree) { window.speak("ડેટા નથી."); return; } 
             document.getElementById('settings-modal').style.display = 'none'; 
             document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
+            
+            // Default to List View
             window.switchVanshavaliView('list');
+            
+            // Populate List
             const listContainer = document.getElementById('vanshavali-list-container');
-            listContainer.innerHTML = ''; 
+            listContainer.innerHTML = ''; // Clear previous
             window.renderVanshavaliList(window.activeFamilyTree, listContainer);
+            
             window.speak("વંશાવલી ખુલ્લી."); 
         };
 
+        // Separate 3D Init function
         window.init3DGraph = function() {
             if(!window.activeFamilyTree) return;
             const gData = convertTreeToGraph(window.activeFamilyTree); 
@@ -948,16 +1218,32 @@
                 }); 
         }
 
-        function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
+        function convertTreeToGraph(node, nodes = [], links = [], parent = null) { 
+            nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); 
+            if (parent) links.push({ source: parent.name, target: node.name }); 
+            if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); 
+            return { nodes, links }; 
+        }
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
-            recognition = new SpeechRecognition(); recognition.lang = 'gu-IN'; 
-            recognition.onstart = () => { micBtn.classList.add('listening'); statusText.innerText = isSilentListening ? "નોંધ લઉં છે..." : "સાંભળું છે..."; }; 
+            recognition = new SpeechRecognition(); 
+            recognition.lang = 'gu-IN'; 
+            recognition.onstart = () => { 
+                micBtn.classList.add('listening'); 
+                statusText.innerText = isSilentListening ? "નોંધ લઉં છે..." : "સાંભળું છે..."; 
+            }; 
             recognition.onend = () => { 
                 micBtn.classList.remove('listening'); 
-                if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) try{recognition.start();}catch(e){} 
-                else if(!isProcessing) statusText.innerText = "Tap Mic"; 
+                if (continuousMode && !isAiSpeaking && !isProcessing && !isSilentListening) {
+                    try {
+                        recognition.start();
+                    } catch(e) {
+                        console.log("Recognition restart error:", e);
+                    }
+                } else if(!isProcessing) {
+                    statusText.innerText = "Tap Mic"; 
+                }
             }; 
             recognition.onresult = (e) => { 
                 let text = e.results[0][0].transcript; 
@@ -966,106 +1252,58 @@
             }; 
         }
         
-        window.startConversation = () => { try{recognition.start();}catch(e){} };
-        window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
-        
-        // --- FINAL ACTIVATE VISION WITH AUTO-RETRY ---
-        window.activateVision = async (mode = "user") => { 
-            // 1. Stop everything first
-            window.stopVisionCamera();
-            
-            // 2. Wait for hardware to release
-            await new Promise(r => setTimeout(r, 200));
-
+        window.startConversation = () => { 
             try {
-                if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                    console.warn("Camera requires HTTPS");
-                    return;
-                }
-
-                const constraints = { video: { facingMode: mode } }; 
-
-                visionStream = await navigator.mediaDevices.getUserMedia(constraints);
-                
-                selfieVideo.srcObject = visionStream; 
-                selfieVideo.style.display = 'block'; 
-                if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; 
-                else selfieVideo.style.transform = "scaleX(1)"; 
-                
-                document.getElementById('video-container').style.display = 'none'; 
-                visionMode = true; 
-                currentCameraMode = mode;
-
-                // Force play to ensure mobile renders
-                if (selfieVideo.paused) {
-                    await selfieVideo.play();
-                }
-
-            } catch(e) { 
-                // LOGIC: If failed because "device in use", retry automatically after 200ms
-                if (e.name === 'NotAllowedError' || e.name === 'NotFoundError' || e.name === 'SecurityError') {
-                     let msg = "કેમેરો એરર.";
-                    if(e.name === 'NotAllowedError') msg = "પરવાનો આપો.";
-                    if(e.name === 'NotFoundError') msg = "કેમેરો નથી.";
-                    
-                    // If it is just a busy hardware issue, retry automatically
-                    if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
-                        console.warn("Camera busy, Retrying once...");
-                        await new Promise(r => setTimeout(r, 200));
-                        try {
-                            visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
-                            selfieVideo.srcObject = visionStream; 
-                            selfieVideo.style.display = 'block'; 
-                            if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; 
-                            else selfieVideo.style.transform = "scaleX(1)"; 
-                            document.getElementById('video-container').style.display = 'none'; 
-                            visionMode = true; 
-                            currentCameraMode = mode;
-                            await selfieVideo.play();
-                            return; // Success
-                        } catch (retryError) {
-                            // Final failure
-                            console.error("Retry failed", retryError);
-                            window.speak(msg);
-                        }
-                    } else {
-                         window.speak(msg);
-                    }
-                } else {
-                    window.speak("કેમેરો એરર.");
-                }
-            } 
+                recognition.start();
+            } catch(e) {
+                console.error("Speech recognition error:", e);
+                window.speak("વાણી ઓળખવામાં ત્રુટિ.");
+            }
         };
         
-        window.stopVisionCamera = () => { 
-            isLiveVisionActive = false; 
-            document.getElementById('canvas-capture').style.display = 'none'; 
-            const canvas = document.getElementById('canvas-capture'); 
-            const ctx = canvas.getContext('2d'); 
-            ctx.clearRect(0, 0, canvas.width, canvas.height); 
-            
-            if(visionStream) {
-                visionStream.getTracks().forEach(t => t.stop());
-                visionStream = null;
-            } 
-            
-            selfieVideo.style.display = 'none'; 
-            document.getElementById('video-container').style.display = 'block'; 
-            visionMode = false; 
+        window.stopConversation = () => { 
+            recognition.stop(); 
+            window.speechSynthesis.cancel(); 
             playVideo('silent'); 
+            window.stopVisionCamera(); 
+            isProcessing = false; 
+            isAiSpeaking = false; 
+            isSilentListening = false; 
         };
 
         window.speak = (text, forceSpeak = false) => { 
-            if(silentMode && !forceSpeak) { statusText.innerText = "Silent..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } 
-            const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "Speaking..."; isAiSpeaking = true; 
+            if(silentMode && !forceSpeak) { 
+                statusText.innerText = "Silent..."; 
+                isAiSpeaking = false; 
+                isProcessing = false; 
+                playVideo('silent'); 
+                return; 
+            } 
             
-            const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; 
+            const clean = text.replace(/[*#_]/g, ""); 
+            statusText.innerText = "Speaking..."; 
+            isAiSpeaking = true; 
+            
+            const u = new SpeechSynthesisUtterance(clean); 
+            u.lang = 'gu-IN'; 
             let voices = window.speechSynthesis.getVoices(); 
-            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); 
+            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); 
+            if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); 
             
             if(bestVoice) u.voice = bestVoice; 
             u.onstart = () => { playVideo('talking'); }; 
-            u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; 
+            u.onend = () => { 
+                playVideo('smiling'); 
+                isAiSpeaking = false; 
+                isProcessing = false; 
+                if (continuousMode) { 
+                    try { 
+                        setTimeout(() => recognition.start(), 1000); 
+                    } catch(e) {
+                        console.log("Auto restart error:", e);
+                    }
+                } 
+            }; 
             window.speechSynthesis.speak(u); 
         };
     </script>
