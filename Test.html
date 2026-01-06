@@ -648,44 +648,21 @@
         };
 
         function getSystemPrompt(memories, contextData) { 
-    let moodPrompt = "You are a helpful assistant."; 
-    if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
-    
-    // 1. Family Data String (ફક્ત ત્યારે વાપરો જ્યારે જરૂર હોય)
-    let familyDataString = ""; 
-    try { 
-        if (window.activeFamilyTree) { 
-            familyDataString = `\n\n[USER'S FAMILY DATA CONTEXT]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}\n(INSTRUCTION: Use this family data ONLY if the user asks about relatives, names, or vanshavali. Otherwise, ignore it.)`; 
-        } 
-    } catch (e) { console.error(e); } 
-    
-    // 2. RAG / Document Data (ફક્ત ત્યારે વાપરો જ્યારે દસ્તાવેજ અપલોડ હોય)
-    let ragContext = "";
-    if(window.ragContent && window.ragContent.length > 0) {
-        const safeContent = window.ragContent.substring(0, 500000); 
-        ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(INSTRUCTION: Use this document content ONLY if the question is about the uploaded file.)\n`;
-    }
-    
-    // 3. Final Prompt Construction
-    return `IMPORTANT INSTRUCTIONS:
-    1. User Name: ${userName}.
-    2. Mood: ${currentMood}. ${moodPrompt}
-
-    ${familyDataString}
-    ${ragContext}
-
-    [Memory]: ${memories}
-    
-    User Question: "${contextData}"
-    
-    [TASK GUIDELINES]:
-    - If the question is about Family/Vanshavali, use the [USER'S FAMILY DATA].
-    - If the question is about a document, use the [UPLOADED DOCUMENT CONTENT].
-    - For general questions (Math, GK, Weather, Jokes, Time), use your OWN general knowledge.
-    - DO NOT mix family names into general answers unless asked.
-
-    [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
-}
+            let moodPrompt = "You are a helpful assistant."; 
+            if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
+            let familyDataString = ""; 
+            try { 
+                if (window.activeFamilyTree) { 
+                    familyDataString = `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}`; 
+                } 
+            } catch (e) { console.error(e); } 
+            let ragContext = "";
+            if(window.ragContent && window.ragContent.length > 0) {
+                const safeContent = window.ragContent.substring(0, 500000); 
+                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
+            }
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
+        }
 
         window.askGeminiText = async (userText) => { 
             let keys = geminiKeys.split(',').filter(k => k); 
