@@ -1020,36 +1020,18 @@
         };
 
         window.speak = (text, forceSpeak = false) => { 
-    if(silentMode && !forceSpeak) { statusText.innerText = "Silent..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } 
-    
-    // FIX: Punctuation ને કાઢશો નહીં, તેનાથી બોલને સાંકો કરવા પણ મદદ મળે છે.
-    // ફક્ત કોડના ખાસ કરેલા ચિહ્નો દૂર કરો.
-    const clean = text.replace(/:::APP_START:::|:::APP_END:::/g, ""); 
-    
-    statusText.innerText = "Speaking..."; isAiSpeaking = true; 
-    
-    const u = new SpeechSynthesisUtterance(clean); 
-    u.lang = 'gu-IN'; 
-    
-    // --- FIX STARTS HERE ---
-    // 1. Pitch (સુર) નીચો: < 1.0 એ ગંભીર, > 1.0 એ ઊંચું. 0.85 એ નેચરલ અવાજ માટે શ્રેષ્ઠ છે.
-    u.pitch = 0.85; 
-    
-    // 2. Rate (ઝડપ) ધીમો: 0.9 એ થોડી ધીમી બોલ.
-    u.rate = 0.9; 
-    // --- FIX ENDS HERE ---
-
-    let voices = window.speechSynthesis.getVoices(); 
-    
-    // Google ની Neural voices શ્રેષ્ટ હોય છે, એટલો પ્રથમ મળશે.
-    let bestVoice = voices.find(v => v.lang === 'gu-IN' && (v.name.includes('Google') || v.name.includes('Neural'))); 
-    if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); 
-    
-    if(bestVoice) u.voice = bestVoice; 
-    u.onstart = () => { playVideo('talking'); }; 
-    u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; 
-    window.speechSynthesis.speak(u); 
-};
+            if(silentMode && !forceSpeak) { statusText.innerText = "Silent..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } 
+            const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "Speaking..."; isAiSpeaking = true; 
+            
+            const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; 
+            let voices = window.speechSynthesis.getVoices(); 
+            let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); 
+            
+            if(bestVoice) u.voice = bestVoice; 
+            u.onstart = () => { playVideo('talking'); }; 
+            u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; 
+            window.speechSynthesis.speak(u); 
+        };
     </script>
 </body>
 </html>
