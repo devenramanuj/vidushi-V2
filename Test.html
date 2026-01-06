@@ -272,6 +272,15 @@
                 <div style="font-size:10px; color:#777; text-align:left; margin-top:-5px;">(Only API Key is required. Other details are pre-set.)</div>
             </div>
 
+            <!-- MEMORY EDITOR ADDED HERE -->
+            <div style="margin-top: 20px; border-top: 1px solid #444; padding-top: 10px;">
+                <label style="color:#00ff00; font-weight:bold;">AI Memory (યાદદાશ્ત)</label>
+                <div style="font-size:10px; color:#777; text-align:left; margin-top:-5px;">(અહીંથી ખોટી માહિતી કાઢી નાખો)</div>
+                <textarea id="memoriesInput" rows="4" placeholder="Memories will load here..."></textarea>
+                <button class="save-btn" onclick="window.saveMemoriesUI()" style="background: #008cff;">Update Memory</button>
+                <button class="save-btn" onclick="window.clearAllMemories()" style="background: red; margin-top:5px;">🗑️ Clear All</button>
+            </div>
+
             <button class="save-btn" onclick="window.saveSettings()">SAVE & SYNC</button>
         </div>
     </div>
@@ -558,55 +567,27 @@
             if(videos[type]) { videos[type].classList.add('active'); videos[type].play().catch(()=>{}); }
         }
 
-        window.openSettings = async () => { 
-    document.getElementById('settings-modal').style.display = 'flex'; 
-    document.getElementById('userNameInput').value = userName; 
-    document.getElementById('providerSelect').value = aiProvider; 
-    document.getElementById('geminiKeyInput').value = geminiKeys; 
-    document.getElementById('geminiModelSelect').value = geminiModel; 
-    document.getElementById('groqKeyInput').value = groqKey; 
-    document.getElementById('groqModelSelect').value = groqModel; 
-    document.getElementById('continuousModeCheck').checked = continuousMode; 
-    document.getElementById('silentModeCheck').checked = silentMode; 
-    document.getElementById('moodSelect').value = currentMood; 
-    document.getElementById('firebaseKeyInput').value = localStorage.getItem('vidushi_firebase_apiKey') || '';
-    window.toggleProviderSettings(); 
+        window.openSettings = () => { 
+            document.getElementById('settings-modal').style.display = 'flex'; 
+            document.getElementById('userNameInput').value = userName; 
+            document.getElementById('providerSelect').value = aiProvider; 
+            document.getElementById('geminiKeyInput').value = geminiKeys; 
+            document.getElementById('geminiModelSelect').value = geminiModel; 
+            document.getElementById('groqKeyInput').value = groqKey; 
+            document.getElementById('groqModelSelect').value = groqModel; 
+            document.getElementById('continuousModeCheck').checked = continuousMode; 
+            document.getElementById('silentModeCheck').checked = silentMode; 
+            document.getElementById('moodSelect').value = currentMood; 
+            document.getElementById('firebaseKeyInput').value = localStorage.getItem('vidushi_firebase_apiKey') || '';
+            window.toggleProviderSettings(); 
 
-    // --- MEMORY LOADER FIX ---
-    try {
-        // સેટિંગ્સ ખોલતા ને તરત જ ફાયરબેઝમાંથી ફ્રેશ ડેટા લાવવાનો પ્રયાસ
-        if (db && userDocRef) {
-            const docSnap = await getDoc(userDocRef);
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                if (data.memories && Array.isArray(data.memories)) {
-                    window.permanentMemories = data.memories; // Local memory update
-                    document.getElementById('memoriesInput').value = data.memories.join('\n');
-                } else {
-                    document.getElementById('memoriesInput').value = "";
-                }
-            } else {
-                // જો ડોક્યુમેન્ટ જ ન હોય તો ડિફોલ્ટ બનાવો
-                await setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે."] });
-                document.getElementById('memoriesInput').value = "મારું નામ વિદુષી છે.";
-            }
-        } else {
-            // જો ઇન્ટરનેટ ન હોય તો જૂનો ડેટા બતાવો
+            // LOAD MEMORIES IN TEXTAREA
             if(window.permanentMemories) {
                 document.getElementById('memoriesInput').value = window.permanentMemories.join('\n');
             } else {
                 document.getElementById('memoriesInput').value = "";
             }
-        }
-    } catch (e) {
-        console.error("Mem load error:", e);
-        // જો કંઈ ભૂલ આવે તો જે છે તે બતાવો
-        if(window.permanentMemories) {
-            document.getElementById('memoriesInput').value = window.permanentMemories.join('\n');
-        }
-    }
-    // -----------------------
-};
+        };
         window.openFeature = (type) => { document.getElementById('settings-modal').style.display = 'none'; window.toggleModal(type); };
         window.openArcheologyMenu = () => { 
             document.getElementById('settings-modal').style.display = 'none'; 
@@ -984,6 +965,36 @@
         }
 
         function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
+
+        // --- MEMORY EDITOR FUNCTIONS (NEW) ---
+        window.saveMemoriesUI = async () => {
+            if(!db) return;
+            const text = document.getElementById('memoriesInput').value;
+            // દરેક લાઈનને અલગ અલગ કરીને એરે (Array) બનાવો
+            const newMemories = text.split('\n').filter(line => line.trim() !== "");
+            
+            try {
+                await updateDoc(userDocRef, { memories: newMemories });
+                window.permanentMemories = newMemories; // Local memory પણ અપડેટ કરો
+                window.speak("મેમરી અપડેટ થઈ.");
+            } catch(e) {
+                console.error(e);
+                window.speak("ભૂળ થઈ.");
+            }
+        };
+
+        window.clearAllMemories = async () => {
+            if(confirm("શું તમે ખરેખર AI ની બધી યાદદાશ્ત ડિલીટ કરવા માંગો છો?")) {
+                try {
+                    await updateDoc(userDocRef, { memories: [] });
+                    window.permanentMemories = [];
+                    document.getElementById('memoriesInput').value = "";
+                    window.speak("બધી મેમરી સાફ થઈ ગઈ.");
+                } catch(e) {
+                    console.error(e);
+                }
+            }
+        };
 
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
