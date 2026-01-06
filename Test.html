@@ -28,8 +28,8 @@
         video.active { opacity: 1; }
         
         /* Overlays */
-        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid var(--primary); }
-        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 100; pointer-events: none; }
+        #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1000; border: 4px solid var(--primary); background: #000; }
+        #canvas-capture { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1100; pointer-events: none; }
         
         /* Buttons */
         .side-btn { position: fixed; top: 20px; right: 20px; z-index: 20; background: rgba(0,0,0,0.5); color: white; border: 1px solid rgba(255,255,255,0.2); width: 45px; height: 45px; border-radius: 50%; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(5px); cursor: pointer; }
@@ -50,7 +50,7 @@
         .list-item { background: #222; padding: 15px; margin-bottom: 8px; border-radius: 8px; border-left: 3px solid var(--primary); color: white; width: 100%; display: flex; justify-content: space-between; align-items: center; }
         
         /* Bottom Controls */
-        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 20; display: flex; flex-direction: column; align-items: center; width: 100%; pointer-events: none; }
+        #mic-container { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); z-index: 1200; display: flex; flex-direction: column; align-items: center; width: 100%; pointer-events: none; }
         #status-text { background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; margin-bottom: 15px; backdrop-filter: blur(4px); border: 1px solid rgba(255,255,255,0.1); font-size: 13px; pointer-events: auto; }
         .controls-row { display: flex; gap: 20px; pointer-events: auto; }
         .round-btn { border-radius: 50%; border: none; color: white; font-size: 24px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center; }
@@ -158,7 +158,7 @@
         <video id="angry-video" muted loop playsinline><source src="angry.mp4" type="video/mp4"></video>
     </div>
     
-    <!-- IMPORTANT: playsinline, muted, autoplay attributes are crucial for mobile -->
+    <!-- High z-index video -->
     <video id="selfie-video" autoplay playsinline muted></video>
     <canvas id="canvas-capture"></canvas>
 
@@ -415,7 +415,6 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, doc, onSnapshot, setDoc, updateDoc, arrayUnion, collection, addDoc, deleteDoc, query, orderBy, getDocs, writeBatch, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- FIREBASE CONFIG ---
         const firebaseConfig = {
             apiKey: localStorage.getItem('vidushi_firebase_apiKey') || "AIzaSyAexampleKey1234567890",
             authDomain: "vidushi-ai-614cb.firebaseapp.com",
@@ -427,8 +426,6 @@
         };
 
         let app, db, userDocRef, settingsDocRef, vanshavaliDocRef;
-        
-        // --- STATE MANAGEMENT ---
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
@@ -441,7 +438,6 @@
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         window.ragContent = ""; 
 
-        // --- HELPER: Format Vanshavali Tree for AI Prompt ---
         window.formatVanshavaliTree = function(node, level = 0) {
             if (!node) return "";
             let indent = "  ".repeat(level);
@@ -449,9 +445,7 @@
             if (node.info) output += ` (${node.info})`;
             output += "\n";
             if (node.children && node.children.length > 0) {
-                node.children.forEach(child => {
-                    output += window.formatVanshavaliTree(child, level + 1);
-                });
+                node.children.forEach(child => { output += window.formatVanshavaliTree(child, level + 1); });
             }
             return output;
         };
@@ -464,7 +458,7 @@
             vanshavaliDocRef = doc(db, "vidushi_db", "vanshavali");
             loadCloudSettings();
             loadVanshavaliFromCloud(); 
-        } catch (err) { console.error("Firebase Error", err); document.getElementById('status-text').innerText = "DB Error: " + err.message; }
+        } catch (err) { console.error("Firebase Error", err); }
 
         async function loadCloudSettings() {
             if(!db) return;
@@ -479,7 +473,6 @@
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
                     if(data.groqModel) groqModel = data.groqModel;
-                    
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
                     localStorage.setItem('vidushi_groq_key', groqKey);
@@ -487,12 +480,9 @@
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
                     localStorage.setItem('vidushi_groq_model', groqModel);
-                    
-                    document.getElementById('status-text').innerText = "Ready";
                 } else { await saveToCloud(); }
             } catch (e) { console.error("Sync Error", e); }
         }
-        
         async function loadVanshavaliFromCloud() {
             if (window.vanshavaliData) { window.activeFamilyTree = window.vanshavaliData; }
             if(!db) return;
@@ -502,7 +492,6 @@
                 else { if(window.vanshavaliData) { await setDoc(vanshavaliDocRef, { tree: window.vanshavaliData }); } }
             } catch(e) { console.error("Vanshavali Error", e); }
         }
-
         async function saveToCloud() {
             if(!db) return;
             const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, groqModel: groqModel, lastUpdated: new Date() };
@@ -535,9 +524,9 @@
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
             'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain logic in Gujarati.`,
-            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
+            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain formatting as much as possible.`,
             'object': `Identify main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
-            'summary': `Read the text in this document image. Provide a concise summary of main points in Gujarati. Bullet points preferred.`
+            'summary': `Read text in this document image. Provide a concise summary of main points in Gujarati. Bullet points preferred.`
         };
 
         let currentVisionPrompt = visionPrompts['history'];
@@ -555,7 +544,7 @@
             thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), angry: document.getElementById('angry-video')
         };
 
-        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null, wakeLock = null;
+        let recognition, isProcessing = false, isAiSpeaking = false, visionStream = null;
 
         window.onload = () => {
             playVideo('smiling'); window.speechSynthesis.getVoices();
@@ -599,20 +588,17 @@
             geminiModel = document.getElementById('geminiModelSelect').value; 
             groqKey = document.getElementById('groqKeyInput').value.trim(); 
             groqModel = document.getElementById('groqModelSelect').value; 
-            
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value; 
             let firebaseKey = document.getElementById('firebaseKeyInput').value.trim();
-
             localStorage.setItem('vidushi_username', userName); localStorage.setItem('vidushi_provider', aiProvider); 
             localStorage.setItem('vidushi_gemini_key', geminiKeys); localStorage.setItem('vidushi_gemini_model', geminiModel); 
             localStorage.setItem('vidushi_groq_key', groqKey); localStorage.setItem('vidushi_groq_model', groqModel); 
             localStorage.setItem('vidushi_continuous', continuousMode); localStorage.setItem('vidushi_silent', silentMode); 
             localStorage.setItem('vidushi_mood', currentMood);
             localStorage.setItem('vidushi_firebase_apiKey', firebaseKey);
-
-            try { await saveToCloud(); } catch(e) { console.warn("Cloud save failed, but local saved."); }
+            try { await saveToCloud(); } catch(e) { console.warn("Cloud save failed."); }
             document.getElementById('settings-modal').style.display = 'none'; 
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ."); 
         };
@@ -642,14 +628,12 @@
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
-            
             if(cmd.includes("આખો") || cmd.includes("સેટિંગ્સ")) {
                 document.getElementById('settings-modal').style.display = 'none'; 
                 document.getElementById('archeology-selector').style.display = 'flex';
                 window.setVisionMode('history', document.querySelector('.mode-btn'));
                 return;
             }
-            
             if(cmd.includes("કોલ કર") || cmd.includes("ફોન કર")) { window.makeCall(text); return; }
             if(cmd.includes("મેસેજ કર")) { window.sendMessage(text); return; }
             if(cmd.includes("ચિત્ર") && cmd.includes("બનાવ")) { window.generateMagicImage(text.replace("ચિત્ર બનાવ","")); return; }
@@ -658,7 +642,6 @@
             if(cmd.includes("હિસાબ")) { window.addExpense(text); return; }
             if(cmd.includes("સેલ્ફી")) { window.captureAndAnalyze("user"); return; }
             if(cmd.includes("ફોટો લે") || cmd.includes("આ શું છે") || cmd.includes("કેમેરો")) { currentVisionPrompt = visionPrompts['object']; window.captureAndAnalyze("environment"); return; }
-            
             isProcessing = true; statusText.innerText = "Thinking..."; playVideo('thinking');
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
@@ -666,32 +649,26 @@
         function getSystemPrompt(memories, contextData) { 
             let moodPrompt = "You are a helpful assistant."; 
             if (currentMood === 'angry') moodPrompt = "You are very angry and sarcastic."; 
-            
             let familyDataString = ""; 
             try { 
                 if (window.activeFamilyTree) { 
                     familyDataString = `[વંશાવાળી માહિતી]:\n${window.formatVanshavaliTree(window.activeFamilyTree)}`; 
                 } 
             } catch (e) { console.error(e); } 
-            
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
                 const safeContent = window.ragContent.substring(0, 500000); 
                 ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
             }
-
             return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
         }
 
         window.askGeminiText = async (userText) => { 
             let keys = geminiKeys.split(',').filter(k => k); 
             if (!keys.length) { window.speak("API Key નથી."); isProcessing = false; return; } 
-            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); 
-            
             let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); 
             contents.push({ role: "user", parts: [{ text: systemInstruction }] }); 
-            
             try { 
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { 
                     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) 
@@ -713,9 +690,7 @@
         
         window.askGroqText = async (userText) => { 
             if(!groqKey) { window.speak("Groq Key નથી."); isProcessing=false; return; } 
-            
             const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText);
-
             let messages = [{ role: "system", content: systemInstruction }, ...window.chatHistory.slice(-6).map(m => ({ role: m.role === "assistant" ? "assistant" : "user", content: m.content })), { role: "user", content: userText }]; 
             try { 
                 const res = await fetch("https://api.groq.com/openai/v1/chat/completions", { 
@@ -744,7 +719,6 @@
                     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
                 }); 
                 const data = await response.json(); 
-                
                 if(data.error) {
                     console.error(data.error);
                     document.getElementById('report-modal').style.display = 'flex';
@@ -753,17 +727,13 @@
                     window.closeImage();
                     return;
                 }
-
                 if(data.candidates) { 
                     const text = data.candidates[0].content.parts[0].text; 
                     document.getElementById('report-modal').style.display = 'flex'; 
                     document.getElementById('report-content-area').value = text; 
                     window.closeImage(); 
                     if(!silentMode) { window.speak("રિપોર્ટ તૈયાર."); } else { isProcessing = false; playVideo('silent'); } 
-                } else { 
-                    console.log(data); 
-                    window.speak("કોઈ જવાબ મળ્યો."); 
-                } 
+                } else { console.log(data); window.speak("કોઈ જવાબ મળ્યો."); } 
             } catch (e) { 
                 console.error(e); 
                 window.speak("Network Error."); 
@@ -801,15 +771,14 @@
             }
         };
 
-        // --- ROBUST FIX FOR CAMERA (Back Side) ---
+        // --- ROBUST CAMERA LOGIC WITH RETRY ---
         window.captureAndAnalyze = async (mode = "user") => { 
             window.stopVisionCamera();
-            
             window.speak(mode === "user" ? "સેલ્ફી કેમેરો ઓપન થાય છે..." : "પાછળનો કેમેરો ઓપન થાય છે..."); 
             
             try {
                 await window.activateVision(mode);
-                setTimeout(window.takeActualPhoto, 3000); 
+                setTimeout(window.takeActualPhoto, 2000); 
             } catch (e) {
                 console.error("Capture failed", e);
                 window.speak("કેમેરો એરર.");
@@ -1000,38 +969,26 @@
         window.startConversation = () => { try{recognition.start();}catch(e){} };
         window.stopConversation = () => { recognition.stop(); window.speechSynthesis.cancel(); playVideo('silent'); window.stopVisionCamera(); isProcessing = false; isAiSpeaking = false; isSilentListening = false; };
         
-        // --- FINAL ROBUST ACTIVATE VISION ---
+        // --- FINAL ACTIVATE VISION WITH AUTO-RETRY ---
         window.activateVision = async (mode = "user") => { 
-            try { 
+            // 1. Stop everything first
+            window.stopVisionCamera();
+            
+            // 2. Wait for hardware to release
+            await new Promise(r => setTimeout(r, 200));
+
+            try {
                 if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-                    alert("ભૂલ: કેમેરો માટે HTTPS જરૂરી છે.");
-                    throw new Error("Camera requires HTTPS");
+                    console.warn("Camera requires HTTPS");
+                    return;
                 }
 
-                // Function to request stream with specific constraints
-                const getStream = async (constraints) => {
-                    try {
-                        return await navigator.mediaDevices.getUserMedia(constraints);
-                    } catch (e) {
-                        console.warn("First constraint failed, trying fallback...", e);
-                        // Fallback: Remove resolution requirements if first attempt fails
-                        const fallbackConstraints = { video: { facingMode: mode } };
-                        return await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-                    }
-                };
+                const constraints = { video: { facingMode: mode } }; 
 
-                const constraints = { 
-                    video: { 
-                        facingMode: mode,
-                        width: { ideal: 1280 },
-                        height: { ideal: 720 }
-                    } 
-                }; 
-
-                visionStream = await getStream(constraints);
+                visionStream = await navigator.mediaDevices.getUserMedia(constraints);
+                
                 selfieVideo.srcObject = visionStream; 
                 selfieVideo.style.display = 'block'; 
-                
                 if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; 
                 else selfieVideo.style.transform = "scaleX(1)"; 
                 
@@ -1039,20 +996,44 @@
                 visionMode = true; 
                 currentCameraMode = mode;
 
-                // Crucial: Explicitly play to ensure mobile renders the frame
+                // Force play to ensure mobile renders
                 if (selfieVideo.paused) {
                     await selfieVideo.play();
                 }
 
             } catch(e) { 
-                console.error("Camera Error", e);
-                let msg = "કેમેરો એરર.";
-                if(e.name === 'NotAllowedError') msg = "માફી, કેમેરોનો પરવાનો આપો.";
-                if(e.name === 'NotFoundError') msg = "કેમેરો મળ્યો નથી.";
-                if(e.name === 'OverconstrainedError') msg = "કેમેરો સેટિંગ્સ સપોર્ટ થતી નથી.";
-                
-                alert(msg); 
-                throw e; 
+                // LOGIC: If failed because "device in use", retry automatically after 200ms
+                if (e.name === 'NotAllowedError' || e.name === 'NotFoundError' || e.name === 'SecurityError') {
+                     let msg = "કેમેરો એરર.";
+                    if(e.name === 'NotAllowedError') msg = "પરવાનો આપો.";
+                    if(e.name === 'NotFoundError') msg = "કેમેરો નથી.";
+                    
+                    // If it is just a busy hardware issue, retry automatically
+                    if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
+                        console.warn("Camera busy, Retrying once...");
+                        await new Promise(r => setTimeout(r, 200));
+                        try {
+                            visionStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: mode } });
+                            selfieVideo.srcObject = visionStream; 
+                            selfieVideo.style.display = 'block'; 
+                            if(mode === "user") selfieVideo.style.transform = "scaleX(-1)"; 
+                            else selfieVideo.style.transform = "scaleX(1)"; 
+                            document.getElementById('video-container').style.display = 'none'; 
+                            visionMode = true; 
+                            currentCameraMode = mode;
+                            await selfieVideo.play();
+                            return; // Success
+                        } catch (retryError) {
+                            // Final failure
+                            console.error("Retry failed", retryError);
+                            window.speak(msg);
+                        }
+                    } else {
+                         window.speak(msg);
+                    }
+                } else {
+                    window.speak("કેમેરો એરર.");
+                }
             } 
         };
         
