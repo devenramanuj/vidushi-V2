@@ -220,8 +220,8 @@
             background: #1e1e1e;
             padding: 12px;
             border-radius: 8px;
-            border: 1px solid #333;
-            margin-bottom: 5px;
+            border:1px solid #333;
+            margin-bottom:5px;
             transition: background 0.2s;
         }
         
@@ -243,7 +243,7 @@
             margin-right: 10px;
             font-weight: bold;
             cursor: pointer;
-            border: 1px solid #555;
+            border:1px solid #555;
             font-size: 14px;
         }
         .toggle-icon:hover { background: #d4af37; color: black; }
@@ -259,7 +259,7 @@
             border-left: 2px solid #333; /* Vertical Line */
             margin-left: 15px; /* Space for line */
             display: none; /* Hidden by default */
-            margin-top: 5px;
+            margin-top:5px;
         }
         
         .children-container.show { display: block; }
@@ -272,6 +272,39 @@
         
         /* 🎙 WAKE WORD MODAL STYLES 🎙 */
         #wake-word-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 250; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
+
+        /* 💻 PRE-WRITTEN APPS STYLES 💻 */
+        /* Calculator Styles */
+        .calc-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 20px; }
+        .calc-screen { width: 100%; max-width: 300px; background: #fff; color: #333; font-size: 24px; padding: 15px; text-align: right; border-radius: 10px; margin-bottom: 10px; border: 2px solid #ddd; }
+        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 300px; width: 100%; }
+        .calc-btn { padding: 20px; font-size: 18px; border-radius: 50%; border: 1px solid #ddd; background: #f0f0f0; cursor: pointer; color: #333; }
+        .calc-btn:active { background: #ddd; }
+        .calc-btn.operator { background: #ff9800; color: white; }
+        .calc-btn.equal { background: #4caf50; color: white; }
+        .calc-btn.clear { background: #f44336; color: white; }
+
+        /* Timer Styles */
+        .timer-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #ff4500; }
+        .timer-display { font-size: 60px; font-family: monospace; font-weight: bold; margin-bottom: 30px; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; border: 2px solid #ff4500; }
+        .timer-controls { display: flex; gap: 20px; }
+        .timer-btn { padding: 15px 30px; font-size: 20px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+        .timer-btn.start { background: #4caf50; }
+        .timer-btn.stop { background: #f44336; }
+        .timer-btn.reset { background: #2196f3; }
+
+        /* Color Picker Styles */
+        .color-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
+        .color-picker-large { width: 200px; height: 200px; border: none; cursor: pointer; background: none; }
+        .color-label { color: white; font-size: 20px; margin-top: 20px; }
+        .color-code { font-family: monospace; font-size: 24px; color: #fff; background: #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
+
+        /* Game Styles */
+        .game-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: white; }
+        .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; width: 100%; margin-bottom: 20px; }
+        .game-card { background: #333; border: 2px solid #555; padding: 20px; border-radius: 10px; cursor: pointer; font-size: 24px; transition: 0.2s; }
+        .game-card:active { background: #ff4500; }
+        .game-info { font-size: 14px; color: #aaa; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -297,7 +330,7 @@
 
     <div id="app-viewer-modal">
         <div id="app-viewer-header">
-            <span>✨ વિદુષી સર્જન</span>
+            <span>✨ વિદુષી એપ (App)</span>
             <button onclick="window.closeAppViewer()" style="background:red; color:white; border:none; padding:5px 15px; border-radius:5px;">બંધ કરો</button>
         </div>
         <div id="app-render-area"></div>
@@ -629,7 +662,6 @@
         
         window.closeWakeWordSettings = () => {
             document.getElementById('wake-word-modal').style.display = 'none';
-            // Reload to apply changes if necessary
             if(wakeWordEnabled) window.startConversation();
         };
         
@@ -674,7 +706,7 @@
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         };
 
-        window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: [] }); window.speak("સાફ કરી દીધું."); } };
+        window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: window.permanentMemories }); window.speak("સાફ કરી દીધું."); } };
         window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n) => `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
@@ -829,11 +861,231 @@
 
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
+
+        // 💻 PRE-WRITTEN APPS INJECTION LOGIC 💻
+        window.openApp = (type) => {
+            let html = "";
+            if (type === 'calculator') {
+                html = `
+                    <div class="calc-wrapper">
+                        <div class="calc-screen" id="calc-display">0</div>
+                        <div class="calc-grid">
+                            <button class="calc-btn clear" onclick="calcClear()">C</button>
+                            <button class="calc-btn operator" onclick="calcOp('/')">÷</button>
+                            <button class="calc-btn operator" onclick="calcOp('*')">×</button>
+                            <button class="calc-btn clear" onclick="calcDelete()">←</button>
+                        </div>
+                        <div class="calc-grid">
+                            <button class="calc-btn" onclick="calcNum('7')">7</button>
+                            <button class="calc-btn" onclick="calcNum('8')">8</button>
+                            <button class="calc-btn" onclick="calcNum('9')">9</button>
+                            <button class="calc-btn operator" onclick="calcOp('-')">-</button>
+                        </div>
+                        <div class="calc-grid">
+                            <button class="calc-btn" onclick="calcNum('4')">4</button>
+                            <button class="calc-btn" onclick="calcNum('5')">5</button>
+                            <button class="calc-btn" onclick="calcNum('6')">6</button>
+                            <button class="calc-btn operator" onclick="calcOp('+')">+</button>
+                        </div>
+                        <div class="calc-grid">
+                            <button class="calc-btn" onclick="calcNum('1')">1</button>
+                            <button class="calc-btn" onclick="calcNum('2')">2</button>
+                            <button class="calc-btn" onclick="calcNum('3')">3</button>
+                            <button class="calc-btn equal" onclick="calcResult()">=</button>
+                        </div>
+                        <div class="calc-grid">
+                            <button class="calc-btn" onclick="calcNum('0')">0</button>
+                            <button class="calc-btn" onclick="calcNum('.')">.</button>
+                        </div>
+                    </div>
+                    <style>
+                        .calc-wrapper { background: #1a1a1a; padding: 20px; border-radius: 10px; }
+                    </style>
+                `;
+            } else if (type === 'timer') {
+                html = `
+                    <div class="timer-wrapper">
+                        <div class="timer-display" id="timer-display">00:00:00</div>
+                        <div class="timer-controls">
+                            <button class="timer-btn start" onclick="startTimer()">Start</button>
+                            <button class="timer-btn stop" onclick="stopTimer()">Stop</button>
+                            <button class="timer-btn reset" onclick="resetTimer()">Reset</button>
+                        </div>
+                    </div>
+                    <style>
+                        .timer-wrapper { background: #000; }
+                    </style>
+                `;
+            } else if (type === 'color') {
+                html = `
+                    <div class="color-wrapper">
+                        <input type="color" id="colorPicker" class="color-picker-large" onchange="document.getElementById('colorCode').innerText = this.value;">
+                        <div class="color-label">Hex Code:</div>
+                        <div class="color-code" id="colorCode">#ffffff</div>
+                    </div>
+                `;
+            } else if (type === 'game') {
+                html = `
+                    <div class="game-wrapper">
+                        <div class="game-info" id="game-score">Score: 0</div>
+                        <div class="game-grid" id="game-cards">
+                            <div class="game-card" onclick="playGame()">?</div>
+                            <div class="game-card" onclick="playGame()">!</div>
+                            <div class="game-card" onclick="playGame()">?</div>
+                        </div>
+                    </div>
+                    <style>
+                        .game-wrapper { background: linear-gradient(45deg, #000000, #1a1a1a); }
+                    </style>
+                `;
+            } else {
+                // Fallback to AI
+                window.speak("મને આ એપ માટતું નથી. AI ને પૂછો.");
+                return;
+            }
+
+            document.getElementById('app-viewer-modal').style.display = 'flex';
+            document.getElementById('app-render-area').innerHTML = html;
+
+            // Inject Logic for specific apps
+            if(type === 'timer') {
+                window.timerInterval = null;
+                window.timerStartTime = null;
+                window.timerRunning = false;
+            }
+        };
+
+        // 🧮 Calculator Logic
+        let calcInput = "0";
+        let calcOperator = "";
+        let calcFirstInput = "";
+        window.calcNum = (num) => {
+            if(calcOperator && calcFirstInput) {
+                calcResult();
+                calcOperator = num;
+            } else {
+                if(calcInput === "0") calcInput = num;
+                else calcInput += num;
+            }
+            updateCalcDisplay();
+        };
+        window.calcOp = (op) => {
+            if(calcInput !== "0") { calcFirstInput = calcInput; }
+            calcOperator = op;
+            calcInput = "";
+            updateCalcDisplay();
+        };
+        window.calcClear = () => { calcInput = "0"; calcFirstInput = ""; calcOperator = ""; updateCalcDisplay(); };
+        window.calcDelete = () => { calcInput = calcInput.slice(0, -1); updateCalcDisplay(); };
+        window.calcResult = () => {
+            if(calcFirstInput && calcOperator && calcInput) {
+                const a = parseFloat(calcFirstInput);
+                const b = parseFloat(calcInput);
+                let res = 0;
+                switch(calcOperator) {
+                    case '+': res = a + b; break;
+                    case '-': res = a - b; break;
+                    case '*': res = a * b; break;
+                    case '/': res = b !== 0 ? a / b : "Error"; break;
+                }
+                calcInput = res.toString();
+                calcFirstInput = "";
+                calcOperator = "";
+                updateCalcDisplay();
+            }
+        };
+        function updateCalcDisplay() { if(document.getElementById('calc-display')) document.getElementById('calc-display').innerText = calcInput; };
+
+        // ⏱ Timer Logic
+        let timerInterval = null;
+        let timerStartTime = null;
+        let timerRunning = false;
+        window.startTimer = () => {
+            if(!timerRunning) {
+                timerRunning = true;
+                timerStartTime = Date.now() - (window.elapsedTime || 0);
+                timerInterval = setInterval(updateTimerDisplay, 10);
+            }
+        };
+        window.stopTimer = () => {
+            timerRunning = false;
+            clearInterval(timerInterval);
+        };
+        window.resetTimer = () => {
+            stopTimer();
+            window.elapsedTime = 0;
+            document.getElementById('timer-display').innerText = "00:00:00";
+        };
+        function updateTimerDisplay() {
+            if(!timerRunning) return;
+            const now = Date.now();
+            window.elapsedTime = now - timerStartTime;
+            const minutes = Math.floor(window.elapsedTime / 60000);
+            const seconds = Math.floor((window.elapsedTime % 60000) / 1000);
+            const ms = Math.floor((window.elapsedTime % 1000) / 10);
+            document.getElementById('timer-display').innerText = 
+                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
+        }
+
+        // 🎮 Game Logic
+        let gameScore = 0;
+        window.playGame = (el) => {
+            const isQuestionMark = el.innerText === "?";
+            const isCorrect = el.innerText === "!";
+            const cards = document.querySelectorAll('.game-card');
+            
+            // Simple logic: '?' is question, '!' is answer.
+            // Just random for demo
+            if(isQuestionMark) {
+                 // Set one correct (Randomly mark one as correct)
+                 cards.forEach(c => {
+                     if(c.innerText === "?") c.style.background = "#444"; 
+                 });
+                 const correctCard = cards[Math.floor(Math.random() * 3)];
+                 correctCard.dataset.correct = "true";
+            }
+            
+            if(isCorrect) {
+                if(el.dataset.correct === "true") {
+                    gameScore += 10;
+                    el.style.background = "#4caf50";
+                    el.innerText = "✔";
+                    delete el.dataset.correct;
+                } else {
+                    gameScore -= 5;
+                    el.style.background = "#f44336";
+                }
+                document.getElementById('game-score').innerText = "Score: " + gameScore;
+            }
+        };
         
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
+            
+            // 🎮 Bypass AI for Known Apps (Instant Load)
+            if(cmd.includes("કેલ્ક્યુલેટર") || cmd.includes("ગણતી")) {
+                window.openApp('calculator');
+                if(!silentMode) window.speak("કેલ્ક્યુલેટર ખોલવી રહ્યો છું.");
+                return;
+            }
+            if(cmd.includes("ટાઈમર")) {
+                window.openApp('timer');
+                if(!silentMode) window.speak("ટાઈમર તૈયાર છે.");
+                return;
+            }
+            if(cmd.includes("કલર") && (cmd.includes("પિકર") || cmd.includes("પસંદ"))) {
+                window.openApp('color');
+                if(!silentMode) window.speak("કલર પિકર તૈયાર છે.");
+                return;
+            }
+            if(cmd.includes("ગેમ") || cmd.includes("પઝલ")) {
+                window.openApp('game');
+                if(!silentMode) window.speak("વર્ડ ગેમ તૈયાર છે.");
+                return;
+            }
+
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { try { let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); if (parts && parts.length >= 3) { let childName = parts[1].trim(); let parentName = parts[2].trim(); if (!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા મળ્યો નથી."); return; } let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree)); let result = findParentAndAddChild(newTree, parentName, childName); if (result === "ADDED") { window.activeFamilyTree = newTree; if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, { tree: newTree }); window.speak(`${childName} નું નામ ઉમેરાઈ ગયું.`); } else if (result === "EXISTS") { window.speak("નામ પહેલેથી છે."); } else { window.speak("પિતાનું નામ મળ્યું નહીં."); } return; } } catch(e) { window.speak("ભૂલ થઈ."); } }
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim(); if(memoryText && db) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; } }
@@ -859,11 +1111,10 @@
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
                 const safeContent = window.ragContent.substring(0, 500000); 
-                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer user's question accurately.)\n`;
+                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
             }
 
-            // 🎙 ADD WAKE WORD TO PROMPT
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" WakeWord: "${wakeWord}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" WakeWord: "${wakeWord}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
         }
 
         window.askGeminiText = async (userText) => { let keys = geminiKeys.split(',').filter(k => k); if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; } 
@@ -872,13 +1123,9 @@
             if(wakeWordEnabled) {
                 if(userText.trim().toLowerCase().includes(wakeWord.toLowerCase())) {
                     cleanText = userText.replace(new RegExp(wakeWord, "gi"), "").trim();
-                // If only wake word was spoken, ignore
-                if(!cleanText) { isProcessing = false; return; }
-                // If wake word included, keep command text only
-                if(cleanText.length < 2) { isProcessing = false; return; }
-                userText = cleanText; // Send only the command part
+                    if(!cleanText) { isProcessing = false; return; } // Ignore only wake word
+                }
             }
-        }
         
         const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); contents.push({ role: "user", parts: [{ text: systemInstruction }] }); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) }); const data = await response.json(); if(data.candidates) { let reply = data.candidates[0].content.parts[0].text; if(!handleGenUI(reply)) { window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply); } } else { window.speak("કાંઈ સમજાયું નહીં."); } } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; } };
         
@@ -936,7 +1183,7 @@
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
         if(SpeechRecognition) { 
             recognition = new SpeechRecognition(); 
-            recognition.continuous = true; // Keep listening
+            recognition.continuous = true; 
             recognition.interimResults = false; 
             recognition.lang = 'gu-IN'; 
             
@@ -948,12 +1195,10 @@
             recognition.onend = () => { 
                 micBtn.classList.remove('listening'); 
                 
-                // 🎙 HOTWORD RESTART LOGIC
                 if (wakeWordEnabled && !isProcessing && !isAiSpeaking && !isSilentListening) {
                     try { recognition.start(); } catch (e) { console.log("Restart recognition..."); }
                 } else if (!wakeWordEnabled) {
                     statusText.innerText = "માઈક દબાવો"; 
-                // If Hotword is OFF, but Manual mode is ON (continuousMode), then restart
                     if (continuousMode && !isAiSpeaking) {
                          try { recognition.start(); } catch (e) {}
                     }
