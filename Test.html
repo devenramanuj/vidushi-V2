@@ -803,7 +803,7 @@ window.sendMessage = (text) => {
 
     isProcessing=false;
 };
-</script>
+
  = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
         window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
         window.makeCall = (text) => { let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને કોલ જોડું છું.`); setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
