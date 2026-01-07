@@ -737,7 +737,74 @@
                 if(!silentMode) window.speak("સંપર્ક નોંધી લીધું."); 
             }
         };
-        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
+        
+        window.<script>
+/* CONTACT શોધવા માટે */
+window.findContact = (query) => { 
+    let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); 
+    return contacts.find(c => 
+        c.name.toLowerCase().includes(cleanQuery) || 
+        cleanQuery.includes(c.name.toLowerCase())
+    ); 
+};
+
+/* 📞 CALL FUNCTION */
+window.makeCall = (text) => { 
+    
+    let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim(); 
+    let c = window.findContact(name); 
+    
+    if(c) { 
+        window.speak(`${c.name} ને કોલ જોડું છું.`);
+
+        setTimeout(() => {  
+            window.location.href = `tel:+91${c.number}`;
+        }, 1200);
+
+    } else { 
+        window.speak("આ નામ સંપર્કમાં નથી."); 
+    } 
+    
+    isProcessing = false; 
+};
+
+
+/* ✉ MESSAGE / WHATSAPP FUNCTION */
+window.sendMessage = (text) => { 
+    
+    let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim(); 
+    let c = window.findContact(name); 
+    
+    if(!c){ 
+        window.speak("આ નામ સંપર્કમાં નથી."); 
+        isProcessing=false; 
+        return; 
+    }
+
+    let lower = text.toLowerCase();
+
+    if(lower.includes("whatsapp") || lower.includes("વોટ્સએપ")){
+        
+        window.speak(`${c.name} માટે WhatsApp ખોલું છું.`);
+
+        setTimeout(()=>{
+            window.location.href = `https://wa.me/91${c.number}`;
+        },1200);
+
+        isProcessing=false;
+        return;
+    }
+
+    window.speak(`${c.name} માટે SMS ખોલું છું.`);
+
+    setTimeout(()=>{
+        window.location.href = `sms:+91${c.number}?body=${encodeURIComponent("નમસ્તે")}`;
+    },1200);
+
+    isProcessing=false;
+};
+</script>
+ = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
         window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
         window.makeCall = (text) => { let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને કોલ જોડું છું.`); setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
         window.sendMessage = (text) => { let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`); setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
