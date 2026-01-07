@@ -13,9 +13,8 @@
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     </script>
 
-    <!-- 🟢 અહીં વંશાવલીનો ડેટા સીધો ઉમેર્યો છે (Inline Data) -->
+    <!-- 🟢 વંશાવલીનો ડેટા -->
     <script>
-        // આ ફાઈલમાં ફક્ત વંશાવલીનો ડેટા રહેશે.
         window.vanshavaliData = {
             name: "જગદગુરુ રામાનંદાચાર્યજી", 
             info: "વિ. સં. ૧૩૫૬",
@@ -128,7 +127,6 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd"></script>
-    <script src="//unpkg.com/3d-force-graph"></script>
 
     <style>
         /* --- CORE STYLES --- */
@@ -198,11 +196,79 @@
         #app-render-area { flex: 1; width: 100%; background: white; overflow: auto; position: relative; }
         #app-render-area body { font-family: sans-serif; padding: 20px; }
 
-        /* 3D UNIVERSE */
-        #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 300; }
-        #graph-container { width: 100%; height: 100%; }
-        #close-3d-btn { position: fixed; top: 20px; right: 20px; background: red; color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; cursor: pointer; border-radius: 5px; }
-        #graph-instruction { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.5); z-index: 301; pointer-events: none; font-size: 12px; }
+        /* 🌌 NEW RESPONSIVE LIST VIEW (Mobile Friendly) 🌌 */
+        #vanshavali-3d-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #050505; z-index: 300; }
+        #tree-wrapper {
+            width: 100%;
+            height: 100%;
+            overflow-y: auto; /* Vertical Scroll Only */
+            padding: 20px;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .vanshavali-list { list-style: none; padding-left: 0; margin: 0; }
+
+        .vanshavali-item {
+            margin-bottom: 5px;
+        }
+
+        /* The Row containing info and toggle */
+        .vanshavali-row {
+            display: flex;
+            align-items: center;
+            background: #1e1e1e;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #333;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+        }
+        
+        .vanshavali-row:hover {
+            background: #2a2a2a;
+            border-color: #d4af37;
+        }
+
+        /* Toggle Button */
+        .toggle-icon {
+            min-width: 30px;
+            height: 30px;
+            background: #333;
+            color: #d4af37;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-right: 10px;
+            font-weight: bold;
+            cursor: pointer;
+            border: 1px solid #555;
+            font-size: 14px;
+        }
+        .toggle-icon:hover { background: #d4af37; color: black; }
+
+        /* Text Content */
+        .node-details { flex: 1; }
+        .node-name { color: #fff; font-weight: bold; font-size: 15px; display: block; }
+        .node-meta { color: #888; font-size: 12px; display: block; margin-top: 2px; }
+        
+        /* Indentation (Hierarchy) */
+        .children-container {
+            padding-left: 25px; /* Indent children */
+            border-left: 2px solid #333; /* Vertical Line */
+            margin-left: 15px; /* Space for line */
+            display: none; /* Hidden by default */
+            margin-top: 5px;
+        }
+        
+        .children-container.show { display: block; }
+
+        /* Hide icon if no children */
+        .no-children .toggle-icon { visibility: hidden; }
+
+        #close-3d-btn { position: fixed; top: 20px; right: 20px; background: red; color: white; border: none; padding: 10px 20px; font-weight: bold; z-index: 301; cursor: pointer; border-radius: 5px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        #graph-instruction { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); color: rgba(255,255,255,0.5); z-index: 301; pointer-events: none; font-size: 12px; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -234,10 +300,13 @@
         <div id="app-render-area"></div>
     </div>
 
+    <!-- Family Tree Modal (List View) -->
     <div id="vanshavali-3d-modal">
         <button id="close-3d-btn" onclick="window.close3DVanshavali()">🔙 પાછા (Back)</button>
-        <div id="graph-container"></div>
-        <div id="graph-instruction">🖱️ ફેરવવા માટે ડ્રેગ કરો • 🤏 ઝૂમ કરો • નામ પર ક્લિક કરો</div>
+        <div id="graph-instruction">📝 યાદી દૃશ્ય (List View)</div>
+        <div id="tree-wrapper">
+            <div id="tree-container" class="vanshavali-list"></div>
+        </div>
     </div>
 
     <div id="archeology-selector">
@@ -303,7 +372,6 @@
             <div class="section-title">Firebase Database</div>
             <label>Firebase API Key:</label><input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
             
-            <!-- 🗑️ નવું બટન: વંશાવલી ડેટા ડિલીટ કરવા માટે -->
             <button class="save-btn" onclick="window.deleteVanshavaliData()" style="background:red; margin-top:5px;">🗑️ વંશાવલી ડેટા ડિલીટ કરો</button>
 
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE (SYNC)</button>
@@ -441,7 +509,7 @@
 
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
-            'math': `Analyze this image for math problems. Solve the problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
+            'math': `Analyze this image for math problems. Solve problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
             'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
             'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
             'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
@@ -561,7 +629,6 @@
                 let extractedText = "";
 
                 if (file.type === "application/pdf") {
-                    // PDF HANDLING
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
                     
@@ -573,11 +640,9 @@
                         document.getElementById('rag-status').innerText = `Reading Page ${i}/${pdf.numPages}...`;
                     }
                 } else {
-                    // TEXT HANDLING (txt, csv, js, py, html)
                     extractedText = await file.text();
                 }
 
-                // CLEANUP & SAVE TO GLOBAL MEMORY
                 window.ragContent = extractedText.replace(/\s+/g, " ").trim();
                 
                 document.getElementById('rag-status').innerText = '✅ RAG Ready';
@@ -613,9 +678,71 @@
         window.useArcheologyCamera = () => { document.getElementById('archeology-selector').style.display = 'none'; window.captureAndAnalyze("environment"); };
         window.handleGalleryUpload = (input) => { const file = input.files[0]; if(!file) return; document.getElementById('archeology-selector').style.display = 'none'; playVideo('thinking'); imageLoadingText.style.display = "block"; imageLoadingText.innerText = "વિશ્લેષણ..."; generatedImage.style.display = "none"; imageOverlay.style.display = "flex"; const reader = new FileReader(); reader.onload = function(e) { generatedImage.src = e.target.result; generatedImage.style.display = "block"; imageLoadingText.style.display = "none"; document.getElementById('download-btn').style.display = "block"; window.askGeminiVision(e.target.result.split(',')[1]); }; reader.readAsDataURL(file); };
         window.generateMagicImage = (p) => { playVideo('thinking'); imageLoadingText.style.display = "block"; generatedImage.style.display="none"; imageOverlay.style.display='flex'; document.getElementById('download-btn').style.display = "none"; generatedImage.src = `https://pollinations.ai/p/${encodeURIComponent(p)}?t=` + new Date().getTime(); generatedImage.onload = () => { imageLoadingText.style.display="none"; generatedImage.style.display="block"; document.getElementById('download-btn').style.display = "block"; window.speak("તૈયાર!"); }; };
-        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('graph-container').innerHTML = ''; window.speak("3D મોડ બંધ."); };
-        window.open3DVanshavali = () => { if(!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા નથી."); return; } document.getElementById('settings-modal').style.display = 'none'; document.getElementById('vanshavali-3d-modal').style.display = 'block'; const gData = convertTreeToGraph(window.activeFamilyTree); const Graph = ForceGraph3D()(document.getElementById('graph-container')).graphData(gData).nodeLabel('id').nodeAutoColorBy('group').linkDirectionalArrowLength(3.5).linkDirectionalArrowRelPos(1).onNodeClick(node => { const distance = 40; const distRatio = 1 + distance/Math.hypot(node.x, node.y, node.z); Graph.cameraPosition({ x: node.x * distRatio, y: node.y * distRatio, z: node.z * distRatio }, node, 3000); window.speak("આ છે " + node.id + ". " + (node.info || "")); }); window.speak("3D વંશાવલી બ્રહ્માંડ. ગોળ ફેરવો."); };
-        function convertTreeToGraph(node, nodes = [], links = [], parent = null) { nodes.push({ id: node.name, group: parent ? 2 : 1, info: node.info }); if (parent) links.push({ source: parent.name, target: node.name }); if (node.children) node.children.forEach(child => convertTreeToGraph(child, nodes, links, node)); return { nodes, links }; }
+        
+        // 🌌 NEW LIST LOGIC (Clean Vertical Hierarchy) 🌌
+        window.close3DVanshavali = () => { document.getElementById('vanshavali-3d-modal').style.display = 'none'; document.getElementById('tree-container').innerHTML = ''; window.speak("3D મોડ બંધ."); };
+
+        window.open3DVanshavali = () => { 
+            if(!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા નથી."); return; } 
+            document.getElementById('settings-modal').style.display = 'none'; 
+            document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
+            
+            const container = document.getElementById('tree-container');
+            container.innerHTML = '';
+            
+            container.appendChild(createListElement(window.activeFamilyTree));
+            window.speak("વંશાવલી યાદી દૃશ્ય બતાવી રહ્યો છું.");
+        };
+
+        function createListElement(node) {
+            const li = document.createElement('div');
+            li.className = 'vanshavali-item';
+            
+            const hasChildren = node.children && node.children.length > 0;
+            
+            // Row Content
+            const row = document.createElement('div');
+            row.className = `vanshavali-row ${!hasChildren ? 'no-children' : ''}`;
+            
+            // Toggle Button
+            const btn = document.createElement('span');
+            btn.className = 'toggle-icon';
+            btn.textContent = hasChildren ? '+' : '';
+            btn.onclick = (e) => {
+                e.stopPropagation();
+                const childrenContainer = li.querySelector('.children-container');
+                if(childrenContainer) {
+                    const isHidden = getComputedStyle(childrenContainer).display === 'none';
+                    childrenContainer.style.display = isHidden ? 'block' : 'none';
+                    btn.textContent = isHidden ? '-' : '+';
+                }
+            };
+
+            // Name & Info
+            const details = document.createElement('div');
+            details.className = 'node-details';
+            details.innerHTML = `<span class="node-name">${node.name}</span>`;
+            if(node.info) {
+                details.innerHTML += `<span class="node-meta">${node.info}</span>`;
+            }
+
+            // Assemble Row
+            row.appendChild(btn);
+            row.appendChild(details);
+            li.appendChild(row);
+
+            // Children
+            if(hasChildren) {
+                const childrenDiv = document.createElement('div');
+                childrenDiv.className = 'children-container';
+                node.children.forEach(child => {
+                    childrenDiv.appendChild(createListElement(child));
+                });
+                li.appendChild(childrenDiv);
+            }
+
+            return li;
+        }
 
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
@@ -646,20 +773,17 @@
             let familyDataString = ""; 
             try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
             
-            // 🔥 NEW: INJECT RAG CONTENT
             let ragContext = "";
             if(window.ragContent && window.ragContent.length > 0) {
-                // Truncate to avoid token limit if very large (Simple Chunking Logic)
                 const safeContent = window.ragContent.substring(0, 500000); 
-                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer the user's question accurately.)\n`;
+                ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use the above document content to answer user's question accurately.)\n`;
             }
 
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If the user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate the full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
         }
 
         window.askGeminiText = async (userText) => { let keys = geminiKeys.split(',').filter(k => k); if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; } const systemInstruction = getSystemPrompt(window.permanentMemories.join("\n"), userText); let contents = window.chatHistory.slice(-10).map(msg => ({ role: msg.role === "user" ? "user" : "model", parts: [{ text: msg.content }] })); contents.push({ role: "user", parts: [{ text: systemInstruction }] }); try { const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: contents }) }); const data = await response.json(); if(data.candidates) { let reply = data.candidates[0].content.parts[0].text; if(!handleGenUI(reply)) { window.chatHistory.push({ role: "user", content: userText }); window.chatHistory.push({ role: "assistant", content: reply }); window.speak(reply); } } else { window.speak("કાંઈ સમજાયું નહીં."); } } catch (e) { window.speak("ઇન્ટરનેટ એરર."); isProcessing = false; } };
         
-        // 🔥🔥🔥 UPDATED VISION FUNCTION FOR BETTER DEBUGGING 🔥🔥🔥
         window.askGeminiVision = async (base64Image) => { 
             let keys = geminiKeys.split(',').filter(k=>k); 
             if(!keys.length) { window.speak("API Key નથી."); return; } 
@@ -670,8 +794,6 @@
                     body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: currentVisionPrompt + " (Respond in Gujarati)" }, { inline_data: { mime_type: "image/jpeg", data: base64Image } }] }] }) 
                 }); 
                 const data = await response.json(); 
-                
-                // CHECK FOR ERROR RESPONSE
                 if(data.error) {
                     console.error(data.error);
                     document.getElementById('report-modal').style.display = 'flex';
@@ -696,8 +818,7 @@
                 window.speak("Network Error."); 
             } 
         };
-                // 👇 આ કોડ ગમે ત્યાં Script માં પેસ્ટ કરી દો 👇
-        
+                
         window.formatVanshavaliTree = (node, parentName = "મૂળ પુરુષ") => {
             let text = `${node.name} (પિતા/ગુરુ: ${parentName})`;
             if(node.info) text += ` [માહિતી: ${node.info}]`;
@@ -723,7 +844,6 @@
 
         window.speak = (text, forceSpeak = false) => { if(silentMode && !forceSpeak) { statusText.innerText = "મૌન (Silent)..."; isAiSpeaking = false; isProcessing = false; playVideo('silent'); return; } const clean = text.replace(/[*#_]/g, ""); statusText.innerText = "બોલું છું..."; isAiSpeaking = true; const u = new SpeechSynthesisUtterance(clean); u.lang = 'gu-IN'; let voices = window.speechSynthesis.getVoices(); let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google')); if(!bestVoice) bestVoice = voices.find(v => v.lang === 'gu-IN'); if(bestVoice) u.voice = bestVoice; u.onstart = () => { playVideo('talking'); statusText.style.border = "1px solid rgba(255,255,255,0.2)"; }; u.onend = () => { playVideo('smiling'); isAiSpeaking = false; isProcessing = false; if (continuousMode) { try { setTimeout(() => recognition.start(), 1000); } catch(e){} } }; window.speechSynthesis.speak(u); };
 
-        // 🗑️ વંશાવલીનો ડેટા ડિલીટ કરવા માટેનું નવું ફંક્શન
         window.deleteVanshavaliData = async () => {
             if(!db) {
                 alert("ઇન્ટરનેટ કનેક્શન નથી.");
@@ -732,17 +852,10 @@
             
             if(confirm("શું તમે ખરેખર વંશાવલીનો ડેટા કાઢી નાખવા માંગો છો? (Delete Data)")) {
                 try {
-                    // 1. Firebase માંથી ડેટા ડિલીટ કરો
                     await deleteDoc(vanshavaliDocRef);
-                    
-                    // 2. Local Variable ખાલી કરો
                     window.activeFamilyTree = null;
-                    
                     alert("વંશાવલીનો ડેટા સફળતાપૂર્વક ડિલીટ થઈ ગયો છે.");
                     window.speak("વંશાવલી ડેટા સાફ કર્યો.");
-                    
-                    // 3. જો તમે `vanshavali_data.js` ફાઇલ પણ દૂર કરવા માંગો તો બ્રાઉઝરને રિલોડ કરાવવું પડશે.
-                    
                 } catch (e) {
                     console.error(e);
                     alert("ડેટા ડિલીટ કરવામાં ભૂલ: " + e.message);
