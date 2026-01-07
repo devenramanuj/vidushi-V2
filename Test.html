@@ -721,24 +721,7 @@
         };
 
         window.addContactUI = async () => { 
-            // Get inputs directly from Settings Modal
-            const nameInput = document.getElementById('contactName');
-            const numInput = document.getElementById('contactNumber');
-            
-            if (!nameInput || !numInput) return;
-            
-            const name = nameInput.value.trim(); 
-            const num = numInput.value.trim(); 
-            
-            if(name && num && db) { 
-                await addDoc(collection(db, "vidushi_contacts"), {name: name, number: num}); 
-                nameInput.value = ""; 
-                numInput.value = "";
-                if(!silentMode) window.speak("સંપર્ક નોંધી લીધું."); 
-            }
-        };
-        
-        window.<script>
+            <script>
 /* CONTACT શોધવા માટે */
 window.findContact = (query) => { 
     let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); 
@@ -803,6 +786,7 @@ window.sendMessage = (text) => {
 
     isProcessing=false;
 };
+</script>
 
  = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
         window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
