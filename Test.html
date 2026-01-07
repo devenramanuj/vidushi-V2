@@ -786,7 +786,6 @@ window.sendMessage = (text) => {
 
     isProcessing=false;
 };
-</script>
 
  = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
         window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
