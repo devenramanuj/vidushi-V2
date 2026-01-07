@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Ultimate RAG</title>
+    <title>Vidushi AI - Settings Contact</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -210,7 +210,7 @@
         .vanshavali-list { list-style: none; padding-left: 0; margin: 0; }
 
         .vanshavali-item {
-            margin-bottom:5px;
+            margin-bottom: 5px;
         }
 
         /* The Row containing info and toggle */
@@ -220,8 +220,8 @@
             background: #1e1e1e;
             padding: 12px;
             border-radius: 8px;
-            border:1px solid #333;
-            margin-bottom:5px;
+            border: 1px solid #333;
+            margin-bottom: 5px;
             transition: background 0.2s;
         }
         
@@ -243,7 +243,7 @@
             margin-right: 10px;
             font-weight: bold;
             cursor: pointer;
-            border:1px solid #555;
+            border: 1px solid #555;
             font-size: 14px;
         }
         .toggle-icon:hover { background: #d4af37; color: black; }
@@ -259,7 +259,7 @@
             border-left: 2px solid #333; /* Vertical Line */
             margin-left: 15px; /* Space for line */
             display: none; /* Hidden by default */
-            margin-top:5px;
+            margin-top: 5px;
         }
         
         .children-container.show { display: block; }
@@ -272,44 +272,13 @@
         
         /* 🎙 WAKE WORD MODAL STYLES 🎙 */
         #wake-word-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 250; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
-
-        /* 💻 PRE-WRITTEN APPS STYLES 💻 */
-        /* Calculator Styles */
-        .calc-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; width: 100%; padding: 20px; }
-        .calc-screen { width: 100%; max-width: 300px; background: #fff; color: #333; font-size: 24px; padding: 15px; text-align: right; border-radius: 10px; margin-bottom: 10px; border: 2px solid #ddd; }
-        .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; max-width: 300px; width: 100%; }
-        .calc-btn { padding: 20px; font-size: 18px; border-radius: 50%; border: 1px solid #ddd; background: #f0f0f0; cursor: pointer; color: #333; }
-        .calc-btn:active { background: #ddd; }
-        .calc-btn.operator { background: #ff9800; color: white; }
-        .calc-btn.equal { background: #4caf50; color: white; }
-        .calc-btn.clear { background: #f44336; color: white; }
-
-        /* Timer Styles */
-        .timer-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #ff4500; }
-        .timer-display { font-size: 60px; font-family: monospace; font-weight: bold; margin-bottom: 30px; background: rgba(0,0,0,0.5); padding: 20px; border-radius: 10px; border: 2px solid #ff4500; }
-        .timer-controls { display: flex; gap: 20px; }
-        .timer-btn { padding: 15px 30px; font-size: 20px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-        .timer-btn.start { background: #4caf50; }
-        .timer-btn.stop { background: #f44336; }
-        .timer-btn.reset { background: #2196f3; }
-
-        /* Color Picker Styles */
-        .color-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; }
-        .color-picker-large { width: 200px; height: 200px; border: none; cursor: pointer; background: none; }
-        .color-label { color: white; font-size: 20px; margin-top: 20px; }
-        .color-code { font-family: monospace; font-size: 24px; color: #fff; background: #333; padding: 10px; margin-top: 10px; border-radius: 5px; }
-
-        /* Game Styles */
-        .game-wrapper { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: white; }
-        .game-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 400px; width: 100%; margin-bottom: 20px; }
-        .game-card { background: #333; border: 2px solid #555; padding: 20px; border-radius: 10px; cursor: pointer; font-size: 24px; transition: 0.2s; }
-        .game-card:active { background: #ff4500; }
-        .game-info { font-size: 14px; color: #aaa; margin-top: 10px; }
     </style>
 </head>
 <body>
     <div id="rag-status">📄 RAG Active</div>
     
+    <!-- 💾 HOME PAGE CONTACT WIDGET IS REMOVED (Deleted) -->
+
     <div id="video-container">
         <video id="silent-video" autoplay muted loop playsinline><source src="silent.mp4" type="video/mp4"></video>
         <video id="talking-video" muted loop playsinline><source src="talking.mp4" type="video/mp4"></video>
@@ -371,6 +340,8 @@
             <div class="mode-btn" onclick="window.setVisionMode('translate', this)">🌐 ભાષાંતર</div>
             <div class="mode-btn" onclick="window.setVisionMode('object', this)">🌿 ઓળખ</div>
             <div class="mode-btn" onclick="window.setVisionMode('summary', this)">📝 સારાંશ</div>
+            <div class="mode-btn" onclick="window.setVisionMode('ocr_speech', this)">👂 શું બોલ (Read)</div>
+            <div class="mode-btn" onclick="window.setVisionMode('mood', this)">🎭 ભાવ ચકાસ</div>
             <div class="mode-btn" onclick="window.startLiveVision(this)" style="color: #ff4500; font-weight:bold;">⚡ લાઈવ વિઝન</div>
         </div>
         <div class="action-row">
@@ -387,7 +358,9 @@
                 <div class="menu-btn" onclick="window.openFeature('notes')"><i class="fas fa-book" style="color:orange;"></i> ડાયરી</div>
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
                 <div class="menu-btn" onclick="window.openFeature('expense')"><i class="fas fa-rupee-sign" style="color:#00ff00;"></i> હિસાબ</div>
-                <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્કો</div>
+                
+                <!-- ✅ RESTORED CONTACTS BUTTON HERE ✅ -->
+                <div class="menu-btn" onclick="window.openFeature('contacts')"><i class="fas fa-address-book" style="color:#008cff;"></i> સંપર્ક</div>
                 
                 <div class="menu-btn" onclick="document.getElementById('docLoader').click()"><i class="fas fa-file-pdf" style="color:red;"></i> દસ્તાવેજ</div>
                 
@@ -396,7 +369,16 @@
                 <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid #d4af37;"><i class="fas fa-globe" style="color:#d4af37;"></i> 🌌 3D વંશાવલી</div>
             </div>
 
-            
+            <!-- ✅ ADD CONTACT FORM MOVED TO SETTINGS HERE ✅ -->
+            <div class="section-title">સંપર્ક ઉમેરવો (Add Contact)</div>
+            <div class="contact-inputs">
+                <input type="text" id="contactName" placeholder="નામ (Name)">
+                <input type="number" id="contactNumber" placeholder="નંબર (Number)">
+            </div>
+            <button class="save-btn" onclick="window.addContactUI()">
+                <i class="fas fa-plus"></i> ઉમેરવો (Add)
+            </button>
+
             <div class="section-title">Personal Info</div>
             <label>તમારું નામ:</label><input type="text" id="userNameInput" placeholder="દા.ત. દેવેન્દ્રભાઈ">
             <label class="checkbox-container"><span>🔇 અવાજ બંધ (Silent Mode)</span><input type="checkbox" id="silentModeCheck"></label>
@@ -421,11 +403,15 @@
                 <div class="section-title">API Keys</div><textarea id="geminiKeyInput" rows="3" placeholder="Key1, Key2..."></textarea>
             </div>
             <div id="groq-settings" style="display:none;">
-                <div class="section-title">Select Groq Model</div><select id="groqModelSelect"><option value="llama-3.1-8b-instant">Llama 8B</option></select>
+                <div class="section-title">Select Groq Model</div>
+                <select id="groqModelSelect">
+                    <option value="llama-3.1-8b-instant">Llama 8B</option>
+                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Versatile)</option>
+                </select>
                 <div class="section-title">Groq Key</div><input type="password" id="groqKeyInput" placeholder="gsk_...">
             </div>
             <div class="section-title">Firebase Database</div>
-            <label>Firebase API Key:</label><input type="password" id="firebaseApiKeyInput" placeholder="AIzaSy...">
+            <label>Firebase API Key (Text):</label><input type="text" id="firebaseApiKeyInput" placeholder="AIzaSy...">
             
             <button class="save-btn" onclick="window.deleteVanshavaliData()" style="background:red; margin-top:5px;">🗑️ વંશાવલી ડેટા ડિલીટ કરો</button>
 
@@ -446,7 +432,8 @@
     <div id="notes-modal" class="modal"><div class="notes-header"><span>મારી ડાયરી</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
     <div id="music-modal" class="modal"><div class="notes-header"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
     <div id="expense-modal" class="modal"><div class="notes-header"><span>હિસાબ</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
-    <div id="contacts-modal" class="modal"><div class="notes-header"><span>સંપર્કો</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
+    <div id="contacts-modal" class="modal"><div class="notes-header"><span>સંપર્કની યાદી (Contacts List)</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div id="contacts-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('contacts')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
+    
     <div id="image-overlay"><img id="generated-image" src="" alt="Magic Image"><div id="image-loading-text">ઉકેલી રહી છું...</div><div class="overlay-btns"><button id="download-btn" onclick="window.downloadSelfie()">⬇ સેવ કરો</button><button id="close-img-btn" onclick="window.closeImage()">બંધ કરો</button></div></div>
 
     <div id="mic-container">
@@ -477,7 +464,7 @@
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
         let groqKey = localStorage.getItem('vidushi_groq_key') || '';
         let geminiModel = localStorage.getItem('vidushi_gemini_model') || "gemini-2.5-flash"; 
-        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.1-8b-instant";
+        let groqModel = localStorage.getItem('vidushi_groq_model') || "llama-3.3-70b-versatile"; // Default updated to 70B
         let continuousMode = localStorage.getItem('vidushi_continuous') === 'true';
         let silentMode = localStorage.getItem('vidushi_silent') === 'true';
         let currentMood = localStorage.getItem('vidushi_mood') || 'normal'; 
@@ -521,8 +508,10 @@
                     if(data.mood) currentMood = data.mood;
                     if(data.provider) aiProvider = data.provider;
                     if(data.geminiModel) geminiModel = data.geminiModel;
+                    if(data.groqModel) groqModel = data.groqModel; // Load Groq Model
                     if(data.wakeWord) wakeWord = data.wakeWord;
                     if(data.wakeWordEnabled) wakeWordEnabled = data.wakeWordEnabled;
+                    if(data.firebaseApiKey) firebaseApiKey = data.firebaseApiKey; // Load Firebase Key
                     
                     localStorage.setItem('vidushi_username', userName);
                     localStorage.setItem('vidushi_gemini_key', geminiKeys);
@@ -530,8 +519,10 @@
                     localStorage.setItem('vidushi_mood', currentMood);
                     localStorage.setItem('vidushi_provider', aiProvider);
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
+                    localStorage.setItem('vidushi_groq_model', groqModel);
                     localStorage.setItem('vidushi_wake_word', wakeWord);
                     localStorage.setItem('vidushi_wake_word_enabled', wakeWordEnabled);
+                    localStorage.setItem('vidushi_firebase_apiKey', firebaseApiKey);
                     
                     if(!silentMode) window.speak(`સિસ્ટમ તૈયાર છે, ${userName}!`);
                 } else { await saveToCloud(); }
@@ -549,7 +540,7 @@
 
         async function saveToCloud() {
             if(!db) return;
-            const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, wakeWord: wakeWord, wakeWordEnabled: wakeWordEnabled, lastUpdated: new Date() };
+            const settingsData = { userName, geminiKey: geminiKeys, groqKey: groqKey, mood: currentMood, provider: aiProvider, geminiModel: geminiModel, groqModel: groqModel, wakeWord: wakeWord, wakeWordEnabled: wakeWordEnabled, firebaseApiKey: firebaseApiKey, lastUpdated: new Date() };
             await setDoc(settingsDocRef, settingsData, { merge: true });
         }
 
@@ -578,7 +569,8 @@
         if (db) {
             onSnapshot(query(collection(db, "vidushi_notes"), orderBy("timestamp", "desc")), (s) => { notes = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('notes-modal').style.display === 'flex') window.renderNotes(); });
             onSnapshot(query(collection(db, "vidushi_expenses"), orderBy("timestamp", "desc")), (s) => { expenses = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('expense-modal').style.display === 'flex') window.renderExpenses(); });
-            onSnapshot(query(collection(db, "vidushi_contacts"), orderBy("name")), (s) => { contacts = s.docs.map(d => ({id: d.id, ...d.data()})); if(document.getElementById('contacts-modal').style.display === 'flex') window.renderContacts(); });
+            onSnapshot(query(collection(db, "vidushi_contacts"), orderBy("name")), (s) => { contacts = s.docs.map(d => ({id: d.id, ...d.data()})); // Auto render contacts when list modal opens
+            });
         }
 
         const visionPrompts = {
@@ -586,7 +578,10 @@
             'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain logic in Gujarati.`,
             'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain formatting as much as possible.`,
             'object': `Identify main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
-            'summary': `Read text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
+            'summary': `Read text in this document image. Provide a concise summary of main points in Gujarati. Bullet points preferred.`,
+            // 📝 NEW SMART LENS PROMPTS 📝
+            'ocr_speech': `Read all text in this image carefully. Translate it to Gujarati. Provide full text in Gujarati inside a code block so it is easy to read. Do not explain, just provide text.`,
+            'mood': `Analyze main human face in this image. Determine mood or emotion (Happy, Sad, Angry, Neutral, Surprised). Provide result in Gujarati. Example: "He/She looks happy."`
         };
 
         let currentVisionPrompt = visionPrompts['history'];
@@ -707,7 +702,7 @@
         };
 
         window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: window.permanentMemories }); window.speak("સાફ કરી દીધું."); } };
-        window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
+        window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContactsList(); };
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n) => `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
         window.deleteNote = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_notes", id)); };
@@ -716,9 +711,33 @@
         window.renderExpenses = () => { let t=0; document.getElementById('expense-list').innerHTML = expenses.map((n) => { t+=n.amount; return `<div class="list-item expense-item"><span>₹${n.amount} - ${n.desc} <br><small style="color:gray; font-size:10px;">🕒 ${window.formatDate(n.timestamp)}</small></span><span style="color:red" onclick="window.deleteExpense('${n.id}')">x</span></div>` }).join(''); document.getElementById('total-expense').innerText = t; };
         window.deleteExpense = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_expenses", id)); };
         window.clearExpenses = async () => { if(confirm("બધો હિસાબ સાફ કરવો છે?") && db) { const snapshot = await getDocs(collection(db, "vidushi_expenses")); const batch = writeBatch(db); snapshot.forEach((doc) => batch.delete(doc.ref)); await batch.commit(); window.speak("હિસાબ સાફ."); } };
-        window.addContactUI = async () => { const name = document.getElementById('contactName').value.trim(); const num = document.getElementById('contactNumber').value.trim(); if(name && num && db) { await addDoc(collection(db, "vidushi_contacts"), {name: name, number: num}); document.getElementById('contactName').value = ""; document.getElementById('contactNumber').value = ""; } };
-        window.renderContacts = () => { document.getElementById('contacts-list').innerHTML = contacts.map((c) => `<div class="list-item contact-item"><span><b>${c.name}</b><br><small>${c.number}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteContact('${c.id}')">x</span></div>`).join(''); };
-        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); };
+        
+        // Contacts List Render (New function)
+        window.renderContactsList = () => {
+            const container = document.getElementById('contacts-list');
+            if(container && contacts) {
+                container.innerHTML = contacts.map((c) => `<div class="list-item contact-item"><span><b>${c.name}</b><br><small>${c.number}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteContact('${c.id}')">x</span></div>`).join(''); 
+            }
+        };
+
+        window.addContactUI = async () => { 
+            // Get inputs directly from Settings Modal
+            const nameInput = document.getElementById('contactName');
+            const numInput = document.getElementById('contactNumber');
+            
+            if (!nameInput || !numInput) return;
+            
+            const name = nameInput.value.trim(); 
+            const num = numInput.value.trim(); 
+            
+            if(name && num && db) { 
+                await addDoc(collection(db, "vidushi_contacts"), {name: name, number: num}); 
+                nameInput.value = ""; 
+                numInput.value = "";
+                if(!silentMode) window.speak("સંપર્ક નોંધી લીધું."); 
+            }
+        };
+        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
         window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
         window.makeCall = (text) => { let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને કોલ જોડું છું.`); setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
         window.sendMessage = (text) => { let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`); setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
@@ -747,7 +766,7 @@
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
                     
-                    for (let i = 1; i <= pdf.numPages; i++) {
+                    for (let i =1; i <= pdf.numPages; i++) {
                         const page = await pdf.getPage(i);
                         const textContent = await page.getTextContent();
                         const pageText = textContent.items.map(item => item.str).join(" ");
@@ -861,231 +880,11 @@
 
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
-
-        // 💻 PRE-WRITTEN APPS INJECTION LOGIC 💻
-        window.openApp = (type) => {
-            let html = "";
-            if (type === 'calculator') {
-                html = `
-                    <div class="calc-wrapper">
-                        <div class="calc-screen" id="calc-display">0</div>
-                        <div class="calc-grid">
-                            <button class="calc-btn clear" onclick="calcClear()">C</button>
-                            <button class="calc-btn operator" onclick="calcOp('/')">÷</button>
-                            <button class="calc-btn operator" onclick="calcOp('*')">×</button>
-                            <button class="calc-btn clear" onclick="calcDelete()">←</button>
-                        </div>
-                        <div class="calc-grid">
-                            <button class="calc-btn" onclick="calcNum('7')">7</button>
-                            <button class="calc-btn" onclick="calcNum('8')">8</button>
-                            <button class="calc-btn" onclick="calcNum('9')">9</button>
-                            <button class="calc-btn operator" onclick="calcOp('-')">-</button>
-                        </div>
-                        <div class="calc-grid">
-                            <button class="calc-btn" onclick="calcNum('4')">4</button>
-                            <button class="calc-btn" onclick="calcNum('5')">5</button>
-                            <button class="calc-btn" onclick="calcNum('6')">6</button>
-                            <button class="calc-btn operator" onclick="calcOp('+')">+</button>
-                        </div>
-                        <div class="calc-grid">
-                            <button class="calc-btn" onclick="calcNum('1')">1</button>
-                            <button class="calc-btn" onclick="calcNum('2')">2</button>
-                            <button class="calc-btn" onclick="calcNum('3')">3</button>
-                            <button class="calc-btn equal" onclick="calcResult()">=</button>
-                        </div>
-                        <div class="calc-grid">
-                            <button class="calc-btn" onclick="calcNum('0')">0</button>
-                            <button class="calc-btn" onclick="calcNum('.')">.</button>
-                        </div>
-                    </div>
-                    <style>
-                        .calc-wrapper { background: #1a1a1a; padding: 20px; border-radius: 10px; }
-                    </style>
-                `;
-            } else if (type === 'timer') {
-                html = `
-                    <div class="timer-wrapper">
-                        <div class="timer-display" id="timer-display">00:00:00</div>
-                        <div class="timer-controls">
-                            <button class="timer-btn start" onclick="startTimer()">Start</button>
-                            <button class="timer-btn stop" onclick="stopTimer()">Stop</button>
-                            <button class="timer-btn reset" onclick="resetTimer()">Reset</button>
-                        </div>
-                    </div>
-                    <style>
-                        .timer-wrapper { background: #000; }
-                    </style>
-                `;
-            } else if (type === 'color') {
-                html = `
-                    <div class="color-wrapper">
-                        <input type="color" id="colorPicker" class="color-picker-large" onchange="document.getElementById('colorCode').innerText = this.value;">
-                        <div class="color-label">Hex Code:</div>
-                        <div class="color-code" id="colorCode">#ffffff</div>
-                    </div>
-                `;
-            } else if (type === 'game') {
-                html = `
-                    <div class="game-wrapper">
-                        <div class="game-info" id="game-score">Score: 0</div>
-                        <div class="game-grid" id="game-cards">
-                            <div class="game-card" onclick="playGame()">?</div>
-                            <div class="game-card" onclick="playGame()">!</div>
-                            <div class="game-card" onclick="playGame()">?</div>
-                        </div>
-                    </div>
-                    <style>
-                        .game-wrapper { background: linear-gradient(45deg, #000000, #1a1a1a); }
-                    </style>
-                `;
-            } else {
-                // Fallback to AI
-                window.speak("મને આ એપ માટતું નથી. AI ને પૂછો.");
-                return;
-            }
-
-            document.getElementById('app-viewer-modal').style.display = 'flex';
-            document.getElementById('app-render-area').innerHTML = html;
-
-            // Inject Logic for specific apps
-            if(type === 'timer') {
-                window.timerInterval = null;
-                window.timerStartTime = null;
-                window.timerRunning = false;
-            }
-        };
-
-        // 🧮 Calculator Logic
-        let calcInput = "0";
-        let calcOperator = "";
-        let calcFirstInput = "";
-        window.calcNum = (num) => {
-            if(calcOperator && calcFirstInput) {
-                calcResult();
-                calcOperator = num;
-            } else {
-                if(calcInput === "0") calcInput = num;
-                else calcInput += num;
-            }
-            updateCalcDisplay();
-        };
-        window.calcOp = (op) => {
-            if(calcInput !== "0") { calcFirstInput = calcInput; }
-            calcOperator = op;
-            calcInput = "";
-            updateCalcDisplay();
-        };
-        window.calcClear = () => { calcInput = "0"; calcFirstInput = ""; calcOperator = ""; updateCalcDisplay(); };
-        window.calcDelete = () => { calcInput = calcInput.slice(0, -1); updateCalcDisplay(); };
-        window.calcResult = () => {
-            if(calcFirstInput && calcOperator && calcInput) {
-                const a = parseFloat(calcFirstInput);
-                const b = parseFloat(calcInput);
-                let res = 0;
-                switch(calcOperator) {
-                    case '+': res = a + b; break;
-                    case '-': res = a - b; break;
-                    case '*': res = a * b; break;
-                    case '/': res = b !== 0 ? a / b : "Error"; break;
-                }
-                calcInput = res.toString();
-                calcFirstInput = "";
-                calcOperator = "";
-                updateCalcDisplay();
-            }
-        };
-        function updateCalcDisplay() { if(document.getElementById('calc-display')) document.getElementById('calc-display').innerText = calcInput; };
-
-        // ⏱ Timer Logic
-        let timerInterval = null;
-        let timerStartTime = null;
-        let timerRunning = false;
-        window.startTimer = () => {
-            if(!timerRunning) {
-                timerRunning = true;
-                timerStartTime = Date.now() - (window.elapsedTime || 0);
-                timerInterval = setInterval(updateTimerDisplay, 10);
-            }
-        };
-        window.stopTimer = () => {
-            timerRunning = false;
-            clearInterval(timerInterval);
-        };
-        window.resetTimer = () => {
-            stopTimer();
-            window.elapsedTime = 0;
-            document.getElementById('timer-display').innerText = "00:00:00";
-        };
-        function updateTimerDisplay() {
-            if(!timerRunning) return;
-            const now = Date.now();
-            window.elapsedTime = now - timerStartTime;
-            const minutes = Math.floor(window.elapsedTime / 60000);
-            const seconds = Math.floor((window.elapsedTime % 60000) / 1000);
-            const ms = Math.floor((window.elapsedTime % 1000) / 10);
-            document.getElementById('timer-display').innerText = 
-                `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}:${ms.toString().padStart(2, '0')}`;
-        }
-
-        // 🎮 Game Logic
-        let gameScore = 0;
-        window.playGame = (el) => {
-            const isQuestionMark = el.innerText === "?";
-            const isCorrect = el.innerText === "!";
-            const cards = document.querySelectorAll('.game-card');
-            
-            // Simple logic: '?' is question, '!' is answer.
-            // Just random for demo
-            if(isQuestionMark) {
-                 // Set one correct (Randomly mark one as correct)
-                 cards.forEach(c => {
-                     if(c.innerText === "?") c.style.background = "#444"; 
-                 });
-                 const correctCard = cards[Math.floor(Math.random() * 3)];
-                 correctCard.dataset.correct = "true";
-            }
-            
-            if(isCorrect) {
-                if(el.dataset.correct === "true") {
-                    gameScore += 10;
-                    el.style.background = "#4caf50";
-                    el.innerText = "✔";
-                    delete el.dataset.correct;
-                } else {
-                    gameScore -= 5;
-                    el.style.background = "#f44336";
-                }
-                document.getElementById('game-score').innerText = "Score: " + gameScore;
-            }
-        };
         
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
-            
-            // 🎮 Bypass AI for Known Apps (Instant Load)
-            if(cmd.includes("કેલ્ક્યુલેટર") || cmd.includes("ગણતી")) {
-                window.openApp('calculator');
-                if(!silentMode) window.speak("કેલ્ક્યુલેટર ખોલવી રહ્યો છું.");
-                return;
-            }
-            if(cmd.includes("ટાઈમર")) {
-                window.openApp('timer');
-                if(!silentMode) window.speak("ટાઈમર તૈયાર છે.");
-                return;
-            }
-            if(cmd.includes("કલર") && (cmd.includes("પિકર") || cmd.includes("પસંદ"))) {
-                window.openApp('color');
-                if(!silentMode) window.speak("કલર પિકર તૈયાર છે.");
-                return;
-            }
-            if(cmd.includes("ગેમ") || cmd.includes("પઝલ")) {
-                window.openApp('game');
-                if(!silentMode) window.speak("વર્ડ ગેમ તૈયાર છે.");
-                return;
-            }
-
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
             if ((cmd.includes("નામ") && cmd.includes("તરીકે")) && (cmd.includes("પુત્ર") || cmd.includes("દીકરા") || cmd.includes("સંતાન"))) { try { let parts = text.match(/(.*) નું નામ (.*) ના (પુત્ર|દીકરા|સંતાન)/); if (parts && parts.length >= 3) { let childName = parts[1].trim(); let parentName = parts[2].trim(); if (!window.activeFamilyTree) { window.speak("વંશાવલી ડેટા મળ્યો નથી."); return; } let newTree = JSON.parse(JSON.stringify(window.activeFamilyTree)); let result = findParentAndAddChild(newTree, parentName, childName); if (result === "ADDED") { window.activeFamilyTree = newTree; if(vanshavaliDocRef) await setDoc(vanshavaliDocRef, { tree: newTree }); window.speak(`${childName} નું નામ ઉમેરાઈ ગયું.`); } else if (result === "EXISTS") { window.speak("નામ પહેલેથી છે."); } else { window.speak("પિતાનું નામ મળ્યું નહીં."); } return; } } catch(e) { window.speak("ભૂલ થઈ."); } }
             if(cmd.includes("યાદ રાખજે") || cmd.includes("યાદ રાખ")) { let memoryText = text.replace(/યાદ રાખજે|યાદ રાખ|કે/g, "").trim(); if(memoryText && db) { await updateDoc(userDocRef, { memories: arrayUnion(memoryText) }); window.speak("નોંધી લીધું."); return; } }
@@ -1114,7 +913,7 @@
                 ragContext = `\n[UPLOADED DOCUMENT CONTENT]:\n${safeContent}\n(IMPORTANT: Use above document content to answer user's question accurately.)\n`;
             }
 
-            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" WakeWord: "${wakeWord}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap the code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain the code, just provide it.`; 
+            return `IMPORTANT: User: ${userName}, Mood: ${currentMood}. ${moodPrompt} ${familyDataString} ${ragContext} [Memory]: ${memories} Question: "${contextData}" WakeWord: "${wakeWord}" [GENERATIVE UI INSTRUCTION]: If user asks to create a small tool, app, game, or calculator (e.g. "Create a calculator", "Make a color picker"), YOU MUST generate full HTML/CSS/JS code. Wrap code exactly like this: :::APP_START::: <style> ...CSS... </style> <div> ...HTML... </div> <script> ...JS... <\/script> :::APP_END::: Do not explain code, just provide it.`; 
         }
 
         window.askGeminiText = async (userText) => { let keys = geminiKeys.split(',').filter(k => k); if (!keys.length) { window.speak("API Key નથી. સેટિંગમાં નાખો."); isProcessing = false; return; } 
@@ -1195,6 +994,7 @@
             recognition.onend = () => { 
                 micBtn.classList.remove('listening'); 
                 
+                // 🎙 HOTWORD RESTART LOGIC
                 if (wakeWordEnabled && !isProcessing && !isAiSpeaking && !isSilentListening) {
                     try { recognition.start(); } catch (e) { console.log("Restart recognition..."); }
                 } else if (!wakeWordEnabled) {
