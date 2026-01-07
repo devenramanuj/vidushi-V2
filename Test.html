@@ -210,7 +210,7 @@
         .vanshavali-list { list-style: none; padding-left: 0; margin: 0; }
 
         .vanshavali-item {
-            margin-bottom: 5px;
+            margin-bottom:5px;
         }
 
         /* The Row containing info and toggle */
@@ -220,8 +220,8 @@
             background: #1e1e1e;
             padding: 12px;
             border-radius: 8px;
-            border: 1px solid #333;
-            margin-bottom: 5px;
+            border:1px solid #333;
+            margin-bottom:5px;
             transition: background 0.2s;
         }
         
@@ -243,7 +243,7 @@
             margin-right: 10px;
             font-weight: bold;
             cursor: pointer;
-            border: 1px solid #555;
+            border:1px solid #555;
             font-size: 14px;
         }
         .toggle-icon:hover { background: #d4af37; color: black; }
@@ -259,7 +259,7 @@
             border-left: 2px solid #333; /* Vertical Line */
             margin-left: 15px; /* Space for line */
             display: none; /* Hidden by default */
-            margin-top: 5px;
+            margin-top:5px;
         }
         
         .children-container.show { display: block; }
@@ -464,6 +464,26 @@
                     localStorage.setItem('vidushi_gemini_model', geminiModel);
                     if(!silentMode) window.speak(`સિસ્ટમ તૈયાર છે, ${userName}!`);
                 } else { await saveToCloud(); }
+
+                // 🔥 NEW: Ensure Identity Memories are saved
+                if (userDocRef) {
+                    const memSnap = await getDoc(userDocRef);
+                    if (memSnap.exists()) {
+                        const currentMems = memSnap.data().memories || [];
+                        // Check if "About" info exists, if not, add it.
+                        const hasIdentity = currentMems.some(m => m.includes("મારું નામ વિદુષી") && m.includes("દેવેન્દ્રભાઈ"));
+                        
+                        if (!hasIdentity) {
+                            console.log("Adding Identity to Memory...");
+                            await updateDoc(userDocRef, {
+                                memories: arrayUnion([
+                                    "મારું નામ વિદુષી છે.", 
+                                    "હું દેવેન્દ્રભાઈ દ્વારા બનાવવામાં આવી છું. હું એક સ્માર્ટ અને ફ્રેન્ડલી ગુજરાતી AI છું."
+                                ])
+                            });
+                        }
+                    }
+                }
             } catch (e) { console.error("Sync Error", e); }
         }
 
@@ -509,10 +529,10 @@
 
         const visionPrompts = {
             'history': `Analyze this image carefully. It may contain ancient scripts like Brahmi, Puranic scripts, or historical inscriptions (Shilalekh). Task: 1. Identify script. 2. Transliterate to Gujarati. 3. Translate meaning to Gujarati. Report in Gujarati.`,
-            'math': `Analyze this image for math problems. Solve problem step-by-step. Show the final answer clearly. Explain the logic in Gujarati.`,
-            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain the formatting as much as possible.`,
-            'object': `Identify the main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
-            'summary': `Read the text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
+            'math': `Analyze this image for math problems. Solve problem step-by-step. Show final answer clearly. Explain logic in Gujarati.`,
+            'translate': `Detect all text in this image. Translate it accurately into Gujarati. Maintain formatting as much as possible.`,
+            'object': `Identify main object, plant, animal, or item in this image. Provide its name and a detailed description of its uses or characteristics in Gujarati.`,
+            'summary': `Read text in this document image. Provide a concise summary of the main points in Gujarati. Bullet points preferred.`
         };
 
         let currentVisionPrompt = visionPrompts['history'];
@@ -591,7 +611,7 @@
             if(!silentMode) window.speak("સેટિંગ્સ સેવ થઈ ગયા."); 
         };
 
-        window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: [] }); window.speak("સાફ કરી દીધું."); } };
+        window.clearMemories = async () => { if(confirm("ખરેખર તમામ યાદશક્તિ સાફ કરવી છે?")) { await setDoc(userDocRef, { memories: ["મારું નામ વિદુષી છે.", "હું દેવેન્દ્રભાઈ દ્વારા બનાવવામાં આવી છું."] }); window.speak("સાફ કરી દીધું."); } };
         window.toggleModal = (type) => { const m = document.getElementById(type+'-modal'); m.style.display = m.style.display === 'flex' ? 'none' : 'flex'; if(type==='notes') window.renderNotes(); if(type==='expense') window.renderExpenses(); if(type==='contacts') window.renderContacts(); };
         window.addNote = async (text) => { if(!db) return; await addDoc(collection(db, "vidushi_notes"), { text: text, timestamp: Date.now() }); window.speak("લખ્યું."); };
         window.renderNotes = () => { document.getElementById('notes-list').innerHTML = notes.map((n) => `<div class="list-item"><span>${n.text} <br> <small style="color:gray; font-size:10px;">📅 ${window.formatDate(n.timestamp)}</small></span><span style="color:red;cursor:pointer" onclick="window.deleteNote('${n.id}')">x</span></div>`).join(''); };
@@ -766,9 +786,16 @@
             if(aiProvider === 'gemini') { await window.askGeminiText(text); } else { await window.askGroqText(text); }
         };
 
+        // 🔄 UPDATED SYSTEM PROMPT WITH IDENTITY 🔄
         function getSystemPrompt(memories, contextData) { 
-            let moodPrompt = "You are a helpful assistant."; 
-            if (currentMood === 'angry') moodPrompt = "You are very angry, rude and sarcastic."; 
+            let moodPrompt = "";
+            
+            // Friendly Identity Base
+            if (currentMood === 'normal') {
+                moodPrompt = "તમારું નામ વિદુષી (Vidushi) છે. તમે દેવેન્દ્રભાઈ દ્વારા બનાવેલ સ્માર્ટ ગુજરાતી AI છું. તમે હંમેશા મદદ કરવામાં આવું છું. હું હંમેશા અને વાતચીત રીતે વાતચીત માત્રાં વાતચીત જવાબ આપીશ. જવાબો માટે અને રસાંચવી રીતે ગુજરાતી ગુજરાતી ગુજરાતી બોલો.";
+            } else if (currentMood === 'angry') {
+                moodPrompt = "તમારું નામ વિદુષી (Vidushi) છે. હું હું એક ગુસ્સ્તા AI છું. હું દેવેન્દ્રભાઈ દ્વારા બનાવેલ છું. પણ હવે હવે કંઈક હાજે તો ત્યારે જવાબ આપીશ.";
+            } 
             
             let familyDataString = ""; 
             try { if (window.activeFamilyTree) { familyDataString = `[વંશાવાળી માહિતી]:\n${formatVanshavaliTree(window.activeFamilyTree)}`; } } catch (e) {} 
