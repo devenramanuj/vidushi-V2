@@ -743,13 +743,65 @@
                 if(!silentMode) window.speak("સંપર્ક નોંધી લીધું."); 
             }
         };
-        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); };
-        window.findContact = (query) => { let cleanQuery = query.toLowerCase().replace(/ભાઈ|બેન|સર|જી/g, "").trim(); return contacts.find(c => c.name.toLowerCase().includes(cleanQuery) || cleanQuery.includes(c.name.toLowerCase())); };
-        window.makeCall = (text) => { let name = text.replace(/કોલ કર|ફોન કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને કોલ જોડું છું.`); setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
-        window.sendMessage = (text) => { let name = text.replace(/મેસેજ કર|વોટ્સએપ કર|ને|કર/g, "").trim(); let c = window.findContact(name); if(c) { window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`); setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); } else { window.speak("આ નામ સંપર્કમાં નથી."); } isProcessing = false; };
-        window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
-        window.closeImage = () => { imageOverlay.style.display='none'; document.getElementById('archeology-selector').style.display = 'none'; playVideo('silent'); isProcessing=false; document.getElementById('download-btn').style.display = 'none'; };
+        window.deleteContact = async (id) => { if(db) await deleteDoc(doc(db, "vidushi_contacts", id)); window.renderContactsList(); };
         
+        // ✅ UPDATED: Robust Contact Finding Logic ✅
+        window.findContact = (text) => {
+            if (!text) return null;
+            
+            let bestMatch = null;
+            let maxLen = 0;
+            let inputText = text.toLowerCase();
+
+            // Loop through all contacts to see if the spoken text contains their name
+            contacts.forEach(c => {
+                let dbName = c.name.toLowerCase();
+                
+                // Logic 1: Exact/Partial Inclusion (e.g. "nita ne call karo" includes "nita")
+                if (inputText.includes(dbName)) {
+                    if (dbName.length > maxLen) {
+                        maxLen = dbName.length;
+                        bestMatch = c;
+                    }
+                }
+                
+                // Logic 2: Handle common suffixes variations
+                // If DB has "Nita", check if input has "Nita Ben" or "Nita Bhai" etc.
+                let suffixes = [" બેન", " ભાઈ", " સર", " જી", " ben", " bhai", " sar", " ji"];
+                suffixes.forEach(suffix => {
+                    if (inputText.includes(dbName + suffix)) {
+                         if ((dbName + suffix).length > maxLen) {
+                            maxLen = (dbName + suffix).length;
+                            bestMatch = c;
+                        }
+                    }
+                });
+            });
+            
+            return bestMatch;
+        };
+
+        window.makeCall = (text) => { 
+            let c = window.findContact(text); 
+            if(c) { 
+                window.speak(`${c.name} ને કોલ જોડું છું.`); 
+                setTimeout(() => window.open(`tel:${c.number}`, '_self'), 1500); 
+            } else { 
+                window.speak("આ નામ સંપર્કમાં નથી."); 
+            } 
+            isProcessing = false; 
+        };
+
+        window.sendMessage = (text) => { 
+            let c = window.findContact(text); 
+            if(c) { 
+                window.speak(`${c.name} ને વોટ્સએપ ખોલું છું.`); 
+                setTimeout(() => window.open(`https://wa.me/91${c.number}`, '_blank'), 1500); 
+            } else { 
+                window.speak("આ નામ સંપર્કમાં નથી."); 
+            } 
+            isProcessing = false; 
+        };
         
         window.playMusic = (q) => { window.speak(`વગાડું છું ${q}`); setTimeout(()=> window.open(`https://music.youtube.com/search?q=${encodeURIComponent(q)}`, "_blank"), 2000); };
         window.closeImage = () => { imageOverlay.style.display='none'; document.getElementById('archeology-selector').style.display = 'none'; playVideo('silent'); isProcessing=false; document.getElementById('download-btn').style.display = 'none'; };
