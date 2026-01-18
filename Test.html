@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vidushi AI - Settings Contact</title>
+    <title>Vidushi AI - DeepSeek સક્ષમ</title>
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -321,8 +321,8 @@
                     <select id="target-lang">
                         <option value="gu">ગુજરાતી</option>
                         <option value="en" selected>English</option>
-                        <option value="hi">हिन्दી</option>
-                        <option value="mr">मरાઠી</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="mr">मराठी</option>
                         <option value="bn">বাংলা</option>
                         <option value="ta">தமிழ்</option>
                         <option value="te">తెలుగు</option>
@@ -842,12 +842,22 @@
             document.getElementById('translation-status').textContent = "";
         };
 
+        // ✅ સુધારેલું DeepSeek કનેક્શન ટેસ્ટ
         window.testDeepSeekConnection = async () => {
-            const key = document.getElementById('deepseekKeyInput').value.trim();
+            let key = document.getElementById('deepseekKeyInput').value.trim();
+            
+            // જો UIમાં ન હોય તો localStorageમાંથી લો
+            if(!key && deepseekKey) {
+                key = deepseekKey;
+            }
+            
             if(!key) {
-                window.speak("API Key નાખો.");
+                window.speak("DeepSeek API Key નાખો.");
+                alert("❌ API Key નાખો!");
                 return;
             }
+            
+            statusText.innerText = "DeepSeek ટેસ્ટ ચાલુ...";
             
             try {
                 const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
@@ -860,43 +870,98 @@
                         model: "deepseek-chat",
                         messages: [
                             {role: "system", content: "તમે વિદુષી AI છો. ટેસ્ટિંગ."},
-                            {role: "user", content: "ગુજરાતીમાં નમસ્તે કહો."}
+                            {role: "user", content: "ગુજરાતીમાં નમસ્તે કહો. તમે કેવા છો?"}
                         ],
-                        max_tokens: 30,
+                        max_tokens: 50,
                         temperature: 0.7
                     })
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
                 const data = await response.json();
                 
                 if(data.choices && data.choices[0]) {
                     const reply = data.choices[0].message.content;
-                    window.speak(`કનેક્શન સફળ! AI કહે: ${reply}`);
-                    alert("✅ DeepSeek API કામ કરે છે!\n" + reply);
+                    
+                    // સંપૂર્ણ જવાબ દેખાડો
+                    alert("✅ DeepSeek API કામ કરે છે!\n\n" + 
+                          "તારીખ: " + new Date().toLocaleString('gu-IN') + "\n" +
+                          "મોડેલ: deepseek-chat\n" +
+                          "જવાબ:\n" + reply);
+                    
+                    window.speak(`કનેક્શન સફળ! AI કહે: ${reply.substring(0, 100)}...`);
+                    statusText.innerText = "DeepSeek ટેસ્ટ સફળ!";
+                    
+                    // Key સેવ કરો
+                    deepseekKey = key;
+                    localStorage.setItem('vidushi_deepseek_key', key);
+                    
                 } else {
-                    window.speak("તકલીફ આવી. કૃપા કરી Key ચેક કરો.");
+                    console.error("DeepSeek Error Response:", data);
+                    let errorMsg = "તકલીફ આવી: ";
+                    if(data.error && data.error.message) {
+                        errorMsg += data.error.message;
+                    } else {
+                        errorMsg += "કોઈ જવાબ નથી મળ્યો.";
+                    }
+                    window.speak(errorMsg);
+                    alert("❌ " + errorMsg);
                 }
             } catch(error) {
-                window.speak("નેટવર્ક એરર.");
                 console.error("DeepSeek Test Error:", error);
+                
+                let errorMsg = "એરર: ";
+                if(error.message.includes("fetch") || error.message.includes("Network")) {
+                    errorMsg += "નેટવર્ક કનેક્શન નથી.";
+                } else if(error.message.includes("401") || error.message.includes("Unauthorized")) {
+                    errorMsg += "અમાન્ય API Key.";
+                } else if(error.message.includes("429")) {
+                    errorMsg += "રેટ લિમિટ ઓળંગી.";
+                } else {
+                    errorMsg += error.message;
+                }
+                
+                window.speak(errorMsg);
+                alert("❌ DeepSeek API Fail\n" + error.message);
+                statusText.innerText = "ટેસ્ટ ફેઈલ";
             }
         };
 
+        // ✅ સુધારેલું DeepSeek chat ફંકશન
         window.askDeepSeek = async (userText) => {
-            const key = deepseekKey || document.getElementById('deepseekKeyInput').value;
-            
-            if(!key) {
-                window.speak("DeepSeek API Key નથી. સેટિંગમાં નાખો.");
-                isProcessing = false;
-                return;
+            if(!deepseekKey) {
+                const uiKey = document.getElementById('deepseekKeyInput')?.value;
+                if(uiKey) {
+                    deepseekKey = uiKey;
+                    localStorage.setItem('vidushi_deepseek_key', deepseekKey);
+                } else {
+                    window.speak("DeepSeek API Key નથી. સેટિંગમાં નાખો.");
+                    isProcessing = false;
+                    return;
+                }
             }
             
             const model = deepseekModel || "deepseek-chat";
             const systemPrompt = getSystemPrompt(window.permanentMemories.join("\n"), userText);
             
+            // Wake word હોય તો દૂર કરો
+            let cleanText = userText;
+            if(wakeWordEnabled && wakeWord) {
+                if(userText.toLowerCase().includes(wakeWord.toLowerCase())) {
+                    cleanText = userText.replace(new RegExp(wakeWord, "gi"), "").trim();
+                    if(!cleanText) { 
+                        isProcessing = false; 
+                        return; 
+                    }
+                }
+            }
+            
             const messages = [
                 { role: "system", content: systemPrompt },
-                { role: "user", content: userText }
+                { role: "user", content: cleanText }
             ];
             
             try {
@@ -906,7 +971,7 @@
                 const response = await fetch("https://api.deepseek.com/v1/chat/completions", {
                     method: "POST",
                     headers: {
-                        "Authorization": `Bearer ${key}`,
+                        "Authorization": `Bearer ${deepseekKey}`,
                         "Content-Type": "application/json"
                     },
                     body: JSON.stringify({
@@ -916,6 +981,10 @@
                         max_tokens: 1000
                     })
                 });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
                 
                 const data = await response.json();
                 
@@ -932,7 +1001,17 @@
                 }
             } catch(error) {
                 console.error("DeepSeek Error:", error);
-                window.speak("DeepSeek કનેક્શન એરર.");
+                
+                if(error.message.includes("401") || error.message.includes("Unauthorized")) {
+                    window.speak("DeepSeek API Key અમાન્ય છે. કૃપા કરી નવું Key નાખો.");
+                } else if(error.message.includes("429")) {
+                    window.speak("રેટ લિમિટ ઓળંગી. થોડી વાર રાહ જુઓ.");
+                } else {
+                    window.speak("DeepSeek કનેક્શન એરર.");
+                }
+                
+                isProcessing = false;
+                playVideo('silent');
             }
         };
 
@@ -943,8 +1022,11 @@
             geminiModel = document.getElementById('geminiModelSelect').value; 
             groqKey = document.getElementById('groqKeyInput').value.trim(); 
             groqModel = document.getElementById('groqModelSelect').value; 
+            
+            // DeepSeek settings
             deepseekKey = document.getElementById('deepseekKeyInput').value.trim();
             deepseekModel = document.getElementById('deepseekModelSelect').value;
+            
             continuousMode = document.getElementById('continuousModeCheck').checked; 
             silentMode = document.getElementById('silentModeCheck').checked; 
             currentMood = document.getElementById('moodSelect').value; 
@@ -1298,7 +1380,7 @@
                     if(!silentMode) { window.speak("રિપોર્ટ તૈયાર છે."); } else { isProcessing = false; playVideo('silent'); } 
                 } else { 
                     console.log(data); 
-                    window.speak("કોઈ જવાબ મળ્યો નહીં."); 
+                    window.speak("કોઈ જવાબ મળ્યો નથી."); 
                 } 
             } catch(e) { 
                 console.error(e); 
@@ -1441,6 +1523,29 @@
                 }
             }
         };
+
+        // Helper functions
+        function findParentAndAddChild(tree, parentName, childName) {
+            if (tree.name === parentName) {
+                if (!tree.children) tree.children = [];
+                
+                // Check if child already exists
+                const exists = tree.children.some(child => child.name === childName);
+                if (exists) return "EXISTS";
+                
+                tree.children.push({ name: childName });
+                return "ADDED";
+            }
+            
+            if (tree.children) {
+                for (let child of tree.children) {
+                    const result = findParentAndAddChild(child, parentName, childName);
+                    if (result === "ADDED" || result === "EXISTS") return result;
+                }
+            }
+            
+            return "NOT_FOUND";
+        }
     </script>
 </body>
 </html>
