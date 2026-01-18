@@ -272,6 +272,18 @@
         
         /* 🎙 WAKE WORD MODAL STYLES 🎙 */
         #wake-word-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 250; flex-direction: column; padding: 20px; box-sizing: border-box; justify-content: center; align-items: center; }
+
+        /* 🔤 TRANSLATION PANEL STYLES 🔤 */
+        #translation-panel { display: none; background: #1a1a1a; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #00ff00; }
+        #translation-input { width: 100%; padding: 10px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; margin-bottom: 10px; resize: vertical; min-height: 80px; }
+        #translation-output { width: 100%; padding: 10px; background: #222; color: #00ff00; border: 1px solid #00ff00; border-radius: 5px; margin-bottom: 10px; min-height: 80px; overflow-y: auto; white-space: pre-wrap; }
+        .translation-controls { display: flex; gap: 10px; margin-bottom: 10px; }
+        .translation-controls select { flex: 1; padding: 8px; background: #333; color: white; border: 1px solid #555; border-radius: 5px; }
+        .translation-btns { display: flex; gap: 10px; }
+        .translation-btn { flex: 1; padding: 8px; background: #008cff; color: white; border: none; border-radius: 5px; cursor: pointer; text-align: center; }
+        .translation-btn:hover { background: #0066cc; }
+        .translation-btn.secondary { background: #444; }
+        #translation-status { color: #aaa; font-size: 12px; margin-top: 5px; text-align: center; }
     </style>
 </head>
 <body>
@@ -360,6 +372,53 @@
                 🔙 પાછા (Back)
             </button>
 
+            <!-- 🔤 REAL-TIME TRANSLATION PANEL 🔤 -->
+            <div id="translation-panel">
+                <div style="color:#00ff00; font-weight:bold; margin-bottom:10px; display:flex; justify-content:space-between; align-items:center;">
+                    <span>🌍 રીઅલ-ટાઈમ ભાષાંતર</span>
+                    <button onclick="window.closeTranslationPanel()" style="background:#444; color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer;">✖</button>
+                </div>
+                
+                <div class="translation-controls">
+                    <select id="source-lang">
+                        <option value="gu">ગુજરાતી</option>
+                        <option value="en">English</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="mr">मराठी</option>
+                        <option value="bn">বাংলা</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="te">తెలుగు</option>
+                        <option value="kn">ಕನ್ನಡ</option>
+                        <option value="ml">മലയാളം</option>
+                        <option value="ur">اردو</option>
+                    </select>
+                    <select id="target-lang">
+                        <option value="gu">ગુજરાતી</option>
+                        <option value="en" selected>English</option>
+                        <option value="hi">हिन्दी</option>
+                        <option value="mr">मराठी</option>
+                        <option value="bn">বাংলা</option>
+                        <option value="ta">தமிழ்</option>
+                        <option value="te">తెలుగు</option>
+                        <option value="kn">ಕನ್ನಡ</option>
+                        <option value="ml">മലയാളം</option>
+                        <option value="ur">اردو</option>
+                    </select>
+                </div>
+                
+                <textarea id="translation-input" placeholder="અહીં લખો... (Type here...)"></textarea>
+                
+                <div id="translation-output" placeholder="ભાષાંતર અહીં દેખાશે... (Translation will appear here...)"></div>
+                
+                <div class="translation-btns">
+                    <button class="translation-btn" onclick="window.translateText()">🔄 ભાષાંતર કરો</button>
+                    <button class="translation-btn secondary" onclick="window.speakTranslation()">🔊 બોલો</button>
+                    <button class="translation-btn secondary" onclick="window.clearTranslation()">🗑️ સાફ કરો</button>
+                </div>
+                
+                <div id="translation-status"></div>
+            </div>
+
             <div class="menu-grid">
                 <div class="menu-btn" onclick="window.openFeature('notes')"><i class="fas fa-book" style="color:orange;"></i> ડાયરી</div>
                 <div class="menu-btn" onclick="window.openFeature('music')"><i class="fas fa-music" style="color:#00e5ff;"></i> ભજન</div>
@@ -372,6 +431,7 @@
                 
                 <div class="menu-btn" onclick="window.openArcheologyMenu()"><i class="fas fa-eye" style="color:#d4af37;"></i> Smart Lens</div>
                 <div class="menu-btn" onclick="window.openWakeWordSettings()"><i class="fas fa-bullhorn" style="color:#ff4500;"></i> 🎙 વોક વર્ડ</div>
+                <div class="menu-btn" onclick="window.toggleTranslationPanel()"><i class="fas fa-language" style="color:#00ff00;"></i> ટ્રાંસલેશન</div>
                 <div class="menu-btn" onclick="window.open3DVanshavali()" style="grid-column: span 2; border: 1px solid #d4af37;"><i class="fas fa-globe" style="color:#d4af37;"></i> 🌌 3D વંશાવલી</div>
             </div>
 
@@ -480,6 +540,9 @@
         // 🎙 NEW: WAKE WORD VARIABLES
         let wakeWord = localStorage.getItem('vidushi_wake_word') || "વિદુષી"; 
         let wakeWordEnabled = localStorage.getItem('vidushi_wake_word_enabled') === 'true';
+
+        // 🔤 TRANSLATION VARIABLES
+        let translationHistory = JSON.parse(localStorage.getItem('vidushi_translation_history') || '[]');
 
         // 🔥 RAG MEMORY STORAGE
         window.ragContent = ""; 
@@ -683,6 +746,152 @@
             if(wakeWordEnabled) {
                 window.startConversation();
             }
+        };
+
+        // 🔤 TRANSLATION FUNCTIONS 🔤
+        window.toggleTranslationPanel = () => {
+            const panel = document.getElementById('translation-panel');
+            if (panel.style.display === 'block' || panel.style.display === '') {
+                panel.style.display = 'none';
+            } else {
+                panel.style.display = 'block';
+                // Scroll to translation panel
+                panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Focus on input
+                setTimeout(() => {
+                    document.getElementById('translation-input').focus();
+                }, 300);
+            }
+        };
+
+        window.closeTranslationPanel = () => {
+            document.getElementById('translation-panel').style.display = 'none';
+        };
+
+        window.translateText = async () => {
+            const input = document.getElementById('translation-input').value.trim();
+            if (!input) {
+                document.getElementById('translation-status').textContent = "કૃપા કરીને લખાણ દાખલ કરો.";
+                return;
+            }
+
+            const sourceLang = document.getElementById('source-lang').value;
+            const targetLang = document.getElementById('target-lang').value;
+            
+            if (sourceLang === targetLang) {
+                document.getElementById('translation-output').textContent = input;
+                document.getElementById('translation-status').textContent = "સ્ત્રોત અને લક્ષ્ય ભાષા સમાન છે.";
+                return;
+            }
+
+            document.getElementById('translation-status').textContent = "ભાષાંતર કરી રહ્યા છીએ...";
+            document.getElementById('translation-output').textContent = "";
+
+            try {
+                // Use Gemini API for translation
+                let keys = geminiKeys.split(',').filter(k => k);
+                if (!keys.length) {
+                    document.getElementById('translation-status').textContent = "API Key નથી. સેટિંગમાં નાખો.";
+                    return;
+                }
+
+                const prompt = `Translate the following text from ${sourceLang} to ${targetLang}. Only provide the translation, no explanations.\n\nSource text: ${input}`;
+                
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ role: "user", parts: [{ text: prompt }] }],
+                        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.candidates && data.candidates[0]) {
+                    const translation = data.candidates[0].content.parts[0].text.trim();
+                    document.getElementById('translation-output').textContent = translation;
+                    document.getElementById('translation-status').textContent = "ભાષાંતર પૂર્ણ!";
+                    
+                    // Save to history
+                    translationHistory.unshift({
+                        input: input,
+                        translation: translation,
+                        source: sourceLang,
+                        target: targetLang,
+                        timestamp: new Date().toISOString()
+                    });
+                    
+                    // Keep only last 50 translations
+                    if (translationHistory.length > 50) {
+                        translationHistory = translationHistory.slice(0, 50);
+                    }
+                    
+                    localStorage.setItem('vidushi_translation_history', JSON.stringify(translationHistory));
+                    
+                } else {
+                    document.getElementById('translation-status').textContent = "ભાષાંતર મળ્યું નહીં.";
+                }
+            } catch (error) {
+                console.error("Translation error:", error);
+                document.getElementById('translation-status').textContent = "ભૂલ: " + error.message;
+                
+                // Fallback: Try simple word mapping for common phrases
+                if (sourceLang === 'gu' && targetLang === 'en') {
+                    const fallback = fallbackGujaratiToEnglish(input);
+                    if (fallback) {
+                        document.getElementById('translation-output').textContent = fallback;
+                        document.getElementById('translation-status').textContent = "સરળ ભાષાંતર (Fallback)";
+                    }
+                }
+            }
+        };
+
+        // Simple fallback translation for common Gujarati phrases
+        function fallbackGujaratiToEnglish(text) {
+            const dictionary = {
+                'નમસ્તે': 'Hello',
+                'ધન્યવાદ': 'Thank you',
+                'કેમ છો': 'How are you',
+                'હું ઠીક છું': 'I am fine',
+                'તમારું નામ શું છે': 'What is your name',
+                'મારું નામ છે': 'My name is',
+                'હા': 'Yes',
+                'ના': 'No',
+                'કૃપા કરીને': 'Please',
+                'માફ કરશો': 'Sorry',
+                'આનંદ થયો': 'Nice to meet you'
+            };
+            
+            for (const [guj, eng] of Object.entries(dictionary)) {
+                if (text.includes(guj)) {
+                    return eng;
+                }
+            }
+            return null;
+        }
+
+        window.speakTranslation = () => {
+            const translation = document.getElementById('translation-output').textContent;
+            if (translation) {
+                const targetLang = document.getElementById('target-lang').value;
+                const utterance = new SpeechSynthesisUtterance(translation);
+                
+                // Set language based on target
+                if (targetLang === 'gu') utterance.lang = 'gu-IN';
+                else if (targetLang === 'hi') utterance.lang = 'hi-IN';
+                else if (targetLang === 'en') utterance.lang = 'en-US';
+                else utterance.lang = targetLang;
+                
+                window.speechSynthesis.speak(utterance);
+                document.getElementById('translation-status').textContent = "બોલી રહ્યા છીએ...";
+            }
+        };
+
+        window.clearTranslation = () => {
+            document.getElementById('translation-input').value = "";
+            document.getElementById('translation-output').textContent = "";
+            document.getElementById('translation-status').textContent = "";
         };
 
         window.saveSettings = async () => { 
