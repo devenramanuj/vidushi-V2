@@ -7,13 +7,119 @@
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- વંશાવલી ડેટા -->
     <script>
-        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+        window.vanshavaliData = {
+            name: "જગદગુરુ રામાનંદાચાર્યજી", 
+            info: "વિ. સં. ૧૩૫૬",
+            children: [{
+                name: "અનંતાનંદજી", 
+                children: [{
+                    name: "ગેંડાજી", 
+                    children: [{
+                        name: "લક્ષ્મીદાસજી", 
+                        children: [{
+                            name: "માધવદાસજી", 
+                            children: [{
+                                name: "ખોજીજી", 
+                                children: [{
+                                    name: "મહેન્દ્રદાસજી", 
+                                    info: "પાલડી-મારવાડ (૧૪૯૫)", 
+                                    children: [{
+                                        name: "પુરણદાસજી બાપુ", 
+                                        info: "ઝીંઝર સમાધિ (૧૯૩૧)", 
+                                        children: [
+                                            {
+                                                name: "ગંગારામજી", 
+                                                children: [
+                                                    { 
+                                                        name: "આશારામજી", 
+                                                        children: [
+                                                            { 
+                                                                name: "ગિરધરદાસજી", 
+                                                                children: [
+                                                                    { name: "હરીરામજી" }
+                                                                ] 
+                                                            }, 
+                                                            { 
+                                                                name: "મોજીરમજી", 
+                                                                children: [
+                                                                    { 
+                                                                        name: "જેજેરામ", 
+                                                                        children: [
+                                                                            { name: "ગૌતમ" }
+                                                                        ] 
+                                                                    }
+                                                                ] 
+                                                            }, 
+                                                            { 
+                                                                name: "સીતારામજી", 
+                                                                children: [
+                                                                    { name: "પ્રભુદાસ" }, 
+                                                                    { name: "રાજુભાઈ" }
+                                                                ] 
+                                                            }
+                                                        ]
+                                                    },
+                                                    { 
+                                                        name: "વ્રજેશરામજી", 
+                                                        children: [
+                                                            { 
+                                                                name: "ભગવાનદાસજી", 
+                                                                info: "ગાંગોદ", 
+                                                                children: [
+                                                                    { name: "બાબુરામજી" }, 
+                                                                    { name: "ઈશ્વરદાસજી" }
+                                                                ] 
+                                                            }, 
+                                                            { 
+                                                                name: "તુલસીદાસજી", 
+                                                                info: "રોજકા", 
+                                                                children: [
+                                                                    { name: "મનસુખભાઈ" }, 
+                                                                    { name: "વિમુભાઈ" }, 
+                                                                    { name: "પરશુરામ" }
+                                                                ] 
+                                                            }
+                                                        ]
+                                                    }
+                                                ]
+                                            },
+                                            {
+                                                name: "રઘુરામજી", 
+                                                children: [{
+                                                    name: "દયારામજી", 
+                                                    info: "દિવાળીબેન (ઝમરાળા)", 
+                                                    children: [
+                                                        { name: "કાશીરામજી", info: "રામપુર" }, 
+                                                        { name: "વશરામજી", info: "સંખેજ" }, 
+                                                        { 
+                                                            name: "જાનકીદાસજી", 
+                                                            info: "ઝીંઝર", 
+                                                            children: [
+                                                                { name: "મનહરલાલ" }, 
+                                                                { name: "પ્રતાપભાઈ" }, 
+                                                                { name: "વૈકુંઠભાઈ" }, 
+                                                                { name: "સતીષભાઈ" }, 
+                                                                { name: "દેવેન્દ્રભાઈ" }
+                                                            ]
+                                                        }
+                                                    ]
+                                                }]
+                                            }
+                                        ]
+                                    }]
+                                }]
+                            }]
+                        }]
+                    }]
+                }]
+            }]
+        };
     </script>
 
     <style>
-        /* ... પહેલાં જેવું જ CSS ... */
+        /* CSS સમાન રાખો */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
         video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
@@ -148,7 +254,6 @@
             <div class="mode-btn" onclick="window.setVisionMode('summary', this)">📝 સારાંશ</div>
             <div class="mode-btn" onclick="window.setVisionMode('ocr_speech', this)">👂 શું બોલ (Read)</div>
             <div class="mode-btn" onclick="window.setVisionMode('mood', this)">🎭 ભાવ ચકાસ</div>
-            <div class="mode-btn" onclick="window.startLiveVision(this)" style="color: #ff4500; font-weight:bold;">⚡ લાઈવ વિઝન</div>
         </div>
         <div class="action-row">
             <div class="arch-btn" onclick="window.useArcheologyCamera()"><i class="fas fa-camera"></i><span>કેમેરો</span></div>
@@ -260,9 +365,6 @@
                 <button onclick="window.testDeepSeekConnection()" style="background:#008cff; margin-top:10px; width:100%; padding:8px; border:none; border-radius:5px; color:white; cursor:pointer;">🔗 કનેક્શન ટેસ્ટ</button>
             </div>
             
-            <div class="section-title">Firebase Database</div>
-            <label>Firebase API Key (Text):</label><input type="text" id="firebaseApiKeyInput" placeholder="AIzaSy...">
-            <button class="save-btn" onclick="window.deleteVanshavaliData()" style="background:red; margin-top:5px;">🗑️ વંશાવલી ડેટા ડિલીટ કરો</button>
             <button class="save-btn" onclick="window.saveSettings()">SAVE & CLOSE (SYNC)</button>
         </div>
     </div>
@@ -293,9 +395,6 @@
     </div>
 
     <script>
-        // Firebase સિંપલ કરેલું
-        let db = null;
-        
         // વેરિએબલ્સ
         let aiProvider = localStorage.getItem('vidushi_provider') || 'gemini';
         let geminiKeys = localStorage.getItem('vidushi_gemini_key') || '';
@@ -362,6 +461,65 @@
                 videos[type].play().catch(()=>{}); 
             }
         }
+
+        // ✅ વંશાવલી ડિસ્પ્લે ફંકશન
+        window.open3DVanshavali = () => { 
+            if(!window.activeFamilyTree) { 
+                if(window.speak) window.speak("વંશાવલી ડેટા નથી."); 
+                return; 
+            } 
+            document.getElementById('settings-modal').style.display = 'none'; 
+            document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
+            
+            const container = document.getElementById('tree-container');
+            if(container) {
+                container.innerHTML = renderVanshavaliTree(window.activeFamilyTree);
+            }
+            
+            if(window.speak) window.speak("વંશાવલી યાદી દૃશ્ય બતાવી રહ્યો છું.");
+        };
+
+        function renderVanshavaliTree(node, level = 0) {
+            const hasChildren = node.children && node.children.length > 0;
+            
+            let html = `<div class="vanshavali-item">
+                <div class="vanshavali-row ${!hasChildren ? 'no-children' : ''}">
+                    <span class="toggle-icon" onclick="toggleChildren(this)">${hasChildren ? '+' : ''}</span>
+                    <div class="node-details">
+                        <span class="node-name">${node.name}</span>
+                        ${node.info ? `<span class="node-meta">${node.info}</span>` : ''}
+                    </div>
+                </div>`;
+            
+            if(hasChildren) {
+                html += `<div class="children-container">`;
+                node.children.forEach(child => {
+                    html += renderVanshavaliTree(child, level + 1);
+                });
+                html += `</div>`;
+            }
+            
+            html += `</div>`;
+            return html;
+        }
+
+        function toggleChildren(btn) {
+            const row = btn.closest('.vanshavali-row');
+            const childrenContainer = row.nextElementSibling;
+            
+            if(childrenContainer && childrenContainer.classList.contains('children-container')) {
+                const isHidden = childrenContainer.style.display === 'none' || !childrenContainer.style.display;
+                childrenContainer.style.display = isHidden ? 'block' : 'none';
+                btn.textContent = isHidden ? '-' : '+';
+            }
+        }
+
+        window.close3DVanshavali = () => { 
+            document.getElementById('vanshavali-3d-modal').style.display = 'none'; 
+            const container = document.getElementById('tree-container');
+            if(container) container.innerHTML = '';
+            if(window.speak) window.speak("3D મોડ બંધ."); 
+        };
 
         // ✅ સુધારેલું DeepSeek ટેસ્ટ
         window.testDeepSeekConnection = async () => {
@@ -572,56 +730,17 @@
             }
         };
 
-        // સરળ વંશાવલી ડિસ્પ્લે
-        window.open3DVanshavali = () => { 
-            if(!window.activeFamilyTree) { 
-                if(window.speak) window.speak("વંશાવલી ડેટા નથી."); 
-                return; 
-            } 
-            document.getElementById('settings-modal').style.display = 'none'; 
-            document.getElementById('vanshavali-3d-modal').style.display = 'block'; 
-            
-            const container = document.getElementById('tree-container');
-            if(container) {
-                container.innerHTML = createTreeHTML(window.activeFamilyTree);
-            }
-            
-            if(window.speak) window.speak("વંશાવલી યાદી દૃશ્ય બતાવી રહ્યો છું.");
-        };
-
-        function createTreeHTML(node, level = 0) {
-            let html = `<div class="vanshavali-item" style="margin-left: ${level * 20}px;">
-                <div class="vanshavali-row">
-                    <div class="node-details">
-                        <span class="node-name">${node.name}</span>
-                        ${node.info ? `<span class="node-meta">${node.info}</span>` : ''}
-                    </div>
-                </div>`;
-            
-            if(node.children && node.children.length > 0) {
-                html += '<div class="children-container show">';
-                node.children.forEach(child => {
-                    html += createTreeHTML(child, level + 1);
-                });
-                html += '</div>';
-            }
-            
-            html += '</div>';
-            return html;
-        }
-
-        window.close3DVanshavali = () => { 
-            document.getElementById('vanshavali-3d-modal').style.display = 'none'; 
-            const container = document.getElementById('tree-container');
-            if(container) container.innerHTML = '';
-            if(window.speak) window.speak("3D મોડ બંધ."); 
-        };
-
         // બેઝિક કમાન્ડ પ્રોસેસિંગ
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             
             let cmd = text.toLowerCase();
+            
+            // વંશાવલી સંબંધિત પ્રશ્નો
+            if(cmd.includes("વંશાવલી") || cmd.includes("family") || cmd.includes("વંશ")) {
+                window.open3DVanshavali();
+                return;
+            }
             
             // જો DeepSeek પસંદ કરેલ હોય
             if(aiProvider === 'deepseek') {
@@ -660,7 +779,7 @@
                     body: JSON.stringify({
                         model: model,
                         messages: [
-                            {role: "system", content: `તમે વિદુષી AI છો. User: ${userName}.`},
+                            {role: "system", content: `તમે વિદુષી AI છો. User: ${userName}. વંશાવલી ડેટા: ${JSON.stringify(window.activeFamilyTree)}`},
                             {role: "user", content: userText}
                         ],
                         temperature: 0.7,
@@ -771,21 +890,6 @@
             if(area) area.innerHTML = ''; 
             if(window.speak) window.speak("એપ બંધ કરી."); 
         };
-
-        // ઇવેન્ટ લિસનર્સ
-        document.getElementById('galleryLoader').addEventListener('change', function(e) {
-            if(e.target.files[0]) {
-                // Handle gallery upload
-                console.log("Gallery file selected:", e.target.files[0].name);
-            }
-        });
-
-        document.getElementById('docLoader').addEventListener('change', function(e) {
-            if(e.target.files[0]) {
-                // Handle document upload
-                console.log("Document file selected:", e.target.files[0].name);
-            }
-        });
 
         // Initial setup
         setTimeout(() => {
