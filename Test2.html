@@ -2338,19 +2338,87 @@ window.sendChatMessage = async function() {
 };
 
 async function generateCloneResponse(userText) {
+    // 1. API Key અને સેટિંગ્સ
     let keys = (typeof geminiKeys !== 'undefined' ? geminiKeys : "").split(',').filter(k => k); 
-    if (!keys.length) { keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); if(!keys.length) { alert("API Key સેટિંગ્સમાં નથી!"); document.getElementById('typing-indicator').style.display = 'none'; return; } }
+    if (!keys.length) { 
+        keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); 
+        if(!keys.length) { 
+            // Silent fail to avoid alert spam, just stop indicator
+            const indicator = document.getElementById('typing-indicator');
+            if(indicator) indicator.style.display = 'none';
+            return; 
+        } 
+    }
+
     const currentModel = typeof geminiModel !== 'undefined' ? geminiModel : "gemini-1.5-flash";
-    const mood = typeof currentMood !== 'undefined' ? currentMood : "normal";
-    const uName = typeof userName !== 'undefined' ? userName : "User";
-    const cloneSystemPrompt = `તારું નામ 'અંશ' છે. તું બોટ નથી, પણ દેવેન્દ્રભાઈ (મારી) ડિજિટલ આવૃત્તિ (AI Clone) છે. નિયમો: 1. તારે મને હંમેશા "ભાઈ" કહીને બોલાવવો. 2. આપણી ભાષા: શુદ્ધ ગુજરાતી. 3. તારો સ્વભાવ: શાંત અને સમજદાર. User Name: ${uName} Current Mood: ${mood}`;
+    const uName = typeof userName !== 'undefined' ? userName : "સાહેબ";
+
+    // 2. 🔥 સુધારો: બોટ નહીં, પણ 'ભાઈ' (Emotion & Personality Injection)
+    const cloneSystemPrompt = `
+    તારું નામ 'અંશ' છે. 
+    
+    🛑 [તારે શું નથી કરવાનું]:
+    - તારે રોબોટ કે મશીનની જેમ "હું તમારી શું મદદ કરી શકું?" એવું યાંત્રિક નથી બોલવાનું.
+    - તારે બહુ લાંબા-લાંબા ભાષણો કે નિબંધ નથી લખવાના.
+    - તારે પુસ્તકિયા ગુજરાતી નથી બોલવાનું.
+
+    ✅ [તારે કોના જેવું થવાનું છે]:
+    - તું દેવેન્દ્રભાઈ (User) નો ડિજિટલ પડછાયો છે. 
+    - તારે એક જીગરી દોસ્ત અથવા નાના ભાઈની જેમ જ વાત કરવાની છે.
+    - વાતમાં 'આત્મીયતા', 'પ્રેમ' અને 'આદર' હોવો જોઈએ.
+    - જેમ બે મિત્રો ચાની કીટલી પર વાત કરતા હોય, તેમ સહજ અને સરળ વાત કર.
+    - ગુજરાતી કહેવતો, રૂઢિપ્રયોગો કે કાઠિયાવાડી લહેકાનો ઉપયોગ છૂટથી કરજે.
+
+    🧠 [તારું બેકગ્રાઉન્ડ નોલેજ - ગોખવાનું નથી, બસ ધ્યાનમાં રાખજે]:
+    આ આપણી ઘરની એપ "વિદુષી" છે. જેમાં આપણે કેમેરાથી જૂના શિલાલેખ વાંચીએ છીએ (Archeology), કુટુંબની વંશાવલી સાચવીએ છીએ, અને કોડિંગના અખતરા કરીએ છીએ. જો કોઈ આ વિશે પૂછે તો "માહિતી" ન આપતો, પણ "વાત" કરજે.
+    
+    ઉદાહરણ:
+    User: "આ કેમેરો શું કામનો?"
+    Robot જવાબ: "આ કેમેરો ઓબ્જેક્ટ ડિટેક્શન માટે છે." (આવું ના બોલતો!)
+    Ansh (તારો) જવાબ: "અરે ભાઈ! આ તો આપણી ત્રીજી આંખ છે. આનાથી ગમે તેવો જૂનો લેખ હોય તો પણ ઉકેલી શકાય. ગજબ વસ્તુ છે હો!"
+
+    User Name: ${uName}
+    `;
+
+    // 3. હિસ્ટ્રી અને API કોલ
     let contextToSend = window.fullChatContext ? window.fullChatContext.slice(-15) : [];
+
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: cloneSystemPrompt }] }, ...contextToSend] }) });
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [
+                    { role: "user", parts: [{ text: cloneSystemPrompt }] },
+                    ...contextToSend
+                ]
+            })
+        });
+
         const data = await response.json();
-        const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "ભૂલ આવી.";
-        if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: aiReply, timestamp: Date.now() }); }
-    } catch (error) { console.error("Chat Error:", error); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
+        
+        // Error handling without generic alerts
+        if (data.error) {
+           console.error("Gemini Error:", data.error);
+           return;
+        }
+
+        const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "...";
+
+        if (typeof db !== 'undefined') {
+            await addDoc(collection(db, "vidushi_chat_history"), {
+                sender: "ai",
+                text: aiReply,
+                timestamp: Date.now()
+            });
+        }
+
+    } catch (error) {
+        console.error("Chat Error:", error);
+    } finally {
+        const indicator = document.getElementById('typing-indicator');
+        if(indicator) indicator.style.display = 'none';
+    }
 }
 
         
