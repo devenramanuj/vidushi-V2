@@ -2178,18 +2178,142 @@
 // ==========================================
 
 // 1. Chat UI બનાવો (HTML Inject)
+// 1. Chat UI બનાવો (સુધારેલી સ્ટાઇલ)
 const chatStyles = `
-    #clone-chat-btn { position: fixed; bottom: 20px; right: 20px; background: #ff9800; color: white; width: 60px; height: 60px; border-radius: 50%; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 9999; display: flex; align-items: center; justify-content: center; }
-    #clone-chat-window { display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 500px; background: #fff; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #ddd; }
-    #chat-header { background: #ff9800; color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
-    #chat-body { flex: 1; padding: 10px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 10px; }
-    #chat-footer { padding: 10px; border-top: 1px solid #ddd; display: flex; gap: 5px; background: white; }
-    #chat-input-text { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
-    #chat-send-btn { background: #d84315; color: white; border: none; padding: 8px 15px; border-radius: 20px; cursor: pointer; }
-    .msg-bubble { max-width: 80%; padding: 10px 15px; border-radius: 15px; font-size: 14px; line-height: 1.4; word-wrap: break-word; }
-    .msg-user { align-self: flex-end; background: #dcf8c6; color: black; border-bottom-right-radius: 2px; }
-    .msg-ai { align-self: flex-start; background: white; border: 1px solid #eee; border-bottom-left-radius: 2px; }
-    .typing-indicator { font-size: 12px; color: gray; margin-left: 10px; display: none; }
+    /* ચેટ બટન (રાઉન્ડ) */
+    #clone-chat-btn { 
+        position: fixed; 
+        bottom: 20px; 
+        right: 20px; 
+        background: #ff9800; 
+        color: white; 
+        width: 60px; 
+        height: 60px; 
+        border-radius: 50%; 
+        font-size: 30px; 
+        border: none; 
+        cursor: pointer; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        z-index: 9999; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+    }
+
+    /* ચેટ વિન્ડો (મેઈન બોક્સ) */
+    #clone-chat-window { 
+        display: none; 
+        position: fixed; 
+        bottom: 90px; 
+        right: 20px; 
+        width: 350px; /* લેપટોપ માટે ફિક્સ */
+        height: 500px; 
+        max-height: 70vh; /* સ્ક્રીનથી બહુ ઊંચું ન જાય */
+        background: #fff; 
+        border-radius: 15px; 
+        box-shadow: 0 5px 25px rgba(0,0,0,0.2); 
+        z-index: 9999; 
+        flex-direction: column; 
+        overflow: hidden; 
+        border: 1px solid #ddd; 
+    }
+
+    /* --- MOBILE SPECIFIC FIX (આ નવું ઉમેર્યું છે) --- */
+    @media screen and (max-width: 480px) {
+        #clone-chat-window {
+            width: auto;    /* ફિક્સ સાઈઝ હટાવી દીધી */
+            left: 15px;     /* ડાબેથી જગ્યા */
+            right: 15px;    /* જમણેથી જગ્યા */
+            bottom: 85px;
+        }
+    }
+
+    /* હેડર */
+    #chat-header { 
+        background: linear-gradient(135deg, #ff9800, #f57c00); 
+        color: white; 
+        padding: 15px; 
+        font-weight: bold; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    /* બોડી (જ્યાં મેસેજ આવે) */
+    #chat-body { 
+        flex: 1; 
+        padding: 15px; 
+        overflow-y: auto; 
+        background: #f4f6f8; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 12px; 
+    }
+
+    /* ફુટર (ઇનપુટ બોક્સ) */
+    #chat-footer { 
+        padding: 10px; 
+        border-top: 1px solid #eee; 
+        display: flex; 
+        gap: 8px; 
+        background: white; 
+        align-items: center;
+    }
+
+    #chat-input-text { 
+        flex: 1; 
+        padding: 12px; 
+        border: 1px solid #ddd; 
+        border-radius: 25px; 
+        outline: none; 
+        font-size: 16px;
+    }
+
+    #chat-send-btn { 
+        background: #d84315; 
+        color: white; 
+        border: none; 
+        width: 45px;
+        height: 45px;
+        border-radius: 50%; 
+        cursor: pointer; 
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* મેસેજ બબલ્સ */
+    .msg-bubble { 
+        max-width: 80%; 
+        padding: 10px 14px; 
+        border-radius: 18px; 
+        font-size: 15px; 
+        line-height: 1.4; 
+        word-wrap: break-word; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .msg-user { 
+        align-self: flex-end; 
+        background: #dcf8c6; 
+        color: black; 
+        border-bottom-right-radius: 4px; 
+    }
+    .msg-ai { 
+        align-self: flex-start; 
+        background: white; 
+        border: 1px solid #fff; 
+        border-bottom-left-radius: 4px; 
+    }
+    .typing-indicator { 
+        font-size: 12px; 
+        color: #888; 
+        margin-left: 15px; 
+        margin-bottom: 5px; 
+        display: none; 
+        font-style: italic;
+    }
 `;
 
 // સ્ટાઇલને હેડમાં ઉમેરો
