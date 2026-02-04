@@ -2172,6 +2172,100 @@
                 hour12: true
             });
         }
+        // ==========================================
+// 🚀 NEW: TEXT CHAT MODULE
+// ==========================================
+
+const chatStyles = `
+    #clone-chat-btn { position: fixed; bottom: 20px; right: 20px; background: #ff9800; color: white; width: 60px; height: 60px; border-radius: 50%; font-size: 30px; border: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.3); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    #clone-chat-window { display: none; position: fixed; bottom: 90px; right: 20px; width: 350px; height: 500px; max-height: 70vh; background: #fff; border-radius: 15px; box-shadow: 0 5px 25px rgba(0,0,0,0.2); z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #ddd; }
+    @media screen and (max-width: 480px) { #clone-chat-window { width: auto; left: 15px; right: 15px; bottom: 85px; } }
+    #chat-header { background: linear-gradient(135deg, #ff9800, #f57c00); color: white; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
+    #chat-body { flex: 1; padding: 15px; overflow-y: auto; background: #f4f6f8; display: flex; flex-direction: column; gap: 12px; }
+    #chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 8px; background: white; align-items: center; }
+    #chat-input-text { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; font-size: 16px; color: black; }
+    #chat-send-btn { background: #d84315; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .msg-bubble { max-width: 80%; padding: 10px 14px; border-radius: 18px; font-size: 15px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
+    .msg-user { align-self: flex-end; background: #dcf8c6; color: black; border-bottom-right-radius: 4px; }
+    .msg-ai { align-self: flex-start; background: white; border: 1px solid #ddd; border-bottom-left-radius: 4px; color: black !important; }
+    .typing-indicator { font-size: 12px; color: #888; margin-left: 15px; margin-bottom: 5px; display: none; font-style: italic; }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.innerText = chatStyles;
+document.head.appendChild(styleSheet);
+
+const chatHTML = `
+    <button id="clone-chat-btn" onclick="toggleChatWindow()">💬</button>
+    <div id="clone-chat-window">
+        <div id="chat-header"><span>🤖 અંશ (AI ભાઈ)</span><span onclick="toggleChatWindow()" style="cursor:pointer;">✖</span></div>
+        <div id="chat-body"></div>
+        <div class="typing-indicator" id="typing-indicator">લખે છે...</div>
+        <div id="chat-footer"><input type="text" id="chat-input-text" placeholder="સંદેશ લખો..." onkeydown="checkEnter(event)"><button id="chat-send-btn" onclick="sendChatMessage()">➤</button></div>
+    </div>
+`;
+document.body.insertAdjacentHTML('beforeend', chatHTML);
+
+window.toggleChatWindow = function() {
+    const win = document.getElementById('clone-chat-window');
+    const btn = document.getElementById('clone-chat-btn');
+    if (win.style.display === 'flex') { win.style.display = 'none'; btn.innerHTML = '💬'; } 
+    else { win.style.display = 'flex'; btn.innerHTML = '🔽'; scrollToBottom(); }
+};
+
+window.checkEnter = function(e) { if (e.key === 'Enter') sendChatMessage(); };
+function scrollToBottom() { const body = document.getElementById('chat-body'); if(body) body.scrollTop = body.scrollHeight; }
+
+let chatUnsubscribe = null;
+if (typeof db !== 'undefined') { initChatListener(); }
+
+function initChatListener() {
+    try {
+        const q = query(collection(db, "vidushi_chat_history"), orderBy("timestamp", "asc")); 
+        chatUnsubscribe = onSnapshot(q, (snapshot) => {
+            const chatBody = document.getElementById('chat-body');
+            if(!chatBody) return;
+            chatBody.innerHTML = ''; 
+            window.fullChatContext = []; 
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = `msg-bubble ${data.sender === 'user' ? 'msg-user' : 'msg-ai'}`;
+                div.innerHTML = data.text ? data.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>') : "...";
+                chatBody.appendChild(div);
+                window.fullChatContext.push({ role: data.sender === 'user' ? 'user' : 'model', parts: [{ text: data.text || "" }] });
+            });
+            scrollToBottom();
+        });
+    } catch(e) { console.error("Chat Init Error", e); }
+}
+
+window.sendChatMessage = async function() {
+    const input = document.getElementById('chat-input-text');
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = ''; 
+    if (typeof db !== 'undefined') { try { await addDoc(collection(db, "vidushi_chat_history"), { sender: "user", text: text, timestamp: Date.now() }); } catch(e) { alert("Firebase Error: " + e.message); return; } }
+    document.getElementById('typing-indicator').style.display = 'block';
+    await generateCloneResponse(text);
+};
+
+async function generateCloneResponse(userText) {
+    let keys = (typeof geminiKeys !== 'undefined' ? geminiKeys : "").split(',').filter(k => k); 
+    if (!keys.length) { keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); if(!keys.length) { alert("API Key સેટિંગ્સમાં નથી!"); document.getElementById('typing-indicator').style.display = 'none'; return; } }
+    const currentModel = typeof geminiModel !== 'undefined' ? geminiModel : "gemini-1.5-flash";
+    const mood = typeof currentMood !== 'undefined' ? currentMood : "normal";
+    const uName = typeof userName !== 'undefined' ? userName : "User";
+    const cloneSystemPrompt = `તારું નામ 'અંશ' છે. તું બોટ નથી, પણ દેવેન્દ્રભાઈ (મારી) ડિજિટલ આવૃત્તિ (AI Clone) છે. નિયમો: 1. તારે મને હંમેશા "ભાઈ" કહીને બોલાવવો. 2. આપણી ભાષા: શુદ્ધ ગુજરાતી. 3. તારો સ્વભાવ: શાંત અને સમજદાર. User Name: ${uName} Current Mood: ${mood}`;
+    let contextToSend = window.fullChatContext ? window.fullChatContext.slice(-15) : [];
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: cloneSystemPrompt }] }, ...contextToSend] }) });
+        const data = await response.json();
+        const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "ભૂલ આવી.";
+        if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: aiReply, timestamp: Date.now() }); }
+    } catch (error) { console.error("Chat Error:", error); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
+}
+
         
         // ===== INITIALIZATION =====
         window.onload = () => {
