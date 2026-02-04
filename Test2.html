@@ -2507,7 +2507,7 @@ async function generateCloneResponse(userText) {
     } catch (error) { console.error("Chat Error:", error); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
 }
 
-        window.onload = () => {
+    
             // Set up file input handlers
             document.getElementById('galleryLoader').onchange = (e) => handleGalleryUpload(e.target);
             document.getElementById('docLoader').onchange = (e) => handleRAGUpload(e.target);
