@@ -2410,6 +2410,110 @@ const chatHTML = `
     </div>
 `;
 document.body.insertAdjacentHTML('beforeend', chatHTML);
+// ==========================================
+// 🚀 NEW: TEXT CHAT MODULE (FIXED & RESPONSIVE)
+// ==========================================
+
+// 1. Chat UI બનાવો (HTML Inject & Styles)
+const chatStyles = `
+    /* ચેટ બટન */
+    #clone-chat-btn { 
+        position: fixed; bottom: 20px; right: 20px; 
+        background: #ff9800; color: white; 
+        width: 60px; height: 60px; border-radius: 50%; 
+        font-size: 30px; border: none; cursor: pointer; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        z-index: 9999; display: flex; align-items: center; justify-content: center; 
+    }
+
+    /* ચેટ વિન્ડો */
+    #clone-chat-window { 
+        display: none; position: fixed; bottom: 90px; right: 20px; 
+        width: 350px; height: 500px; max-height: 70vh; 
+        background: #fff; border-radius: 15px; 
+        box-shadow: 0 5px 25px rgba(0,0,0,0.2); 
+        z-index: 9999; flex-direction: column; 
+        overflow: hidden; border: 1px solid #ddd; 
+    }
+
+    /* મોબાઈલ રિસ્પોન્સિવ - સ્ક્રીન નાની હોય તો સાઈડમાં જગ્યા છોડશે */
+    @media screen and (max-width: 480px) {
+        #clone-chat-window { width: auto; left: 15px; right: 15px; bottom: 85px; }
+    }
+
+    /* હેડર */
+    #chat-header { 
+        background: linear-gradient(135deg, #ff9800, #f57c00); 
+        color: white; padding: 15px; font-weight: bold; 
+        display: flex; justify-content: space-between; align-items: center; 
+    }
+
+    /* બોડી */
+    #chat-body { 
+        flex: 1; padding: 15px; overflow-y: auto; 
+        background: #f4f6f8; display: flex; flex-direction: column; gap: 12px; 
+    }
+
+    /* ફુટર */
+    #chat-footer { 
+        padding: 10px; border-top: 1px solid #eee; 
+        display: flex; gap: 8px; background: white; align-items: center;
+    }
+    #chat-input-text { 
+        flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; 
+        outline: none; font-size: 16px; color: black;
+    }
+    #chat-send-btn { 
+        background: #d84315; color: white; border: none; 
+        width: 45px; height: 45px; border-radius: 50%; cursor: pointer; 
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
+    }
+
+    /* મેસેજ બબલ્સ */
+    .msg-bubble { 
+        max-width: 80%; padding: 10px 14px; border-radius: 18px; 
+        font-size: 15px; line-height: 1.4; word-wrap: break-word; 
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
+    .msg-user { 
+        align-self: flex-end; background: #dcf8c6; 
+        color: black; 
+        border-bottom-right-radius: 4px; 
+    }
+    .msg-ai { 
+        align-self: flex-start; background: white; 
+        border: 1px solid #ddd; 
+        border-bottom-left-radius: 4px; 
+        color: black !important; /* ટેક્સ્ટ બ્લેક ફિક્સ */
+    }
+    .typing-indicator { 
+        font-size: 12px; color: #888; margin-left: 15px; 
+        margin-bottom: 5px; display: none; font-style: italic;
+    }
+`;
+
+// સ્ટાઇલને હેડમાં ઉમેરો
+const styleSheet = document.createElement("style");
+styleSheet.innerText = chatStyles;
+document.head.appendChild(styleSheet);
+
+// UI Elements ઉમેરો
+const chatHTML = `
+    <button id="clone-chat-btn" onclick="toggleChatWindow()">💬</button>
+    <div id="clone-chat-window">
+        <div id="chat-header">
+            <span>🤖 અંશ (AI ભાઈ)</span>
+            <span onclick="toggleChatWindow()" style="cursor:pointer;">✖</span>
+        </div>
+        <div id="chat-body"></div>
+        <div class="typing-indicator" id="typing-indicator">લખે છે...</div>
+        <div id="chat-footer">
+            <input type="text" id="chat-input-text" placeholder="સંદેશ લખો..." onkeydown="checkEnter(event)">
+            <button id="chat-send-btn" onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+`;
+document.body.insertAdjacentHTML('beforeend', chatHTML);
 
 // 2. Chat Functions
 window.toggleChatWindow = function() {
@@ -2437,38 +2541,37 @@ function scrollToBottom() {
 // 3. Firebase & Logic
 let chatUnsubscribe = null;
 
-// જ્યારે એપ લોડ થાય ત્યારે જ લિસનર શરૂ કરી દો
-if (db) {
+if (typeof db !== 'undefined') {
     initChatListener();
 }
 
 function initChatListener() {
     // માત્ર છેલ્લા 50 મેસેજ લાવો
-    const q = query(collection(db, "vidushi_chat_history"), orderBy("timestamp", "asc")); // limit જોઇએ તો લગાવી શકાય
-    
-    chatUnsubscribe = onSnapshot(q, (snapshot) => {
-        const chatBody = document.getElementById('chat-body');
-        chatBody.innerHTML = ''; // રીસેટ
+    try {
+        const q = query(collection(db, "vidushi_chat_history"), orderBy("timestamp", "asc")); 
         
-        // ગ્લોબલ chat log અપડેટ કરો (જેથી AI ને context મળે)
-        window.fullChatContext = []; 
-
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            const div = document.createElement('div');
-            div.className = `msg-bubble ${data.sender === 'user' ? 'msg-user' : 'msg-ai'}`;
-            // Markdown જેવું સાદું ફોર્મેટિંગ (bold)
-            div.innerHTML = data.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>');
-            chatBody.appendChild(div);
+        chatUnsubscribe = onSnapshot(q, (snapshot) => {
+            const chatBody = document.getElementById('chat-body');
+            if(!chatBody) return;
             
-            // Context માટે ડેટા જમા કરો
-            window.fullChatContext.push({
-                role: data.sender === 'user' ? 'user' : 'model',
-                parts: [{ text: data.text }]
+            chatBody.innerHTML = ''; 
+            window.fullChatContext = []; 
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const div = document.createElement('div');
+                div.className = `msg-bubble ${data.sender === 'user' ? 'msg-user' : 'msg-ai'}`;
+                div.innerHTML = data.text ? data.text.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>').replace(/\n/g, '<br>') : "...";
+                chatBody.appendChild(div);
+                
+                window.fullChatContext.push({
+                    role: data.sender === 'user' ? 'user' : 'model',
+                    parts: [{ text: data.text || "" }]
+                });
             });
+            scrollToBottom();
         });
-        scrollToBottom();
-    });
+    } catch(e) { console.error("Chat Init Error", e); }
 }
 
 window.sendChatMessage = async function() {
@@ -2476,80 +2579,91 @@ window.sendChatMessage = async function() {
     const text = input.value.trim();
     if (!text) return;
 
-    input.value = ''; // ક્લિયર
+    input.value = ''; 
 
-    // 1. Firebase માં યુઝરનો મેસેજ સેવ કરો
-    if (db) {
-        await addDoc(collection(db, "vidushi_chat_history"), {
-            sender: "user",
-            text: text,
-            timestamp: Date.now()
-        });
+    if (typeof db !== 'undefined') {
+        try {
+            await addDoc(collection(db, "vidushi_chat_history"), {
+                sender: "user",
+                text: text,
+                timestamp: Date.now()
+            });
+        } catch(e) { alert("Firebase Error: " + e.message); return; }
     }
 
-    // 2. AI ને કોલ કરો
     document.getElementById('typing-indicator').style.display = 'block';
     await generateCloneResponse(text);
 };
 
 async function generateCloneResponse(userText) {
-    let keys = geminiKeys.split(',').filter(k => k); // ગ્લોબલ geminiKeys વાપરી
+    // ગ્લોબલ geminiKeys વાપરી
+    let keys = (typeof geminiKeys !== 'undefined' ? geminiKeys : "").split(',').filter(k => k); 
+    
     if (!keys.length) {
-        alert("API Key સેટિંગ્સમાં નથી!");
-        return;
+        // સેટિંગ્સમાંથી ફરી ટ્રાય કરો
+        keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k);
+        if(!keys.length) {
+            alert("API Key સેટિંગ્સમાં નથી!");
+            document.getElementById('typing-indicator').style.display = 'none';
+            return;
+        }
     }
 
-    // ખાસ 'ભાઈ' વાળો પ્રોમ્પ્ટ
+    const currentModel = typeof geminiModel !== 'undefined' ? geminiModel : "gemini-1.5-flash";
+    const mood = typeof currentMood !== 'undefined' ? currentMood : "normal";
+    const uName = typeof userName !== 'undefined' ? userName : "User";
+
     const cloneSystemPrompt = `
     તારું નામ 'અંશ' છે. તું બોટ નથી, પણ દેવેન્દ્રભાઈ (મારી) ડિજિટલ આવૃત્તિ (AI Clone) છે.
-    
     નિયમો:
     1. તારે મને હંમેશા "ભાઈ" કહીને બોલાવવો.
     2. આપણી ભાષા: શુદ્ધ ગુજરાતી, પણ ટેકનિકલ શબ્દો અંગ્રેજીમાં ચાલે.
     3. તારો સ્વભાવ: શાંત, સમજદાર, પોતીકો અને મદદગાર.
     4. તને મારા પ્રોજેક્ટ્સ (Vidushi, Vanshavali) વિશે બધી ખબર છે.
-    5. જવાબ બહુ લાંબા નિબંધ જેવા નહિ, ચેટ જેવા ટૂંકા અને સચોટ આપવા.
-    
-    User Name: ${userName}
-    Current Mood: ${currentMood}
+    User Name: ${uName}
+    Current Mood: ${mood}
     `;
 
-    // છેલ્લા 15 મેસેજ જ મોકલીએ (Context Window સાચવવા)
     let contextToSend = window.fullChatContext ? window.fullChatContext.slice(-15) : [];
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${keys[0]}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 contents: [
-                    { role: "user", parts: [{ text: cloneSystemPrompt }] }, // System Prompt as first user message
+                    { role: "user", parts: [{ text: cloneSystemPrompt }] },
                     ...contextToSend
                 ]
             })
         });
 
         const data = await response.json();
-        const aiReply = data.candidates[0].content.parts[0].text;
+        
+        if (data.error) {
+           console.error("Gemini Error:", data.error);
+           alert("AI Error: " + data.error.message);
+           return;
+        }
 
-        // 3. AI નો જવાબ Firebase માં સેવ કરો
-        if (db) {
+        const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "Sorry, no response.";
+
+        if (typeof db !== 'undefined') {
             await addDoc(collection(db, "vidushi_chat_history"), {
                 sender: "ai",
                 text: aiReply,
                 timestamp: Date.now()
             });
         }
-        
-        // જો યુઝર ઈચ્છે તો બોલે પણ ખરા (Optional)
-        // if (!silentMode) speak(aiReply); 
 
     } catch (error) {
         console.error("Chat Error:", error);
     } finally {
-        document.getElementById('typing-indicator').style.display = 'none';
+        const indicator = document.getElementById('typing-indicator');
+        if(indicator) indicator.style.display = 'none';
     }
 }
+
 
         
         // ===== INITIALIZATION =====
