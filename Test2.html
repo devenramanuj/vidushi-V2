@@ -2442,8 +2442,15 @@ window.sendChatMessage = async function() {
 };
 
 async function generateCloneResponse(userText) {
+    // 1. API Key Check
     let keys = (typeof geminiKeys !== 'undefined' ? geminiKeys : "").split(',').filter(k => k); 
-    if (!keys.length) { keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); if(!keys.length) { document.getElementById('typing-indicator').style.display = 'none'; return; } }
+    if (!keys.length) { 
+        keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); 
+        if(!keys.length) { 
+            document.getElementById('typing-indicator').style.display = 'none';
+            return; 
+        } 
+    }
     
     const currentModel = typeof geminiModel !== 'undefined' ? geminiModel : "gemini-1.5-flash";
     const uName = typeof userName !== 'undefined' ? userName : "User";
@@ -2460,21 +2467,48 @@ async function generateCloneResponse(userText) {
     let contextToSend = window.fullChatContext ? window.fullChatContext.slice(-15) : [];
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: cloneSystemPrompt }] }, ...contextToSend] }) });
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [
+                    { role: "user", parts: [{ text: cloneSystemPrompt }] },
+                    ...contextToSend
+                ]
+            })
+        });
+
         const data = await response.json();
         
         if (data.error) { 
             if (typeof db !== 'undefined') { 
-                await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: `⚠️ Error: ${data.error.message}`, sessionId: currentSessionId, timestamp: Date.now() }); 
+                await addDoc(collection(db, "vidushi_chat_history"), { 
+                    sender: "ai", 
+                    text: `⚠️ Error: ${data.error.message}`, 
+                    sessionId: currentSessionId, 
+                    timestamp: Date.now() 
+                }); 
             } 
             return; 
         }
         
         const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "જવાબ મળ્યો નથી.";
+        
         if (typeof db !== 'undefined') { 
-            await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: aiReply, sessionId: currentSessionId, timestamp: Date.now() }); 
+            await addDoc(collection(db, "vidushi_chat_history"), { 
+                sender: "ai", 
+                text: aiReply, 
+                sessionId: currentSessionId, 
+                timestamp: Date.now() 
+            }); 
         }
-    } catch (error) { console.error("Chat Error:", error); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
+
+    } catch (error) { 
+        console.error("Chat Error:", error); 
+    } finally { 
+        const indicator = document.getElementById('typing-indicator'); 
+        if(indicator) indicator.style.display = 'none'; 
+    }
 }
 
 
