@@ -2288,8 +2288,8 @@ function initChatListener() {
             if(!chatBody) return;
             chatBody.innerHTML = ''; 
             window.fullChatContext = []; 
-            
-// ==========================================
+
+            // ==========================================
 // 🚀 NEW: TEXT CHAT MODULE (V6 - Full Screen Mobile Fix)
 // ==========================================
 
@@ -2497,7 +2497,10 @@ async function generateCloneResponse(userText) {
         if (data.error) { if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: `⚠️ Error: ${data.error.message}`, sessionId: currentSessionId, timestamp: Date.now() }); } return; }
         const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "જવાબ મળ્યો નથી.";
         if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: aiReply, sessionId: currentSessionId, timestamp: Date.now() }); }
-    } catch (error) { console.error("Chat Error:", error); alert("Network Error: કન્સોલ ચેક કરો."); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; };}
+    } catch (error) { console.error("Chat Error:", error); alert("Network Error: કન્સોલ ચેક કરો."); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
+}
+
+
 
 
 
