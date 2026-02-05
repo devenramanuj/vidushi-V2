@@ -2289,9 +2289,166 @@ function initChatListener() {
             chatBody.innerHTML = ''; 
             window.fullChatContext = []; 
             
+// ==========================================
+// 🚀 NEW: TEXT CHAT MODULE (V6 - Full Screen Mobile Fix)
+// ==========================================
+
+// 1. સેશન મેનેજમેન્ટ
+let currentSessionId = localStorage.getItem("vidushi_chat_session_id");
+if (!currentSessionId) {
+    currentSessionId = "session_" + Date.now();
+    localStorage.setItem("vidushi_chat_session_id", currentSessionId);
+}
+
+// 2. CSS સ્ટાઈલ્સ (Full Screen Fix)
+const chatStyles = `
+    /* ચેટ બટન */
+    #clone-chat-btn { 
+        position: fixed; bottom: 20px; right: 20px; 
+        background: #ff9800; color: white; 
+        width: 60px; height: 60px; border-radius: 50%; 
+        font-size: 30px; border: none; cursor: pointer; 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.3); 
+        z-index: 10000; display: flex; align-items: center; justify-content: center; 
+    }
+
+    /* ઓવરલે (કાળો પડદો) */
+    #chat-overlay {
+        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.8); /* થોડું ડાર્ક */
+        z-index: 9998; backdrop-filter: blur(4px);
+    }
+
+    /* Desktop Window (લેપટોપમાં બોક્સ રહેશે) */
+    #clone-chat-window { 
+        display: none; position: fixed; bottom: 90px; right: 20px; 
+        width: 400px; height: 600px; max-height: 85vh; 
+        background-color: #ffffff !important; color: #000000 !important; 
+        border-radius: 15px; box-shadow: 0 10px 40px rgba(0,0,0,0.4); 
+        z-index: 9999; flex-direction: column; overflow: hidden; border: 1px solid #ddd; 
+    }
+
+    /* 🔥 MOBILE FULL SCREEN FIX (આ જાદુ છે) */
+    @media screen and (max-width: 480px) { 
+        #clone-chat-window { 
+            width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
+            
+            top: 0 !important;      /* છેક ઉપર અડી જશે */
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;   /* છેક નીચે અડી જશે */
+            
+            border-radius: 0 !important; /* ખૂણા ચોરસ */
+            margin: 0 !important;
+            position: fixed !important;
+        } 
+        
+        /* મોબાઈલમાં હેડર થોડું મોટું */
+        #chat-header { padding: 18px 15px !important; }
+    }
+
+    /* બાકીની ડિઝાઈન */
+    #chat-header { background: linear-gradient(135deg, #ff9800, #f57c00); color: white !important; padding: 15px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+    #chat-body { flex: 1; padding: 15px; overflow-y: auto; background-color: #f4f6f8 !important; display: flex; flex-direction: column; gap: 12px; scroll-behavior: smooth; }
+    #chat-footer { padding: 10px; border-top: 1px solid #eee; display: flex; gap: 10px; background-color: #ffffff !important; align-items: center; }
+    #chat-input-text { flex: 1; padding: 12px; border: 1px solid #999 !important; border-radius: 25px; outline: none; font-size: 16px; background-color: #ffffff !important; color: #000000 !important; -webkit-text-fill-color: #000000 !important; opacity: 1 !important; }
+    #chat-send-btn { background: #d84315; color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    
+    .msg-bubble { max-width: 85%; padding: 12px 16px; border-radius: 18px; font-size: 16px; line-height: 1.5; word-wrap: break-word; box-shadow: 0 1px 2px rgba(0,0,0,0.1); text-shadow: none !important; }
+    .msg-user { align-self: flex-end; background-color: #dcf8c6 !important; color: #000000 !important; border-bottom-right-radius: 4px; }
+    .msg-ai { align-self: flex-start; background-color: #ffffff !important; border: 1px solid #ccc; border-bottom-left-radius: 4px; color: #000000 !important; }
+    .typing-indicator { font-size: 12px; color: #555 !important; margin-left: 15px; margin-bottom: 5px; display: none; font-style: italic; }
+`;
+
+const styleSheet = document.createElement("style");
+styleSheet.innerText = chatStyles;
+document.head.appendChild(styleSheet);
+
+// 3. HTML Structure
+const chatHTML = `
+    <div id="chat-overlay" onclick="toggleChatWindow()"></div>
+    <button id="clone-chat-btn" onclick="toggleChatWindow()">💬</button>
+    <div id="clone-chat-window">
+        <div id="chat-header">
+            <span style="font-size: 18px;">🤖 અંશ (AI ભાઈ)</span>
+            <div style="display:flex; gap:18px; align-items:center;">
+                <span onclick="startNewChat()" style="cursor:pointer; font-size:20px;" title="નવી ચેટ">➕</span>
+                <span onclick="clearChatHistory()" style="cursor:pointer; font-size:20px;" title="ડિલીટ કરો">🗑️</span>
+                <span onclick="toggleChatWindow()" style="cursor:pointer; font-size:22px;">✖</span>
+            </div>
+        </div>
+        <div id="chat-body"></div>
+        <div class="typing-indicator" id="typing-indicator">લખે છે...</div>
+        <div id="chat-footer">
+            <input type="text" id="chat-input-text" placeholder="સંદેશ લખો..." onkeydown="checkEnter(event)">
+            <button id="chat-send-btn" onclick="sendChatMessage()">➤</button>
+        </div>
+    </div>
+`;
+document.body.insertAdjacentHTML('beforeend', chatHTML);
+
+// 4. Functions
+window.toggleChatWindow = function() {
+    const win = document.getElementById('clone-chat-window');
+    const btn = document.getElementById('clone-chat-btn');
+    const overlay = document.getElementById('chat-overlay');
+    
+    if (win.style.display === 'flex') { 
+        win.style.display = 'none'; 
+        overlay.style.display = 'none'; 
+        btn.innerHTML = '💬'; 
+        document.body.style.overflow = 'auto'; // સ્ક્રોલ ચાલુ
+    } else { 
+        win.style.display = 'flex'; 
+        overlay.style.display = 'block'; 
+        btn.innerHTML = '🔽'; 
+        document.body.style.overflow = 'hidden'; // પાછળનું પેજ સ્ક્રોલ બંધ
+        scrollToBottom(); 
+    }
+};
+
+window.checkEnter = function(e) { if (e.key === 'Enter') sendChatMessage(); };
+function scrollToBottom() { const body = document.getElementById('chat-body'); if(body) body.scrollTop = body.scrollHeight; }
+
+window.startNewChat = function() {
+    if(!confirm("નવી ચેટ શરૂ કરવી છે?")) return;
+    currentSessionId = "session_" + Date.now();
+    localStorage.setItem("vidushi_chat_session_id", currentSessionId);
+    document.getElementById('chat-body').innerHTML = '';
+    window.fullChatContext = []; 
+};
+
+window.clearChatHistory = async function() {
+    if(!confirm("શું અત્યારની ચેટ ડિલીટ કરવી છે?")) return;
+    if (typeof db !== 'undefined') {
+        try {
+            const q = query(collection(db, "vidushi_chat_history"));
+            const snapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            snapshot.forEach((doc) => {
+                if (doc.data().sessionId === currentSessionId) batch.delete(doc.ref);
+            });
+            await batch.commit();
+            document.getElementById('chat-body').innerHTML = ''; 
+        } catch (e) { alert("ભૂલ: " + e.message); }
+    }
+};
+
+let chatUnsubscribe = null;
+if (typeof db !== 'undefined') { initChatListener(); }
+
+function initChatListener() {
+    try {
+        const q = query(collection(db, "vidushi_chat_history"), orderBy("timestamp", "asc")); 
+        chatUnsubscribe = onSnapshot(q, (snapshot) => {
+            const chatBody = document.getElementById('chat-body');
+            if(!chatBody) return;
+            chatBody.innerHTML = ''; 
+            window.fullChatContext = []; 
             snapshot.forEach((doc) => {
                 const data = doc.data();
-                // 🔥 ફક્ત અત્યારના સેશનની ચેટ બતાવો
                 if (data.sessionId === currentSessionId) {
                     const div = document.createElement('div');
                     div.className = `msg-bubble ${data.sender === 'user' ? 'msg-user' : 'msg-ai'}`;
@@ -2310,17 +2467,7 @@ window.sendChatMessage = async function() {
     const text = input.value.trim();
     if (!text) return;
     input.value = ''; 
-    if (typeof db !== 'undefined') { 
-        try { 
-            // 🔥 મેસેજ સાથે sessionId પણ સેવ કરો
-            await addDoc(collection(db, "vidushi_chat_history"), { 
-                sender: "user", 
-                text: text, 
-                sessionId: currentSessionId, // ID ઉમેર્યું
-                timestamp: Date.now() 
-            }); 
-        } catch(e) { alert("Firebase Error: " + e.message); return; } 
-    }
+    if (typeof db !== 'undefined') { try { await addDoc(collection(db, "vidushi_chat_history"), { sender: "user", text: text, sessionId: currentSessionId, timestamp: Date.now() }); } catch(e) { alert("Firebase Error: " + e.message); return; } }
     document.getElementById('typing-indicator').style.display = 'block';
     await generateCloneResponse(text);
 };
@@ -2347,28 +2494,9 @@ async function generateCloneResponse(userText) {
     try {
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: cloneSystemPrompt }] }, ...contextToSend] }) });
         const data = await response.json();
-        
-        if (data.error) { 
-            if (typeof db !== 'undefined') { 
-                await addDoc(collection(db, "vidushi_chat_history"), { 
-                    sender: "ai", 
-                    text: `⚠️ Error: ${data.error.message}`, 
-                    sessionId: currentSessionId, // ID ઉમેર્યું
-                    timestamp: Date.now() 
-                }); 
-            } 
-            return; 
-        }
-        
+        if (data.error) { if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: `⚠️ Error: ${data.error.message}`, sessionId: currentSessionId, timestamp: Date.now() }); } return; }
         const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "જવાબ મળ્યો નથી.";
-        if (typeof db !== 'undefined') { 
-            await addDoc(collection(db, "vidushi_chat_history"), { 
-                sender: "ai", 
-                text: aiReply, 
-                sessionId: currentSessionId, // ID ઉમેર્યું
-                timestamp: Date.now() 
-            }); 
-        }
+        if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: aiReply, sessionId: currentSessionId, timestamp: Date.now() }); }
     } catch (error) { console.error("Chat Error:", error); alert("Network Error: કન્સોલ ચેક કરો."); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
 }
 
