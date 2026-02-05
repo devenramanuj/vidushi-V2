@@ -2414,35 +2414,6 @@ function scrollToBottom() { const body = document.getElementById('chat-body'); i
 
 window.startNewChat = function() {
     if(!confirm("નવી ચેટ શરૂ કરવી છે?")) return;
-    currentSessionId = "session_" + Date.now();
-    localStorage.setItem("vidushi_chat_session_id", currentSessionId);
-    document.getElementById('chat-body').innerHTML = '';
-    window.fullChatContext = []; 
-};
-
-window.clearChatHistory = async function() {
-    if(!confirm("શું અત્યારની ચેટ ડિલીટ કરવી છે?")) return;
-    if (typeof db !== 'undefined') {
-        try {
-            const q = query(collection(db, "vidushi_chat_history"));
-            const snapshot = await getDocs(q);
-            const batch = writeBatch(db);
-            snapshot.forEach((doc) => {
-                if (doc.data().sessionId === currentSessionId) batch.delete(doc.ref);
-            });
-            await batch.commit();
-            document.getElementById('chat-body').innerHTML = ''; 
-        } catch (e) { alert("ભૂલ: " + e.message); }
-    }
-};
-
-let chatUnsubscribe = null;
-if (typeof db !== 'undefined') { initChatListener(); }
-
-function initChatListener() {
-    try {
-        const q = query(collection(db, "vidushi_chat_history"), orderBy("timestamp", "asc")); 
-        chatUnsubscribe = onSnapshot(q, (snapshot) => {
 
 // ==========================================
 // 🚀 NEW: TEXT CHAT MODULE (V7 - FINAL FIXED)
