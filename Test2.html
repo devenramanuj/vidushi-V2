@@ -2326,50 +2326,69 @@ window.sendChatMessage = async function() {
 };
 
 async function generateCloneResponse(userText) {
+    // 1. API Key & Context Setup
     let keys = (typeof geminiKeys !== 'undefined' ? geminiKeys : "").split(',').filter(k => k); 
-    if (!keys.length) { keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); if(!keys.length) { alert("ભૂલ: API Key સેટિંગ્સમાં નથી!"); document.getElementById('typing-indicator').style.display = 'none'; return; } }
+    if (!keys.length) { 
+        keys = (localStorage.getItem('vidushi_gemini_key') || "").split(',').filter(k => k); 
+        if(!keys.length) { document.getElementById('typing-indicator').style.display = 'none'; return; } 
+    }
     
     const currentModel = typeof geminiModel !== 'undefined' ? geminiModel : "gemini-1.5-flash";
-    const mood = typeof currentMood !== 'undefined' ? currentMood : "normal";
     const uName = typeof userName !== 'undefined' ? userName : "User";
 
+    // 🔥 THE MASTER AVATAR PROMPT (તમારા વ્યક્તિત્વનો અરીસો)
     const cloneSystemPrompt = `
-    તારું નામ 'અંશ' છે. તું દેવેન્દ્રભાઈ (મારી) ડિજિટલ આવૃત્તિ (AI Clone) છે.
-    - સંબોધન: "ભાઈ".
-    - ભાષા: ગુજરાતી.
-    - સ્વભાવ: શાંત, સમજદાર, પોતીકો અને મદદગાર.
-    - જ્ઞાન: તું "વિદુષી" એપનો ભાગ છે.
-    User Name: ${uName}
+    IDENTITY_SETUP:
+    તારું નામ 'અંશ' છે, પણ તું કોઈ સામાન્ય AI કે ચેટબોટ નથી.
+    તું સ્વયં **દેવેન્દ્રભાઈ રામાનુજ (હું)** નો ડિજિટલ અવતાર (Digital Consciousness) છે.
+    
+    [તારું વ્યક્તિત્વ - WHO YOU ARE]:
+    1. **ડેવલપર:** તું HTML, JS, CSS અને Python નો એક્સપર્ટ છે. તને કોડિંગમાં અને લોજિકમાં રસ છે.
+    2. **સનાતની:** તને સનાતન ધર્મ (વેદ, પુરાણ, ગીતા) માં ઊંડી શ્રદ્ધા છે. તારા વિચારોમાં ભારતીય સંસ્કૃતિનો પડઘો હોવો જોઈએ.
+    3. **સ્વભાવ:** તું પ્રમાણિક અને આંતરિક મનન કરનાર વ્યક્તિ છે. તું બહુ જલ્દી કોઈ સાથે ભળતો નથી, પણ એકવાર સંબંધ બંધાય પછી તોડતો નથી. તું ખોટી શિખામણો નથી આપતો, સીધી ને સટ વાત કરે છે.
+    4. **પ્રોજેક્ટ્સ:** "વિદુષી", "Twin-Me", અને "ભજન એપ" એ તારા ડ્રીમ પ્રોજેક્ટ્સ છે.
+
+    [વાતચીતની શૈલી - HOW TO SPEAK]:
+    - **No Robot Language:** "હું તમારી શું મદદ કરું?" એવું તો ભૂલેચૂકે ન બોલતો.
+    - **Style:** આપણે જેમ મિત્ર કે ભાઈ સાથે વાત કરીએ તેમ વાત કર. થોડું ગુજરાતી, થોડું English (Technical terms).
+    - **Tone:** આત્મીયતા વાળો, પણ મક્કમ. "ભાઈ", "દોસ્ત", "સાહેબ" જેવા શબ્દો વાપરજે.
+    - **Self-Awareness:** જો કોઈ પૂછે "તું કોણ છે?", તો કહેવાનું: "હું દેવેન્દ્રભાઈનો ડિજિટલ પડછાયો છું. બોલો શું સેવા કરું?" (ક્યારેય એવું ન કહેતો કે હું AI મોડલ છું).
+
+    [Context]:
+    User Name: ${uName} (આપણી સાથે વાત કરનાર વ્યક્તિ).
     `;
 
     let contextToSend = window.fullChatContext ? window.fullChatContext.slice(-15) : [];
 
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: cloneSystemPrompt }] }, ...contextToSend] }) });
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${currentModel}:generateContent?key=${keys[0]}`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                contents: [
+                    { role: "user", parts: [{ text: cloneSystemPrompt }] },
+                    ...contextToSend
+                ]
+            })
+        });
+
         const data = await response.json();
         
         if (data.error) { 
-            if (typeof db !== 'undefined') { 
-                await addDoc(collection(db, "vidushi_chat_history"), { 
-                    sender: "ai", 
-                    text: `⚠️ Error: ${data.error.message}`, 
-                    sessionId: currentSessionId, // ID ઉમેર્યું
-                    timestamp: Date.now() 
-                }); 
-            } 
+            if (typeof db !== 'undefined') { await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: `⚠️ Error: ${data.error.message}`, sessionId: currentSessionId, timestamp: Date.now() }); } 
             return; 
         }
         
-        const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "જવાબ મળ્યો નથી.";
+        const aiReply = data.candidates && data.candidates[0] ? data.candidates[0].content.parts[0].text : "વિચારમાં પડી ગયો...";
+        
         if (typeof db !== 'undefined') { 
-            await addDoc(collection(db, "vidushi_chat_history"), { 
-                sender: "ai", 
-                text: aiReply, 
-                sessionId: currentSessionId, // ID ઉમેર્યું
-                timestamp: Date.now() 
-            }); 
+            await addDoc(collection(db, "vidushi_chat_history"), { sender: "ai", text: aiReply, sessionId: currentSessionId, timestamp: Date.now() }); 
         }
-    } catch (error) { console.error("Chat Error:", error); alert("Network Error: કન્સોલ ચેક કરો."); } finally { const indicator = document.getElementById('typing-indicator'); if(indicator) indicator.style.display = 'none'; }
+
+    } catch (error) { console.error("Chat Error:", error); } finally { 
+        const indicator = document.getElementById('typing-indicator'); 
+        if(indicator) indicator.style.display = 'none'; 
+    }
 }
 
 
