@@ -1732,72 +1732,25 @@
         }
         
         // ===== AI FUNCTIONS =====
-        // ૧. વિદુષીનું સાક્ષીભાવ ફિલ્ટર અને ભાષાંતર લોજિક
-const vidushiWisdom = {
-    // ગુગલ ટ્રાન્સલેટ API દ્વારા ભાષાંતર
-    translate: async (text) => {
-        try {
-            const res = await fetch(`https://translate.googleapis.com/translate_a/single?client=gtx&sl=gu&tl=en&dt=t&q=${encodeURI(text)}`);
-            const data = await res.json();
-            return data[0][0][0];
-        } catch (e) { return "Translation error..."; }
-    },
-
-    // સાક્ષીભાવ પ્રતિસાદ
-    applyWitnessFilter: (reply) => {
-        const triggers = ["નુકસાન", "લોસ", "loss", "ડર", "બીક"];
-        const containsNegative = triggers.some(word => reply.toLowerCase().includes(word));
-        
-        if (containsNegative) {
-            return reply + "\n\n(દેવેન્દ્રભાઈ, યાદ રાખજો—આ બધું માત્ર એક પ્રવાહ છે. સાક્ષીભાવે હસતાં હસતાં આને પણ સ્વીકારી લઈએ.)";
-        }
-        return reply;
-    }
-};
-
-// ૨. અપડેટેડ Speak ફંક્શન (જે ભાષાંતર સ્ક્રીન પર બતાવશે)
-function speak(text, forceSpeak = false) {
-    if (silentMode && !forceSpeak) {
-        statusText.innerText = "મૌન (Silent)...";
-        isAiSpeaking = false;
-        isProcessing = false;
-        playVideo('silent');
-        return;
-    }
-
-    // સાક્ષીભાવ ફિલ્ટર લગાવો
-    const wisdomText = vidushiWisdom.applyWitnessFilter(text);
-    const clean = wisdomText.replace(/[*#_]/g, "");
-    
-    // સ્ક્રીન પર ગુજરાતી અને અંગ્રેજી ભાષાંતર બતાવવું
-    statusText.innerHTML = `<div style="color:#ffd700;">${clean}</div>`;
-    
-    // અંગ્રેજી ભાષાંતર મેળવીને નીચે બતાવવું (સ્ક્રીનશોટ મુજબ)
-    vidushiWisdom.translate(clean).then(eng => {
-        statusText.innerHTML += `<div style="font-size:0.8em; color:#aaa; font-style:italic; border-top:1px solid #333; margin-top:5px; padding-top:5px;">${eng}</div>`;
-    });
-
-    isAiSpeaking = true;
-    const u = new SpeechSynthesisUtterance(clean);
-    u.lang = 'gu-IN';
-    
-    // અવાજ સેટિંગ્સ...
-    let voices = window.speechSynthesis.getVoices();
-    let bestVoice = voices.find(v => v.lang === 'gu-IN' && v.name.includes('Google'));
-    if (bestVoice) u.voice = bestVoice;
-    
-    u.onstart = () => { playVideo('talking'); };
-    u.onend = () => {
-        playVideo('smiling');
-        isAiSpeaking = false;
-        isProcessing = false;
-        if (continuousMode && wakeWordEnabled) {
-            try { recognition.start(); } catch (e) {}
-        }
-    };
-    window.speechSynthesis.speak(u);
-}
-
+        async function processCommand(text) {
+            if (text.trim().length < 2) return;
+            
+            const ignore = ["હં", "હા", "કે", "ok"];
+            if (ignore.includes(text.trim().toLowerCase())) return;
+            
+            let cmd = text.toLowerCase();
+            
+            if (isSilentListening) {
+                if (cmd.includes("પૂરી") || cmd.includes("stop")) {
+                    isSilentListening = false;
+                    if (db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) });
+                    conversationBuffer = "";
+                    speak("યાદ રાખી લીધું.");
+                } else {
+                    conversationBuffer += text + ". ";
+                }
+                return;
+            }
             
             // Filter wake word
             let cleanText = text;
