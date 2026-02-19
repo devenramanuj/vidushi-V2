@@ -206,7 +206,7 @@
     </div>
 
     <div id="notes-modal" class="modal"><div class="notes-header"><span>મારી ડાયરી</span><span onclick="window.toggleModal('notes')" style="cursor:pointer">✖</span></div><div id="notes-list" class="list-container"></div><div style="display:flex; gap:10px; width:100%; margin-top:10px;"><button class="save-btn" onclick="window.speakNotes()" style="flex:1;">🔊 વાંચ</button><button class="save-btn" onclick="window.toggleModal('notes')" style="flex:1; background:#444;">🔙 પાછા</button></div></div>
-    <div id="music-modal" class="modal"><div class="notes-header"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="pointer:cursor">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
+    <div id="music-modal" class="modal"><div class="notes-header"><span>ભજન પ્લેયર</span><span onclick="window.toggleModal('music')" style="cursor:pointer">✖</span></div><div class="list-container"><div class="list-item" onclick="window.playMusic('Gayatri Mantra')">🕉️ ગાયત્રી મંત્ર</div><div class="list-item" onclick="window.playMusic('Hanuman Chalisa')">🙏 હનુમાન ચાલીસા</div><div class="list-item" onclick="window.playMusic('Krishna Bhajan')">🦚 શ્રી કૃષ્ણ ભજન</div></div></div>
     <div id="expense-modal" class="modal"><div class="notes-header"><span>હિસાબ</span><span onclick="window.toggleModal('expense')" style="cursor:pointer">✖</span></div><div style="color:#00ff00; font-size:20px; margin-bottom:10px;">કુલ: ₹<span id="total-expense">0</span></div><div id="expense-list" class="list-container"></div><button class="save-btn" onclick="window.clearExpenses()" style="background:red;">🗑️ સાફ કરો</button></div>
     <div id="contacts-modal" class="modal"><div class="notes-header"><span>સંપર્કો</span><span onclick="window.toggleModal('contacts')" style="cursor:pointer">✖</span></div><div style="display:flex; gap:5px; width:100%;"><input type="text" id="contactName" placeholder="નામ" style="flex:1;"><input type="number" id="contactNumber" placeholder="નંબર" style="flex:1;"></div><button class="save-btn" onclick="window.addContactUI()" style="margin-bottom:15px;">Add Contact</button><div id="contacts-list" class="list-container" style="width:100%;"></div></div>
     <div id="image-overlay"><img id="generated-image" src="" alt="Magic Image"><div id="image-loading-text">ઉકેલી રહી છું...</div><div class="overlay-btns"><button id="download-btn" onclick="window.downloadSelfie()">⬇ સેવ કરો</button><button id="close-img-btn" onclick="window.closeImage()">બંધ કરો</button></div></div>
@@ -246,7 +246,7 @@
         let userName = localStorage.getItem('vidushi_username') || "સાહેબ";
         let firebaseApiKey = localStorage.getItem('vidushi_firebase_apiKey') || '';
 
-        // 🔥 RAG MEMORY STORAGE
+        // RAG MEMORY STORAGE
         window.ragContent = ""; 
 
         try {
@@ -345,6 +345,7 @@
         const generatedImage = document.getElementById('generated-image');
         const imageLoadingText = document.getElementById('image-loading-text');
         
+        // UPDATED: Added dancing to the videos object
         const videos = {
             silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'),
             thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), 
@@ -362,66 +363,33 @@
             if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
         };
 
-        // ૧. સુધારેલું playVideo ફંક્શન
-function playVideo(type) {
-    if(selfieVideo.style.display === 'block') return;
-    
-    console.log("Switching to:", type);
-
-    Object.values(videos).forEach(v => { 
-        if(v) {
-            v.style.display = 'none'; 
-            v.style.zIndex = "1";
-            v.pause(); 
-        }
-    });
-
-    if(videos[type]) { 
-        videos[type].style.display = 'block'; 
-        videos[type].style.zIndex = "10"; // વિડિયોને સૌથી ઉપર લાવવા માટે
-        videos[type].muted = true; 
-        videos[type].currentTime = 0; 
-        
-        let promise = videos[type].play();
-        if (promise !== undefined) {
-            promise.catch(error => {
-                console.error("Playback Error:", error);
-                videos[type].play();
+        // UPDATED: Enhanced playVideo with focus on zIndex and autoplay
+        function playVideo(type) {
+            if(selfieVideo && selfieVideo.style.display === 'block') return;
+            
+            Object.keys(videos).forEach(key => { 
+                if(videos[key]) {
+                    videos[key].style.display = 'none'; 
+                    videos[key].style.zIndex = "1";
+                    videos[key].pause(); 
+                }
             });
+
+            if(videos[type]) { 
+                videos[type].style.display = 'block'; 
+                videos[type].style.zIndex = "10"; 
+                videos[type].muted = true; 
+                videos[type].currentTime = 0; 
+                
+                let promise = videos[type].play();
+                if (promise !== undefined) {
+                    promise.catch(error => {
+                        console.error("Playback Error:", error);
+                        videos[type].play();
+                    });
+                }
+            }
         }
-    }
-}
-
-// ૨. processCommand માં ડાન્સ લોજિક (સૌથી ઉપર મૂકજો)
-window.processCommand = async (text) => {
-    if(text.trim().length < 2) return;
-    const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
-    let cmd = text.toLowerCase();
-    
-    // 🔥 FORCE DANCE LOGIC
-    if(cmd.includes("ડાન્સ કર") || cmd.includes("નાચ") || cmd.includes("dance")) {
-        console.log("Dance Command Detected!");
-        isProcessing = true;
-        
-        // પેલા વિડિયો બદલો પછી બોલવાનું શરૂ કરો
-        playVideo('dancing'); 
-        window.speak("ચોક્કસ! જુઓ મારો ડાન્સ.");
-        
-        // વિડિયો ૮ સેકન્ડ સુધી ચાલશે (તમારા વિડિયોની લંબાઈ મુજબ બદલી શકો)
-        setTimeout(() => {
-            playVideo('smiling');
-            isProcessing = false;
-        }, 8000); 
-        return; // બાકીના કોડને અટકાવવા માટે
-    }
-    
-    // ... બાકીનો તમારો ઓરીજનલ કોડ (RAG, Notes વગેરે) અહીંથી ચાલુ થશે ...
-    if(isSilentListening) { /* ... */ }
-    // ...
-};
-
-}
-
 
         window.openSettings = () => { 
             document.getElementById('settings-modal').style.display = 'flex'; 
@@ -489,7 +457,6 @@ window.processCommand = async (text) => {
         window.speakReportFromModal = () => { window.speak(document.getElementById("report-content-area").value, true); };
         window.downloadSelfie = () => { const link = document.createElement('a'); link.href = document.getElementById('generated-image').src; link.download = `Vidushi_Capture_${new Date().getTime()}.jpg`; document.body.appendChild(link); link.click(); document.body.removeChild(link); window.speak("સેવ થઈ ગયો!"); window.closeImage(); };
 
-        // 🔥🔥🔥 RAG LOGIC: READ PDF & FILES 🔥🔥🔥
         window.handleRAGUpload = async (input) => {
             const file = input.files[0];
             if (!file) return;
@@ -502,7 +469,6 @@ window.processCommand = async (text) => {
                 let extractedText = "";
 
                 if (file.type === "application/pdf") {
-                    // PDF HANDLING
                     const arrayBuffer = await file.arrayBuffer();
                     const pdf = await pdfjsLib.getDocument(arrayBuffer).promise;
                     
@@ -514,11 +480,9 @@ window.processCommand = async (text) => {
                         document.getElementById('rag-status').innerText = `Reading Page ${i}/${pdf.numPages}...`;
                     }
                 } else {
-                    // TEXT HANDLING (txt, csv, js, py, html)
                     extractedText = await file.text();
                 }
 
-                // CLEANUP & SAVE TO GLOBAL MEMORY
                 window.ragContent = extractedText.replace(/\s+/g, " ").trim();
                 
                 document.getElementById('rag-status').innerText = '✅ RAG Ready';
@@ -561,23 +525,23 @@ window.processCommand = async (text) => {
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
         
+        // UPDATED: processCommand with prioritized Dancing logic
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
             let cmd = text.toLowerCase();
             
-            // NEW: Dancing Feature Logic added here
+            // PRIORITY: DANCING FEATURE
             if(cmd.includes("ડાન્સ કર") || cmd.includes("નાચ") || cmd.includes("dance")) {
+                console.log("Dance Command Detected!");
                 isProcessing = true;
-                playVideo('dancing');
+                playVideo('dancing'); 
                 window.speak("ચોક્કસ! જુઓ મારો ડાન્સ.");
                 setTimeout(() => {
-                    if(!isAiSpeaking) {
-                        playVideo('smiling');
-                        isProcessing = false;
-                    }
-                }, 7000); 
-                return;
+                    playVideo('smiling');
+                    isProcessing = false;
+                }, 8000); 
+                return; 
             }
 
             if(isSilentListening) { if(cmd.includes("પૂરી") || cmd.includes("stop")) { isSilentListening = false; if(db) await updateDoc(userDocRef, { memories: arrayUnion(conversationBuffer) }); conversationBuffer=""; window.speak("યાદ રાખી લીધું."); } else { conversationBuffer += text + ". "; } return; }
