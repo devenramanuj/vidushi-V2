@@ -362,30 +362,64 @@
             if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
         };
 
-        function playVideo(type) {
+        // ૧. સુધારેલું playVideo ફંક્શન
+function playVideo(type) {
     if(selfieVideo.style.display === 'block') return;
     
+    console.log("Switching to:", type);
+
     Object.values(videos).forEach(v => { 
         if(v) {
             v.style.display = 'none'; 
+            v.style.zIndex = "1";
             v.pause(); 
         }
     });
 
     if(videos[type]) { 
         videos[type].style.display = 'block'; 
-        videos[type].muted = true; // બ્રાઉઝર ઓટોપ્લે માટે આ જરૂરી છે
+        videos[type].style.zIndex = "10"; // વિડિયોને સૌથી ઉપર લાવવા માટે
+        videos[type].muted = true; 
         videos[type].currentTime = 0; 
         
         let promise = videos[type].play();
         if (promise !== undefined) {
             promise.catch(error => {
-                console.error("Video Play Error:", error);
-                // જો હજુ પણ પ્લે ન થાય તો ફોર્સફુલી ટ્રાય કરો
+                console.error("Playback Error:", error);
                 videos[type].play();
             });
         }
     }
+}
+
+// ૨. processCommand માં ડાન્સ લોજિક (સૌથી ઉપર મૂકજો)
+window.processCommand = async (text) => {
+    if(text.trim().length < 2) return;
+    const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
+    let cmd = text.toLowerCase();
+    
+    // 🔥 FORCE DANCE LOGIC
+    if(cmd.includes("ડાન્સ કર") || cmd.includes("નાચ") || cmd.includes("dance")) {
+        console.log("Dance Command Detected!");
+        isProcessing = true;
+        
+        // પેલા વિડિયો બદલો પછી બોલવાનું શરૂ કરો
+        playVideo('dancing'); 
+        window.speak("ચોક્કસ! જુઓ મારો ડાન્સ.");
+        
+        // વિડિયો ૮ સેકન્ડ સુધી ચાલશે (તમારા વિડિયોની લંબાઈ મુજબ બદલી શકો)
+        setTimeout(() => {
+            playVideo('smiling');
+            isProcessing = false;
+        }, 8000); 
+        return; // બાકીના કોડને અટકાવવા માટે
+    }
+    
+    // ... બાકીનો તમારો ઓરીજનલ કોડ (RAG, Notes વગેરે) અહીંથી ચાલુ થશે ...
+    if(isSilentListening) { /* ... */ }
+    // ...
+};
+
 }
 
 
