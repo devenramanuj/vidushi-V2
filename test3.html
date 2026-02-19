@@ -366,6 +366,7 @@
 
         // UPDATED: Enhanced playVideo with focus on zIndex and autoplay
         function playVideo(type) {
+    if(sfunction playVideo(type) {
     if(selfieVideo && selfieVideo.style.display === 'block') return;
     
     Object.keys(videos).forEach(key => { 
@@ -384,19 +385,6 @@
     }
 }
 
-
-            if(videos[type]) { 
-                videos[type].style.display = 'block'; 
-                videos[type].style.zIndex = "10"; 
-                videos[type].muted = true; 
-                videos[type].currentTime = 0; 
-                
-                let promise = videos[type].play();
-                if (promise !== undefined) {
-                    promise.catch(error => {
-                        console.error("Playback Error:", error);
-                        videos[type].play();
-                    });
                 }
             }
         }
