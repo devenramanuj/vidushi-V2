@@ -363,10 +363,31 @@
         };
 
         function playVideo(type) {
-            if(selfieVideo.style.display === 'block') return;
-            Object.values(videos).forEach(v => { v.style.display = 'none'; v.pause(); });
-            if(videos[type]) { videos[type].style.display = 'block'; videos[type].play().catch(()=>{}); }
+    if(selfieVideo.style.display === 'block') return;
+    
+    Object.values(videos).forEach(v => { 
+        if(v) {
+            v.style.display = 'none'; 
+            v.pause(); 
         }
+    });
+
+    if(videos[type]) { 
+        videos[type].style.display = 'block'; 
+        videos[type].muted = true; // બ્રાઉઝર ઓટોપ્લે માટે આ જરૂરી છે
+        videos[type].currentTime = 0; 
+        
+        let promise = videos[type].play();
+        if (promise !== undefined) {
+            promise.catch(error => {
+                console.error("Video Play Error:", error);
+                // જો હજુ પણ પ્લે ન થાય તો ફોર્સફુલી ટ્રાય કરો
+                videos[type].play();
+            });
+        }
+    }
+}
+
 
         window.openSettings = () => { 
             document.getElementById('settings-modal').style.display = 'flex'; 
