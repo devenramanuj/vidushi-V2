@@ -366,15 +366,24 @@
 
         // UPDATED: Enhanced playVideo with focus on zIndex and autoplay
         function playVideo(type) {
-            if(selfieVideo && selfieVideo.style.display === 'block') return;
-            
-            Object.keys(videos).forEach(key => { 
-                if(videos[key]) {
-                    videos[key].style.display = 'none'; 
-                    videos[key].style.zIndex = "1";
-                    videos[key].pause(); 
-                }
-            });
+    if(selfieVideo && selfieVideo.style.display === 'block') return;
+    
+    Object.keys(videos).forEach(key => { 
+        if(videos[key]) {
+            videos[key].style.display = 'none'; 
+            videos[key].style.zIndex = "1"; // બાકીનાને નીચે મોકલો
+            videos[key].pause(); 
+        }
+    });
+
+    if(videos[type]) { 
+        videos[type].style.display = 'block'; 
+        videos[type].style.zIndex = "10"; // ડાન્સ વિડિયોને સૌથી ઉપર લાવો
+        videos[type].muted = true; 
+        videos[type].play().catch(e => console.log("Error:", e)); 
+    }
+}
+
 
             if(videos[type]) { 
                 videos[type].style.display = 'block'; 
