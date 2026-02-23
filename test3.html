@@ -22,7 +22,7 @@
         /* --- CORE STYLES --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: black; font-family: 'Segoe UI', sans-serif; user-select: none; }
         #video-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
-        video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; z-index: 1; }
+        video { width: 100%; height: 100%; object-fit: cover; position: absolute; display: none; }
         #silent-video { display: block; }
         
         #selfie-video { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 5; border: 4px solid #ff4500; }
@@ -345,7 +345,6 @@
         const generatedImage = document.getElementById('generated-image');
         const imageLoadingText = document.getElementById('image-loading-text');
         
-        // UPDATED: Added dancing to the videos object
         const videos = {
             silent: document.getElementById('silent-video'), talking: document.getElementById('talking-video'),
             thinking: document.getElementById('thinking-video'), smiling: document.getElementById('smiling-video'), 
@@ -363,7 +362,6 @@
             if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(err => console.log('SW Fail', err));
         };
 
-        // UPDATED: Enhanced playVideo with focus on zIndex and autoplay
         function playVideo(type) {
             if(selfieVideo && selfieVideo.style.display === 'block') return;
             
@@ -525,7 +523,6 @@
         window.closeAppViewer = () => { document.getElementById('app-viewer-modal').style.display = 'none'; document.getElementById('app-render-area').innerHTML = ''; window.speak("એપ બંધ કરી."); };
         function handleGenUI(reply) { if(reply.includes(":::APP_START:::")) { let code = reply.split(":::APP_START:::")[1].split(":::APP_END:::")[0]; document.getElementById('app-viewer-modal').style.display = 'flex'; document.getElementById('app-render-area').innerHTML = code; const scripts = document.getElementById('app-render-area').querySelectorAll("script"); scripts.forEach(oldScript => { const newScript = document.createElement("script"); newScript.textContent = oldScript.textContent; document.body.appendChild(newScript); }); window.speak("એપ બનાવી દીધી છે. જુઓ!"); return true; } return false; }
         
-        // UPDATED: processCommand with prioritized Dancing logic
         window.processCommand = async (text) => {
             if(text.trim().length < 2) return;
             const ignore = ["હં", "હા", "કે", "ok"]; if(ignore.includes(text.trim().toLowerCase())) return;
